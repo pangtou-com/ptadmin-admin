@@ -1,0 +1,21 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    level: 1
+    checkGenericClassInNonGenericObjectType: false
+    checkMissingIterableValueType: false
+    excludes_analyse:
+        - ptadmin/Controllers/Traits/ValidateTrait.php
+    ignoreErrors:
+        # 忽略变量方法调用的警告
+        - '#^Variable property access on \$this\([a-zA-Z0-9\\_]+\)\.#'
+        - '#^Variable method call on \$this\([a-zA-Z0-9\\_]+\)\.#'
+        - '#^Variable property access on [a-zA-Z0-9\|\\_]+\.#'
+        - '#^Variable static method call on [a-zA-Z0-9\|\\_]+\.#'
+        - '#^Variable method call on mixed\.#'
+        - '#^Unsafe usage of new static\(\)\.#'
+        # - message: '#^Access to an undefined property Zane\\View\\Providers\\ServiceProvider::\$stubCallbacks\.#'
+        #  paths:
+            # - package/View/Providers/ServiceProvider.php
+

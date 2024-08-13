@@ -1,0 +1,150 @@
+
+/* loading.css */
+//<div class="loading">
+//  <div class="inner one"></div>
+//  <div class="inner two"></div>
+//  <div class="inner three"></div>
+//  <div class="inner four"></div>
+//</div>
+.loading {
+    position: absolute;
+    top: calc(50% - 24px);
+    left: calc(50% - 24px);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    transform: perspective( 128px ) rotateX( 30deg );
+}
+.inner {
+    position: absolute;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    background-color: var(--theme-main-bg);
+    border-radius: 50%;
+}
+.inner.one {
+    left: 0;
+    top: 0;
+    animation: move-right 1s ease-out infinite;
+}
+.inner.two {
+    right: 0;
+    top: 0;
+    animation: move-down 1s ease-in-out infinite;
+}
+.inner.three {
+    right: 0;
+    bottom: 0;
+    animation: move-left 1s ease-in-out infinite;
+}
+.inner.four {
+    left: 0;
+    bottom: 0;
+    animation: move-up 1s ease-out infinite;
+}
+@keyframes move-right {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(32px);
+    }
+}
+@keyframes move-down {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(32px);
+    }
+}
+@keyframes move-left {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-32px);
+    }
+}
+@keyframes move-up {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-32px);
+    }
+}
+
+/* loading.css */
+//<div class="sk-cube-grid">
+//<div class="sk-cube sk-cube-1"></div>
+//<div class="sk-cube sk-cube-2"></div>
+//<div class="sk-cube sk-cube-3"></div>
+//<div class="sk-cube sk-cube-4"></div>
+//<div class="sk-cube sk-cube-5"></div>
+//<div class="sk-cube sk-cube-6"></div>
+//<div class="sk-cube sk-cube-7"></div>
+//<div class="sk-cube sk-cube-8"></div>
+//<div class="sk-cube sk-cube-9"></div>
+//</div>
+.sk-cube-grid {
+    position: absolute;
+    top: calc(50% - 24px);
+    left: calc(50% - 24px);
+    width: 4em;
+    height: 4em;
+    z-index: 2000;
+    .sk-cube {
+        width: 33%;
+        height: 33%;
+        background-color: var(--theme-main-bg);
+        float: left;
+        animation: sk-cube-grid-scale-delay 1.3s infinite ease-in-out;
+    }
+    .sk-cube-1 {
+        animation-delay: 0.2s;
+    }
+    .sk-cube-2 {
+        animation-delay: 0.3s;
+    }
+    .sk-cube-3 {
+        animation-delay: 0.4s;
+    }
+    .sk-cube-4 {
+        animation-delay: 0.1s;
+    }
+    .sk-cube-5 {
+        animation-delay: 0.2s;
+    }
+    .sk-cube-6 {
+        animation-delay: 0.3s;
+    }
+    .sk-cube-7 {
+        animation-delay: 0s;
+    }
+    .sk-cube-8 {
+        animation-delay: 0.1s;
+    }
+    .sk-cube-9 {
+        animation-delay: 0.2s;
+    }
+    @keyframes sk-cube-grid-scale-delay {
+        0%, 70%, 100% {
+            transform: scale3D(1,1,1);
+        }
+        35%           {
+            transform: scale3D(0,0,1);
+        }
+    }
+}
+.loading-shade {
+    position: absolute;
+    left: var(--theme-expand-left);
+    top: var(--theme-header-top);
+    background-color: rgba(0,0,0,.3);
+    z-index: 1000;
+    width: 100vw;
+    height: 100vh;
+}
+

@@ -1,0 +1,42 @@
+#!/bin/bash
+
+echo "执行钩子 commit-msg"
+
+# 定义期望的 commit 消息格式
+expected_prefix="feat: fix: docs: style: refactor: test: build: ci: chore:"
+
+# 读取提交信息
+message=$(cat "$1")
+echo "commit 信息为：$message"
+for prefix in $expected_prefix; do
+    if [[ $message =~ ^${prefix}[[:space:]] ]]; then
+      echo "当前提交符合规范"
+      exit 0
+    fi
+done
+
+error() {
+    # 定义颜色
+    RED='\033[0;31m'
+    BLUE='\033[0;34m'
+    # 清除颜色
+    NC='\033[0m' # No Color
+    echo -e "${RED}"
+    echo -e "================================================"
+    echo -e "commit 信息不符合规范，请检查"
+    echo -e "================================================${NC}${BLUE}"
+    echo -e "feat: 新功能（feature）提交，表示新增功能或功能改进"
+    echo -e "fix: 表示修复bug或问题"
+    echo -e "docs: 文档更新提交"
+    echo -e "style: 代码格式、空白字符或注释等无实质改变的提交"
+    echo -e "refactor: 表示对代码的重构，如重构、重命名、重构变量、重构函数等"
+    echo -e "test: 表示新增修改测试代码"
+    echo -e "build: 影响构建系统或者外部依赖关系的更改"
+    echo -e "ci: 更新了持续集成配置或脚本"
+    echo -e "chore: 表示一些无关紧要的修改"
+    echo -e "================================================"
+    echo -e "${NC}"
+}
+
+error
+exit 1

@@ -1,0 +1,95 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 4603765 */
+  src: url('iconfont.woff2?t=1719646093690') format('woff2'),
+       url('iconfont.woff?t=1719646093690') format('woff'),
+       url('iconfont.ttf?t=1719646093690') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-a-business-icon-AlibabacomOnlineTradeShow:before {
+  content: "\e822";
+}
+
+.icon-a-business-icon-Bigpromotion:before {
+  content: "\e823";
+}
+
+.icon-business-icon-buyers-club-fill:before {
+  content: "\e824";
+}
+
+.icon-business-icon-ali-clould:before {
+  content: "\e825";
+}
+
+.icon-a-business-icon-MOQ:before {
+  content: "\e826";
+}
+
+.icon-business-icon-buyers-club:before {
+  content: "\e827";
+}
+
+.icon-a-business-icon-gold-supplier2:before {
+  content: "\e828";
+}
+
+.icon-business-icon-feeds:before {
+  content: "\e829";
+}
+
+.icon-business-icon-gold-supplier:before {
+  content: "\e82a";
+}
+
+.icon-business-icon-feeds-logo-fill:before {
+  content: "\e82b";
+}
+
+.icon-business-icon-feeds-fill:before {
+  content: "\e82c";
+}
+
+.icon-business-icon-feeds-logo:before {
+  content: "\e82d";
+}
+
+.icon-business-icon-festivals:before {
+  content: "\e82e";
+}
+
+.icon-business-icon-rfq-word:before {
+  content: "\e82f";
+}
+
+.icon-business-icon-vs:before {
+  content: "\e830";
+}
+
+.icon-business-icon-vs-fill:before {
+  content: "\e831";
+}
+
+.icon-business-icon-trade-assurance-fill:before {
+  content: "\e832";
+}
+
+.icon-a-business-MYbank:before {
+  content: "\e833";
+}
+
+.icon-cart-add:before {
+  content: "\e834";
+}
+
+.icon-global:before {
+  content: "\e857";
+}
+

@@ -1,0 +1,40 @@
+html{
+    width: 100vw;
+    height: 100vh;
+}
+.ptadmin-layout-body{
+    width: 100%;
+    height: 100%;
+}
+// 展开时左侧宽度
+$theme-expand-left: 220px;
+// 收缩时左侧宽度
+$theme-shrink-left: 60px;
+// 头部高度
+$theme-header-top: 60px;
+// tabs 高度
+$theme-tabs-top: 40px;
+// 默认body背景色
+// $theme-body-bg: ;
+$theme-body-bg: rgba(239, 232, 232, 0.6);
+$theme-main-bg: #2e81fa;
+
+:root{
+    --theme-expand-left: #{$theme-expand-left};
+    --theme-shrink-left: #{$theme-shrink-left};
+    --theme-header-top: #{$theme-header-top};
+    --theme-body-bg: #{$theme-body-bg};
+    --theme-tabs-top: #{$theme-tabs-top};
+    --theme-main-bg: #{$theme-main-bg};
+    --lay-color-bg-2: #2f363c; /*一级容器背景,卡片,面板*/
+}
+
+// 深色模式
+.dark:root {
+    --lay-color-bg-1: #17171A; /*整体背景*/
+    --lay-color-bg-2: #232324; /*一级容器背景,卡片,面板*/
+    --lay-color-bg-3: #2a2a2b; /*二级容器背景*/
+    --lay-color-bg-4: #313132; /*三级容器背景*/
+    --lay-color-bg-5: #373739; /*下拉弹出框、Tooltip 背景颜色*/
+    --lay-color-bg-white: #f6f6f6; /*白色背景*/
+}

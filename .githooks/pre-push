@@ -1,0 +1,42 @@
+#!/bin/bash
+# 1、
+# 输出错误信息
+error() {
+    # 定义颜色
+    RED='\033[0;31m'
+    # 清除颜色
+    NC='\033[0m'
+    echo -e "${RED}======================================"
+    echo -e "【ERROR】: $1"
+    echo -e "======================================${NC}"
+    exit 1
+}
+
+info() {
+    # 定义颜色
+    GREEN='\033[0;32m'
+    # 清除颜色
+    NC='\033[0m'
+    echo -e "${GREEN}======================================"
+    echo -e "【INFO】: $1"
+    echo -e "======================================${NC}"
+}
+
+# 确保 PHPStan 可执行
+if ! [ -x "$(command -v phpstan)" ]; then
+  error "错误: PHPStan 未安装或者不可执行."
+fi
+info "正在处理PHPStan检查..."
+# 运行 PHPStan 检查
+phpstan analyze app addons ptadmin --configuration phpstan.neon
+
+# 检查 PHPStan 的退出码
+
+# shellcheck disable=SC2181
+if [ $? -ne 0 ]; then
+    error "PHPStan 校验失败，请修复后再提交，详情请查看错误."
+else
+    info "PHPStan 执行结果 $?"
+fi
+
+exit 0

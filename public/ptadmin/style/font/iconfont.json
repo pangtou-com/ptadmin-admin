@@ -1,0 +1,149 @@
+{
+  "id": "4603765",
+  "name": "PTAdmin",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "34452757",
+      "name": "business-icon-Alibaba.com Online Trade Show",
+      "font_class": "a-business-icon-AlibabacomOnlineTradeShow",
+      "unicode": "e822",
+      "unicode_decimal": 59426
+    },
+    {
+      "icon_id": "34452758",
+      "name": "business-icon-Big promotion",
+      "font_class": "a-business-icon-Bigpromotion",
+      "unicode": "e823",
+      "unicode_decimal": 59427
+    },
+    {
+      "icon_id": "34452759",
+      "name": "business-icon-buyers-club-fill",
+      "font_class": "business-icon-buyers-club-fill",
+      "unicode": "e824",
+      "unicode_decimal": 59428
+    },
+    {
+      "icon_id": "34452760",
+      "name": "business-icon-ali-clould",
+      "font_class": "business-icon-ali-clould",
+      "unicode": "e825",
+      "unicode_decimal": 59429
+    },
+    {
+      "icon_id": "34452761",
+      "name": "business-icon- MOQ",
+      "font_class": "a-business-icon-MOQ",
+      "unicode": "e826",
+      "unicode_decimal": 59430
+    },
+    {
+      "icon_id": "34452762",
+      "name": "business-icon-buyers-club",
+      "font_class": "business-icon-buyers-club",
+      "unicode": "e827",
+      "unicode_decimal": 59431
+    },
+    {
+      "icon_id": "34452763",
+      "name": "business-icon-gold-supplier 2",
+      "font_class": "a-business-icon-gold-supplier2",
+      "unicode": "e828",
+      "unicode_decimal": 59432
+    },
+    {
+      "icon_id": "34452765",
+      "name": "business-icon-feeds",
+      "font_class": "business-icon-feeds",
+      "unicode": "e829",
+      "unicode_decimal": 59433
+    },
+    {
+      "icon_id": "34452766",
+      "name": "business-icon-gold-supplier",
+      "font_class": "business-icon-gold-supplier",
+      "unicode": "e82a",
+      "unicode_decimal": 59434
+    },
+    {
+      "icon_id": "34452767",
+      "name": "business-icon-feeds-logo-fill",
+      "font_class": "business-icon-feeds-logo-fill",
+      "unicode": "e82b",
+      "unicode_decimal": 59435
+    },
+    {
+      "icon_id": "34452768",
+      "name": "business-icon-feeds-fill",
+      "font_class": "business-icon-feeds-fill",
+      "unicode": "e82c",
+      "unicode_decimal": 59436
+    },
+    {
+      "icon_id": "34452769",
+      "name": "business-icon-feeds-logo",
+      "font_class": "business-icon-feeds-logo",
+      "unicode": "e82d",
+      "unicode_decimal": 59437
+    },
+    {
+      "icon_id": "34452770",
+      "name": "business-icon-festivals",
+      "font_class": "business-icon-festivals",
+      "unicode": "e82e",
+      "unicode_decimal": 59438
+    },
+    {
+      "icon_id": "34452772",
+      "name": "business-icon-rfq-word",
+      "font_class": "business-icon-rfq-word",
+      "unicode": "e82f",
+      "unicode_decimal": 59439
+    },
+    {
+      "icon_id": "34452773",
+      "name": "business-icon-vs",
+      "font_class": "business-icon-vs",
+      "unicode": "e830",
+      "unicode_decimal": 59440
+    },
+    {
+      "icon_id": "34452774",
+      "name": "business-icon-vs-fill",
+      "font_class": "business-icon-vs-fill",
+      "unicode": "e831",
+      "unicode_decimal": 59441
+    },
+    {
+      "icon_id": "34452775",
+      "name": "business-icon-trade-assurance-fill",
+      "font_class": "business-icon-trade-assurance-fill",
+      "unicode": "e832",
+      "unicode_decimal": 59442
+    },
+    {
+      "icon_id": "34452776",
+      "name": "business-MY bank",
+      "font_class": "a-business-MYbank",
+      "unicode": "e833",
+      "unicode_decimal": 59443
+    },
+    {
+      "icon_id": "34452777",
+      "name": "cart-add",
+      "font_class": "cart-add",
+      "unicode": "e834",
+      "unicode_decimal": 59444
+    },
+    {
+      "icon_id": "34453220",
+      "name": "global",
+      "font_class": "global",
+      "unicode": "e857",
+      "unicode_decimal": 59479
+    }
+  ]
+}
