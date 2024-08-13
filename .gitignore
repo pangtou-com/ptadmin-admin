@@ -1,5 +1,4 @@
 /node_modules
-/public/hot
 /public/storage
 /public/addons
 /storage/*.key
@@ -18,5 +17,6 @@ yarn-error.log
 .php-cs-fixer.cache
 .DS_Store
 composer.lock
+publish.sh
 
 
