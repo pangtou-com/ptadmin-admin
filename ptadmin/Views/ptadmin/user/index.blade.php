@@ -5,7 +5,6 @@
     <div class="layui-card">
         @include('ptadmin.common.index_header')
         <div class="layui-card-body">
-            <div id="searchForm"></div>
             <table id="dataTable" lay-filter="dataTable"></table>
         </div>
     </div>

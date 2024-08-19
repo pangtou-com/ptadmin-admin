@@ -195,11 +195,11 @@
                 cols: [[
                     {type: 'checkbox', width: 50},
                     {field: 'id', title: 'ID', width: 50},
-                    {field: 'title', title: '{{ L("attachments", "title") }}', templet: "#titleHtml"},
-                    {field: 'preview', title: '{{ L("attachments", "preview") }}', templet: "#previewHtml"},
-                    {field: 'mime', title: '{!! L("attachments", "mime") !!}'},
-                    {field: 'size', title: '{!! L("attachments", "size") !!}'},
-                    {field: 'driver', title: '{!! L("attachments", "driver") !!}'},
+                    {field: 'title', title: '{{ __("table.attachments.title") }}', templet: "#titleHtml"},
+                    {field: 'preview', title: '{{ __("table.attachments.preview") }}', templet: "#previewHtml"},
+                    {field: 'mime', title: '{!! __("table.attachments.mime") !!}'},
+                    {field: 'size', title: '{!! __("table.attachments.size") !!}'},
+                    {field: 'driver', title: '{!! __("table.attachments.driver") !!}'},
                 ]]
             });
 

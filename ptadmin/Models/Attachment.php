@@ -41,7 +41,7 @@ use PTAdmin\Admin\Service\Common\ThumbService;
  */
 class Attachment extends AbstractModel
 {
-    protected $appends = ['preview'];
+    protected $appends = ['preview', 'url'];
 
     /**
      * 根据文件md5获取信息.
@@ -73,13 +73,13 @@ class Attachment extends AbstractModel
         return config('constant.file_image');
     }
 
+    public function getUrlAttribute(): string
+    {
+        return url(Storage::url($this->attributes['path']));
+    }
+
     public function getSizeAttribute(): string
     {
         return byte_format($this->attributes['size']);
-    }
-
-    public function getUrlAttribute(): string
-    {
-        return url($this->attributes['url']);
     }
 }

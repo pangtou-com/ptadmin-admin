@@ -21,6 +21,7 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
+// 管理后台异常信息语言包
 return [
     'login' => [
         'fail' => '登录失败，账户密码错误',

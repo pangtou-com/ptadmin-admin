@@ -21,9 +21,11 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
+// 管理后台公共语言包
 return [
     'username' => '用户名',
-    'password' => '密码',
+    'password' => '密 码',
+    'login_submit' => '登 录',
     'success' => '操作成功',
     'install' => '安装',
     'official' => '官',
