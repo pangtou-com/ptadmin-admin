@@ -1,25 +1,21 @@
 @extends('ptadmin.layouts.base')
 
 @section("content")
-    <div class="content">
-        <div class="layui-card">
-            <div class="layui-card-body">
-                <table id="dataTable" lay-filter="dataTable"></table>
-            </div>
+    <div class="layui-card ptadmin-page-container">
+        <div class="layui-card-body">
+            <table id="dataTable" lay-filter="dataTable"></table>
         </div>
     </div>
 @endsection
 
 @section("script")
     <script>
-        layui.use(['PTTable', 'common', 'form', 'table'], function () {
-            const {PTTable, common, form, table} = layui;
-            PTTable.render({
-                extend: {
-                    index_url: "{{admin_route('operations')}}",
-                    show_url: '{{admin_route('operations')}}/{id}'
-                },
-                cols: [[
+        layui.use(['PTPage', 'common', 'form', 'table'], function () {
+            const {PTPage, common, form, table} = layui;
+            PTPage.make({
+                urls: {index_url: "{{admin_route('operations')}}", show_url: '{{admin_route('operations')}}/{id}'},
+                btn_left: ['refresh', 'del'],
+                table: [
                     {field: 'id', title: 'ID', width: 80},
                     {field: 'title', title: '名称', width: 100},
                     {field: 'url', title: '请求路径'},
@@ -51,16 +47,7 @@
                         align: 'center',
                         operate: ['show']
                     },
-                ]]
-            });
-
-            form.on('submit(table-search)', function (data) {
-                const field = data.field;
-                table.reload('dataTable', {
-                    page: { curr: 1 },
-                    where: field
-                });
-                return false;
+                ],
             });
         })
     </script>

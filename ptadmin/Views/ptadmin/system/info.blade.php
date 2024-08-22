@@ -32,15 +32,13 @@
 
 @section("script")
     <script>
-        layui.use(['PTTable', 'upload', 'layer', 'form', 'jquery'], function () {
-            let {PTTable} = layui;
-            var upload = layui.upload;
-            var layer = layui.layer;
-            PTTable.render({
-                extend: {
+        layui.use(['PTPage', 'upload', 'layer'], function () {
+            const { PTPage, upload, layer } = layui;
+            PTPage.make({
+                urls: {
                     index_url: '{{admin_route('systems')}}',
                 },
-                cols: [[
+                table: [
                     {field: 'id', title: 'ID', width: 80},
                     {field: 'username', title: '{{ L("systems", "username") }}'},
                     {field: 'nickname', title: '{!! L("systems", "nickname") !!}'},
@@ -53,16 +51,15 @@
                         width: 120,
                         title: '{{ __("system.btn_handle") }}',
                         align: 'center',
-                        operate: ['edit', 'del', 'link']
+                        operate: ['edit', 'del']
                     },
-                ]]
+                ]
             });
 
-            var uploadInst = upload.render({
+            upload.render({
                 elem: '#upload-avatar-btn',
                 url: '/system/upload', // 实际使用时改成您自己的上传接口即可。
                 done: function (res) {
-                    // 若上传失败
                     if (res.code > 0) {
                         return layer.msg('上传失败');
                     }
@@ -71,15 +68,14 @@
                 },
                 // 进度条
                 progress: function (n, elem, e) {
-                    element.progress('filter-demo', n + '%'); // 可配合 layui 进度条元素使用
-                    if (n == 100) {
+                    element.progress('filter-demo', n + '%');
+                    if (n === 100) {
                         layer.msg('上传完毕', {icon: 1});
                     }
                 }
             });
 
             $('.getDiv').on('click', function () {
-
                 if ($(this).data('id') == 1) {
                     $('.hidden_div').hide()
                     $('.div_message').show();
@@ -92,7 +88,6 @@
                     $('.div_login').show()
                 }
             })
-
         })
     </script>
     <style>

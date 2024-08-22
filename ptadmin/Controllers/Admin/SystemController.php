@@ -68,11 +68,11 @@ class SystemController extends AbstractBackgroundController
     {
         if ($request->expectsJson()) {
             $data = $request->all();
-            $data['password'] = Hash::make(trim($data['password']));
             DB::beginTransaction();
 
             try {
                 $dao = (new System());
+                $dao->password = Hash::make(trim($data['password']));
                 $dao->fill($data)->save();
                 // 默认情况下一个账户只有一个角色
                 $roleId = (int) $request->get('role_id');
@@ -93,16 +93,13 @@ class SystemController extends AbstractBackgroundController
 
     public function edit(SystemRequest $request, $id)
     {
+        /** @var System $dao */
         $dao = System::query()->findOrFail($id);
-
         if ($request->expectsJson()) {
             $data = $request->all();
             if (isset($data['password']) && $data['password']) {
-                $data['password'] = Hash::make($data['password']);
-            } else {
-                unset($data['password']);
+                $dao->password = Hash::make($data['password']);
             }
-
             $roleId = (int) $request->get('role_id');
             $roleId && $dao->syncRoles($roleId);
             $dao->update($data);
@@ -110,7 +107,7 @@ class SystemController extends AbstractBackgroundController
             return ResultsVo::success();
         }
 
-        return view($this->getViewPath(), compact('dao'));
+        return $this->view(compact('dao'));
     }
 
     public function details($id): \Illuminate\Http\JsonResponse

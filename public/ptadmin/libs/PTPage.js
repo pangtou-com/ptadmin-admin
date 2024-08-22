@@ -59,7 +59,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         export: {icon: 'layui-icon layui-icon-download-circle', event: 'export', theme: 'default'},
         import: {icon: 'layui-icon layui-icon-upload-drag', event: 'import', theme: 'default'},
         search: {icon: 'layui-icon layui-icon-search', event: 'search', theme: 'warn'},
-        view: {icon: 'layui-icon layui-icon-view', event: 'view', theme: 'warn'},
+        show: {icon: 'layui-icon layui-icon-eye', event: 'show', theme: 'warn'},
         edit: {icon: 'layui-icon layui-icon-edit', event: 'edit', theme: 'warn'},
     }
 
@@ -549,11 +549,13 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         btn = undefined
 
         /**
-         * @param table_options 列表table 选项设置
-         * @param config 页面配置
+         * @param options 选项设置
          * @see https://www.pangtou.com
          */
-        constructor(table_options, config = DEFAULT_CONFIG) {
+        constructor(options) {
+            let table_options = options['table'];
+            delete options['table'];
+            let config = Object.assign(DEFAULT_CONFIG, options)
             if (layui._typeof(table_options) === 'array') {
                 table_options = {
                     cols: layui._typeof(table_options[0]) === 'array' ? table_options : [table_options]
@@ -714,8 +716,8 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
             return PTTableFormat
         }
 
-        static make = (table_options, config) => {
-            let thiz = new PTPage(table_options, config)
+        static make = (options) => {
+            let thiz = new PTPage(options)
             thiz.mount()
             return thiz
         }

@@ -37,7 +37,9 @@ layui.define(function (exports) {
         if (config.icon !== '') {
             icon = `<i class="${config.icon}"></i>`;
         }
-
+        if (config['event'] !== "") {
+            config['lay-event'] = config['event']
+        }
         return `<${config.tagName} ${getAttribute(config)}>${icon}${config.text}</${config.tagName}>`;
     }
 

@@ -2,7 +2,7 @@
 @extends('ptadmin.layouts.base')
 
 @section("content")
-    <div class="layui-card">
+    <div class="layui-card ptadmin-page-container">
         <div class="layui-card-body">
             <table id="dataTable" lay-filter="dataTable"></table>
         </div>
@@ -11,13 +11,14 @@
 
 @section("script")
     <script>
-        layui.use(['PTTable', 'common', 'form', 'table'], function () {
-            let {PTTable, common, form, table} = layui;
-            PTTable.render({
-                extend: {
+        layui.use(['PTPage', 'common'], function () {
+            let {PTPage, common} = layui;
+            PTPage.make({
+                urls: {
                     index_url: '{{admin_route('system/login')}}',
                 },
-                cols: [[
+                btn_left: ['refresh', 'del'],
+                table: [
                     {field: 'id', title: 'ID', width: 80},
                     {field: 'system.nickname', title: '{{ __("table.systems.nickname") }}'},
                     {
@@ -31,17 +32,7 @@
                     },
                     {field: 'login_at', title: '{!! __("table.systems.login_at") !!}'},
                     {field: 'login_ip', title: '{!! __("table.systems.login_ip") !!}'},
-                ]]
-            });
-            form.on('submit(table-search)', function (data) {
-                const field = data.field;
-                table.reload('dataTable', {
-                    page: {
-                        curr: 1
-                    },
-                    where: field
-                });
-                return false;
+                ]
             });
 
         })

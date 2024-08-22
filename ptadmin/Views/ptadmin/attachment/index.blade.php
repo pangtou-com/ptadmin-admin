@@ -15,14 +15,13 @@
 
 @section("script")
 <script>
-    layui.use(['PTTable', 'common'], function() {
-        let { PTTable } = layui;
-        PTTable.render({
-            extend: {
-                index_url: '{{admin_route('attachments')}}',
+    layui.use(['PTPage', 'common'], function() {
+        let { PTPage } = layui;
+        PTPage.make({
+            urls: {
                 del_url: "{{admin_route('attachment')}}/{id}",
             },
-            cols: [[
+            table: [
                 {type: 'checkbox', width: 50},
                 {field: 'id', title: 'ID', width: 80},
                 {field: 'title', title: '{{ __("table.attachments.title") }}', templet: "#titleHtml"},
@@ -31,7 +30,7 @@
                 {field: 'driver', title: '{!! __("table.attachments.driver") !!}'},
                 {field: 'groups', title: '{!! __("table.attachments.groups") !!}'},
                 {fixed: 'right', width: 80, title: '{{ __("system.btn_handle") }}', align: 'center', operate: ['del']},
-            ]]
+            ]
         });
     })
 </script>
