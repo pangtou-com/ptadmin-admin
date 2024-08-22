@@ -199,6 +199,7 @@ layui.define(['element'], function (exports) {
         let option = {
             btn: ['确认', '关闭'],
             yes: function (index, layerObj) {
+                // 当表单内部存在提交事件按钮时由内部处理
                 let obj = window[layerObj.find('iframe')[0]['name']];
                 if (obj.$("button[lay-filter='PT-submit']").length > 0) {
                     obj.$("button[lay-filter='PT-submit']").click();
@@ -214,6 +215,20 @@ layui.define(['element'], function (exports) {
         $.extend(true, option, options);
 
         return common.open(url, title, option);
+    }
+
+    common.data_get = function (data, key, def) {
+        let param = key.split('.')
+        let val
+        for (const k in param) {
+            val = data[`${param[k]}`] ?? undefined
+            if (val === undefined) {
+                break
+            }
+            data = val
+        }
+
+        return val === undefined ? def : val
     }
 
     /**
@@ -316,6 +331,10 @@ layui.define(['element'], function (exports) {
             }
         }
         return data
+    }
+
+    common.getUrl = function () {
+        return window.location.href
     }
 
     /**

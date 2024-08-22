@@ -1064,3 +1064,57 @@
     cursor: pointer;
 }
 
+.ptadmin-theme-success{
+    background-color: var(--ptadmin-theme-success);
+}
+.ptadmin-theme-danger{
+    background-color: var(--ptadmin-theme-danger);
+}
+.ptadmin-theme-warning{
+    background-color: var(--ptadmin-theme-warning);
+}
+.ptadmin-theme-info{
+    background-color: var(--ptadmin-theme-info);
+}
+.ptadmin-theme-primary{
+    background-color: var(--ptadmin-theme-primary);
+}
+.ptadmin-theme-black{
+    background-color: var(--ptadmin-theme-black);
+}
+
+.ptadmin-page-container {
+    > .content {
+        padding: 15px;
+    }
+    .ptadmin-page-box {
+        padding: 10px 15px;
+        .ptadmin-search-form{
+            background: $search-header-bg;
+            padding: 5px;
+        }
+        .layui-form-item {
+            margin-bottom: 0;
+        }
+        .layui-form-label {
+            height: 35px;
+            padding: 0 8px;
+            line-height: 35px;
+        }
+        input {
+            height: 35px;
+        }
+    }
+    .ptadmin-header {
+        height: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .layui-table-cell {
+        height: auto;
+        white-space: normal;
+    }
+}
+

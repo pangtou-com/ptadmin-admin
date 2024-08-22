@@ -60,7 +60,7 @@ class Handler extends ExceptionHandler
             $data['message'] = implode('', $msg);
             $data['code'] = 20000;
         } elseif ($e instanceof NotFoundHttpException) {
-            $data['message'] = __('exception.exception.view_404');
+            $data['message'] = __('background.404');
             $e->render = function () {
                 return view('errors.404');
             };

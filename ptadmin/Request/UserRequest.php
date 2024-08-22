@@ -35,7 +35,7 @@ class UserRequest extends FormRequest
             return [];
         }
 
-        $id = (int) $this->get('id');
+        $id = (int) $this->route('id');
 
         return [
             'username' => [

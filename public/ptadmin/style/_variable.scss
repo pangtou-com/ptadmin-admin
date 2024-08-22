@@ -19,6 +19,22 @@ $theme-tabs-top: 40px;
 $theme-body-bg: rgba(239, 232, 232, 0.6);
 $theme-main-bg: #2e81fa;
 
+$normal-size: 14px;
+$border-color: #f8f8f8;
+$search-header-bg: #f8f8f8;
+$input-border-color: #e8e8e8;
+$hover-bg: #f8f8f8;
+$categorize-color: #606266;
+
+/** 主题色彩 */
+$ptadmin-theme-primary: #0066ff;
+$ptadmin-theme-success: #67C23A;
+$ptadmin-theme-warn: #E6A23C;
+$ptadmin-theme-danger: #F56C6C;
+$ptadmin-theme-info: #909399;
+$ptadmin-theme-black: #303133;
+$ptadmin-theme-white: #ffffff;
+
 :root{
     --theme-expand-left: #{$theme-expand-left};
     --theme-shrink-left: #{$theme-shrink-left};
@@ -27,14 +43,12 @@ $theme-main-bg: #2e81fa;
     --theme-tabs-top: #{$theme-tabs-top};
     --theme-main-bg: #{$theme-main-bg};
     --lay-color-bg-2: #2f363c; /*一级容器背景,卡片,面板*/
-}
 
-// 深色模式
-.dark:root {
-    --lay-color-bg-1: #17171A; /*整体背景*/
-    --lay-color-bg-2: #232324; /*一级容器背景,卡片,面板*/
-    --lay-color-bg-3: #2a2a2b; /*二级容器背景*/
-    --lay-color-bg-4: #313132; /*三级容器背景*/
-    --lay-color-bg-5: #373739; /*下拉弹出框、Tooltip 背景颜色*/
-    --lay-color-bg-white: #f6f6f6; /*白色背景*/
+    --ptadmin-theme-primary: #{$ptadmin-theme-primary};
+    --ptadmin-theme-success: #{$ptadmin-theme-success};
+    --ptadmin-theme-warn: #{$ptadmin-theme-warn};
+    --ptadmin-theme-danger: #{$ptadmin-theme-danger};
+    --ptadmin-theme-info: #{$ptadmin-theme-info};
+    --ptadmin-theme-black: #{$ptadmin-theme-black};
+    --ptadmin-theme-white: #{$ptadmin-theme-white};
 }

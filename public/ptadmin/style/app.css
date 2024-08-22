@@ -1,5 +1,5 @@
 @charset "UTF-8";
-@import "./font/iconfont.css";
+@import url(./font/iconfont.css);
 html {
   width: 100vw;
   height: 100vh; }
@@ -8,6 +8,7 @@ html {
   width: 100%;
   height: 100%; }
 
+/** 主题色彩 */
 :root {
   --theme-expand-left: 220px;
   --theme-shrink-left: 60px;
@@ -16,21 +17,14 @@ html {
   --theme-tabs-top: 40px;
   --theme-main-bg: #2e81fa;
   --lay-color-bg-2: #2f363c;
-  /*一级容器背景,卡片,面板*/ }
-
-.dark:root {
-  --lay-color-bg-1: #17171A;
-  /*整体背景*/
-  --lay-color-bg-2: #232324;
   /*一级容器背景,卡片,面板*/
-  --lay-color-bg-3: #2a2a2b;
-  /*二级容器背景*/
-  --lay-color-bg-4: #313132;
-  /*三级容器背景*/
-  --lay-color-bg-5: #373739;
-  /*下拉弹出框、Tooltip 背景颜色*/
-  --lay-color-bg-white: #f6f6f6;
-  /*白色背景*/ }
+  --ptadmin-theme-primary: #0066ff;
+  --ptadmin-theme-success: #67C23A;
+  --ptadmin-theme-warn: #E6A23C;
+  --ptadmin-theme-danger: #F56C6C;
+  --ptadmin-theme-info: #909399;
+  --ptadmin-theme-black: #303133;
+  --ptadmin-theme-white: #ffffff; }
 
 /** 登录css ***/
 .ptadmin-login {
@@ -525,127 +519,101 @@ html {
 /** PTICON */
 .ptadmin-icon-dialog .ptadmin-icon {
   height: 100%;
-  display: flex;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left {
-  min-width: 120px;
-  background: rgb(242, 242, 242);
-  text-align: center;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left .icon-nav-item {
-  padding: 10px 0;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.3s;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left .icon-nav-item:hover {
-  background: #FFF;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left .active {
-  background: #FFF;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left .active::before {
-  position: absolute;
-  content: "";
-  width: 3px;
-  height: 100%;
-  top: 0;
-  left: 0;
-  background: #2e81fa;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content {
-  flex: 1;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item {
-  display: none;
-  height: 100%;
-  overflow-y: auto;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item {
-  overflow-y: auto;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item:last-child .icons {
-  padding-bottom: 10px;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .categorize-title {
-  padding: 15px;
-  font-weight: 550;
-  font-size: 15px;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons {
-  padding: 0 10px;
-  display: grid;
-  gap: 5px;
-  grid-template-columns: repeat(8, 1fr);
-}
-@media (max-width: 575.98px) {
-  .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-@media (min-width: 575px) and (max-width: 991.98px) {
-  .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item {
-  text-align: center;
-  aspect-ratio: 1/1;
-  border: 1px solid #e2e2e2;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  min-width: 0%;
-  padding: 0 5px;
-  box-sizing: border-box;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item span {
-  display: block;
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item:hover {
-  background: rgb(242, 242, 242);
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item > i {
-  margin-bottom: 8px;
-  font-size: 30px;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item > * {
-  color: #777;
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .icon-item-active {
-  background: rgb(242, 242, 242);
-}
-.ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .ptadmin-show-icon {
-  display: block;
-}
+  display: flex; }
+  .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left {
+    min-width: 120px;
+    background: #f2f2f2;
+    text-align: center; }
+    .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left .icon-nav-item {
+      padding: 10px 0;
+      cursor: pointer;
+      position: relative;
+      transition: all .3s; }
+      .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left .icon-nav-item:hover {
+        background: #FFF; }
+    .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left .active {
+      background: #FFF; }
+      .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-left .active::before {
+        position: absolute;
+        content: '';
+        width: 3px;
+        height: 100%;
+        top: 0;
+        left: 0;
+        background: #2e81fa; }
+  .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content {
+    flex: 1; }
+    .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item {
+      display: none;
+      height: 100%;
+      overflow-y: auto; }
+      .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item {
+        overflow-y: auto; }
+        .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item:last-child .icons {
+          padding-bottom: 10px; }
+        .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .categorize-title {
+          padding: 15px;
+          font-weight: 550;
+          font-size: 15px; }
+        .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons {
+          padding: 0  10px;
+          display: grid;
+          gap: 5px;
+          grid-template-columns: repeat(8, 1fr); }
+          @media (max-width: 575.98px) {
+            .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons {
+              grid-template-columns: repeat(3, 1fr); } }
+          @media (min-width: 575px) and (max-width: 991.98px) {
+            .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons {
+              grid-template-columns: repeat(5, 1fr); } }
+          .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item {
+            text-align: center;
+            aspect-ratio: 1/1;
+            border: 1px solid #e2e2e2;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            min-width: 0%;
+            padding: 0 5px;
+            box-sizing: border-box; }
+            .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item span {
+              display: block;
+              width: 100%;
+              overflow: hidden;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              text-align: center; }
+            .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item:hover {
+              background: #f2f2f2; }
+            .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item > i {
+              margin-bottom: 8px;
+              font-size: 30px; }
+            .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .categorize-item .icons .icon-item > * {
+              color: #777; }
+      .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .content-item .icon-item-active {
+        background: #f2f2f2; }
+    .ptadmin-icon-dialog .ptadmin-icon .ptadmin-icon-content .ptadmin-show-icon {
+      display: block; }
 .ptadmin-icon-dialog .layui-layer-btn {
-  position: relative;
-}
-.ptadmin-icon-dialog .layui-layer-btn .footer-icon {
-  position: absolute;
-  left: 0;
-  top: 0%;
-  height: 100%;
-  padding: 5px 10px 10px;
-  box-sizing: border-box;
-}
-.ptadmin-icon-dialog .layui-layer-btn .footer-icon .pt-icon {
-  margin: 5px 5px 0;
-  height: 30px;
-  line-height: 30px;
-  font-size: 16px;
-  padding: 0 16px;
-  border-radius: 2px;
-  border: 1px solid #dedede;
-}
+  position: relative; }
+  .ptadmin-icon-dialog .layui-layer-btn .footer-icon {
+    position: absolute;
+    left: 0;
+    top: 0%;
+    height: 100%;
+    padding: 5px 10px 10px;
+    box-sizing: border-box; }
+    .ptadmin-icon-dialog .layui-layer-btn .footer-icon .pt-icon {
+      margin: 5px 5px 0;
+      height: 30px;
+      line-height: 30px;
+      font-size: 16px;
+      padding: 0 16px;
+      border-radius: 2px;
+      border: 1px solid #dedede; }
 
 /** PTICON End */
 /** 配置分类 **/
@@ -977,5 +945,48 @@ html {
 
 [ptadmin-tips] {
   cursor: pointer; }
+
+.ptadmin-theme-success {
+  background-color: var(--ptadmin-theme-success); }
+
+.ptadmin-theme-danger {
+  background-color: var(--ptadmin-theme-danger); }
+
+.ptadmin-theme-warning {
+  background-color: var(--ptadmin-theme-warning); }
+
+.ptadmin-theme-info {
+  background-color: var(--ptadmin-theme-info); }
+
+.ptadmin-theme-primary {
+  background-color: var(--ptadmin-theme-primary); }
+
+.ptadmin-theme-black {
+  background-color: var(--ptadmin-theme-black); }
+
+.ptadmin-page-container > .content {
+  padding: 15px; }
+.ptadmin-page-container .ptadmin-page-box {
+  padding: 10px 15px; }
+  .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form {
+    background: #f8f8f8;
+    padding: 5px; }
+  .ptadmin-page-container .ptadmin-page-box .layui-form-item {
+    margin-bottom: 0; }
+  .ptadmin-page-container .ptadmin-page-box .layui-form-label {
+    height: 35px;
+    padding: 0 8px;
+    line-height: 35px; }
+  .ptadmin-page-container .ptadmin-page-box input {
+    height: 35px; }
+.ptadmin-page-container .ptadmin-header {
+  height: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; }
+.ptadmin-page-container .layui-table-cell {
+  height: auto;
+  white-space: normal; }
 
 /*# sourceMappingURL=app.css.map */
