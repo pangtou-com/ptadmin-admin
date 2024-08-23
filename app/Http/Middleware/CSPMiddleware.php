@@ -24,9 +24,9 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 /**
- * 安全策略设置.
+ * 响应头安全策略设置.
  */
-class XFrameOptions
+class CSPMiddleware
 {
     public function handle($request, \Closure $next)
     {

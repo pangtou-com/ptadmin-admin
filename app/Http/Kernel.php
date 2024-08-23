@@ -24,8 +24,8 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Http\Middleware\OperationRecordMiddleware;
+use App\Http\Middleware\CSPMiddleware;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
-use Zane\Addon\Middleware\AddonMiddleware;
 
 class Kernel extends HttpKernel
 {
@@ -77,7 +77,7 @@ class Kernel extends HttpKernel
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'permission' => \App\Http\Middleware\Permission::class,
-        // 'addon' => AddonMiddleware::class,
         'operation.record' => OperationRecordMiddleware::class,
+        'csp' => CSPMiddleware::class,
     ];
 }
