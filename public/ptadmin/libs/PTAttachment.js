@@ -25,7 +25,7 @@ layui.define(['common'],function(exports){
                     `                <div class="layui-img-bg"></div>\n` +
                     `                <div class="layui-img-btn">\n` +
                     `                    <a href="javascript:void(0);" class="layui-btn layui-btn-xs btn-theme layui-img-open">\n` +
-                    `                        <i class="layui-icon layui-icon-addition"></i> 大图</a>\n` +
+                    `                        <i class="layui-icon layui-icon-eye"></i></a>\n` +
                     `                </div>\n` +
                     `            </div>`;
             }
@@ -158,3 +158,8 @@ layui.define(['common'],function(exports){
 
     exports(MOD_NAME, PTAttachment);
 });
+
+
+/**
+ * 1、资源上传功能封装
+ */

@@ -1,7 +1,7 @@
 @extends('ptadmin.layouts.base')
 
 @section("content")
-<div class="layui-card">
+<div class="layui-card ptadmin-page-container">
     <div class="layui-card-body">
         <table id="dataTable" lay-filter="dataTable"></table>
     </div>
@@ -21,6 +21,7 @@
             urls: {
                 del_url: "{{admin_route('attachment')}}/{id}",
             },
+            btn_left: ['refresh', 'del'],
             table: [
                 {type: 'checkbox', width: 50},
                 {field: 'id', title: 'ID', width: 80},

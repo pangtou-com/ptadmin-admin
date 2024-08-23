@@ -148,15 +148,18 @@ class SystemController extends AbstractBackgroundController
     {
         if ($request->expectsJson()) {
             $data = $request->validate([
-                'password' => 'required|confirmed',
+                'password' => 'required|confirmed|min:6|max:20',
                 'old_password' => 'required',
             ]);
 
+            /** @var System $user */
             $user = SystemAuth::user();
             if (!Hash::check($data['old_password'], $user->password)) {
                 throw new BackgroundException('原密码错误');
             }
-            $user->update(['password' => Hash::make($data['password'])]);
+            $user->password = Hash::make($data['password']);
+            $user->update();
+
             Auth::guard(SystemAuth::getGuard())->logout();
 
             return ResultsVo::success();
@@ -199,18 +202,6 @@ class SystemController extends AbstractBackgroundController
         ]);
 
         return ResultsVo::success();
-    }
-
-    public function info(Request $request)
-    {
-        $id = SystemAuth::user()->id;
-        $dao = System::query()->find($id);
-        if (request()->isMethod('post')) {
-            $dao->update($request->all());
-        }
-        $permissions = $this->systemService->permissionsInner();
-
-        return view('ptadmin.system.info', compact('dao', 'permissions'));
     }
 
     /**

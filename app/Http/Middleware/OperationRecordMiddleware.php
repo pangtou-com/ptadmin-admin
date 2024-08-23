@@ -35,6 +35,7 @@ class OperationRecordMiddleware
     public function handle($request, \Closure $next)
     {
         $response = $next($request);
+
         static::$LOG_ROUTE = request()->route();
 
         return $response;

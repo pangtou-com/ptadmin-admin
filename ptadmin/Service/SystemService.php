@@ -26,7 +26,6 @@ namespace PTAdmin\Admin\Service;
 use Illuminate\Support\Facades\Hash;
 use PTAdmin\Admin\Exceptions\BackgroundException;
 use PTAdmin\Admin\Models\System;
-use PTAdmin\Admin\Utils\SystemAuth;
 
 class SystemService
 {
@@ -66,25 +65,5 @@ class SystemService
         $model->status = 1;
         $model->password = Hash::make($data['password']);
         $model->save();
-    }
-
-    /**
-     * TODO 待处理.
-     *
-     * @return array
-     */
-    public function permissionsInner(): array
-    {
-        $user = SystemAuth::user()->id;
-        $permissions = $this->permissionService->bySystemIdPermission($user->id);
-        $permissionArr = [];
-        foreach ($permissions as $value) {
-            if (1 === (int) $value['is_inner'] && 'nav' === $value['type']) {
-                $value['url'] = admin_route($value['route']);
-                $permissionArr[] = $value;
-            }
-        }
-
-        return $permissionArr;
     }
 }

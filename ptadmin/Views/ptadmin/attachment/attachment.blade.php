@@ -62,8 +62,8 @@
     <script>
         // 存储选中数据
         const data = [];
-        layui.use(['PTTable', 'common', 'upload', 'element'], function () {
-            let {PTTable, common, upload, element} = layui;
+        layui.use(['PTPage', 'upload', 'element'], function () {
+            let { PTPage, upload, element } = layui;
 
             /**
              * 选中事件处理
@@ -188,11 +188,11 @@
                 }
             });
 
-            PTTable.render({
-                extend: {
+           const page = PTPage.make({
+                urls: {
                     index_url: '{{admin_route('attachments')}}',
                 },
-                cols: [[
+                table: [[
                     {type: 'checkbox', width: 50},
                     {field: 'id', title: 'ID', width: 50},
                     {field: 'title', title: '{{ __("table.attachments.title") }}', templet: "#titleHtml"},
@@ -203,9 +203,9 @@
                 ]]
             });
 
-            PTTable.on('checkbox', function (obj) {
+            page.on('checkbox', function (obj) {
                 if (obj.type === 'all') {
-                    const res = PTTable.getData() || []
+                    const res = page.getCurrentTable?.getData() || []
                     res.map((item) => {
                         obj.checked ? insertData(item) : deleteData(item)
                     })

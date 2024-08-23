@@ -4,7 +4,7 @@
     <div class="layui-fluid">
         <div class="layui-card-body">
             @php
-                $form = \Zane\Build\Layui::make();
+                $form = \PTAdmin\Build\Layui::make();
                 $form->password('old_password')->label('原密码')->required();
                 $form->password('password')->label('新密码')->required();
                 $form->password('password_confirmation')->label('确认密码')->required();

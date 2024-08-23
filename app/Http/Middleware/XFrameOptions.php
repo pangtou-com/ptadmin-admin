@@ -21,7 +21,27 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
-use App\Http\Controllers\Home;
-use Illuminate\Support\Facades\Route;
+namespace App\Http\Middleware;
 
-Route::get('/', [Home\HomeController::class, 'index']);
+/**
+ * 安全策略设置.
+ */
+class XFrameOptions
+{
+    public function handle($request, \Closure $next)
+    {
+        $response = $next($request);
+        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        $csp = [
+            "default-src 'self'",
+            "frame-ancestors 'self'",
+            "style-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+            "font-src 'self' data:",
+            "img-src 'self' https://www.pangtou.com data:",
+        ];
+        $response->headers->set('Content-Security-Policy', implode(';', $csp));
+
+        return $response;
+    }
+}

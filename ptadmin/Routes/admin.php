@@ -62,8 +62,6 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
     Route::put('systems-status/{id?}', [Admin\SystemController::class, 'status']);
     Route::delete('system/{id?}', [Admin\SystemController::class, 'delete']);
     Route::get('my-permission', [Admin\SystemController::class, 'myPermission']);
-    Route::get('system/info', [Admin\SystemController::class, 'info']);
-    Route::post('system/info', [Admin\SystemController::class, 'info']);
 
     // 系统角色管理
     Route::get('roles', [Admin\RoleController::class, 'index']);

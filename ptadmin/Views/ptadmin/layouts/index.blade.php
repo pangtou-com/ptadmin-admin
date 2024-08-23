@@ -37,9 +37,6 @@
                             <i class="layui-icon layui-icon-refresh-3"></i>
                         </a>
                     </li>
-                    <li class="layui-nav-item layui-hide-xs">
-                        <input type="text" placeholder="搜索..." autocomplete="off" class="layui-input layui-input-search" layadmin-event="search" lay-action="template/search.html?keywords=">
-                    </li>
                 </ul>
                 <ul class="layui-nav layui-nav-right">
                     <li class="layui-nav-item layui-hide-xs">
@@ -61,8 +58,8 @@
                             <cite>管理员</cite>
                         </a>
                         <dl class="layui-nav-child">
-                            <dd><a href="javascript:void(0)" ptadmin-href="{{admin_route('system/info')}}">基本资料</a>
-                            </dd>
+{{--                            <dd><a href="javascript:void(0)" ptadmin-href="{{admin_route('system/info')}}">基本资料</a>--}}
+{{--                            </dd>--}}
                             <dd><a href="javascript:void(0)" ptadmin-event="password" data-url="{{admin_route('system/password')}}">修改密码</a></dd>
                             <hr>
                             <dd ptadmin-event="logout" data-url="{{admin_route('logout')}}" style="text-align: center;"><a href="javascript:void(0)">退出</a></dd>

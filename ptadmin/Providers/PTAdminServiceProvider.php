@@ -65,6 +65,7 @@ class PTAdminServiceProvider extends ServiceProvider
 
     private function mapSystemRoutes(): void
     {
+        Route::pattern('id', '[1-9][0-9]*');
         Route::middleware(['web', 'operation.record'])->group(base_path('ptadmin/Routes/admin.php'));
     }
 }
