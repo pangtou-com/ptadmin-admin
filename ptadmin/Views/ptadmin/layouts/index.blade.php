@@ -1,5 +1,4 @@
 @extends("ptadmin.layouts.base")
-
 @section("content")
 <div class="ptadmin_app" id="ptadmin_app">
     <div class="ptadmin-layout">
@@ -119,9 +118,7 @@
         </div>
     </div>
 </div>
-<script id="password-html" type="text/html">
-
-</script>
+<script id="password-html" type="text/html"></script>
 @endsection
 
 @section("script")
@@ -130,7 +127,8 @@
         main: 'main',
     }).use(["form", 'main', 'layout'], function() {
         const {
-            layout
+            layout,
+            $
         } = layui
         // 仪表盘iframe事件
         const iframe = document.querySelector('.ptadmin_iframe')

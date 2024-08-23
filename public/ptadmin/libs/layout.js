@@ -29,12 +29,18 @@ layui.define(['form', 'common', 'element'], function (exports) {
 
     /** tab_header */
     const TAB_HEADER = 'ptadmin_app_tab_header'
+    /**  左侧导航 */
+    const PTADMIN_NAV = 'ptadmin-nav'
     /** 选项卡右键元素 */
     const action_ele = $('.ptadmin-layout-tabs-action')
     const app = $('#ptadmin_app')
     const $win = $(window)
     const $body = $('body')
-
+    // 刷新遮罩样式
+    const shadeConfig = {
+        '--theme-expand-left': '',
+        'width': ''
+    }
     const layout = {
         v: '0.1',
         /** 当前激活body **/
@@ -48,22 +54,30 @@ layui.define(['form', 'common', 'element'], function (exports) {
          * **/
         sideFlexible: (status) => {
             const eleIcon = $(`#${FLEXIBLE_ICON}`)
+            const windowWidth = $win.width()
             if (status) {
                 // 切换为收缩
                 eleIcon.removeClass(ICON.spread).addClass(ICON.shrink);
                 if (common.screen() >= common.SIZE_NO.md) {
                     app.addClass(SIDE_SHRINK_SM);
+                    shadeConfig["--theme-expand-left"] = '0px'
+                    shadeConfig.width = `${windowWidth}px`
                 } else {
                     app.addClass(SIDE_SHRINK)
+                    $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '60px')
+                    shadeConfig["--theme-expand-left"] = '60px'
+                    shadeConfig.width = `${windowWidth - 60}px`
                 }
                 app.removeClass(SIDE_SPREAD_SM);
-
             } else {
                 // 切换为展开
                 eleIcon.removeClass(ICON.shrink).addClass(ICON.spread);
                 if (common.screen() >= common.SIZE_NO.md) {
                     app.addClass(SIDE_SPREAD_SM)
                 }
+                shadeConfig["--theme-expand-left"] = '220px'
+                shadeConfig.width = `${windowWidth - 220}px`
+                $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '200px')
                 app.removeClass(SIDE_SHRINK_SM).removeClass(SIDE_SHRINK)
             }
         },
@@ -114,7 +128,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
             iframe.onload = function () {
                 common.loadingClose()
             }
-            common.loading()
+            common.loading(shadeConfig)
             if (url) {
                 iframe.contentWindow.location.href = url
             } else {
@@ -452,7 +466,6 @@ layui.define(['form', 'common', 'element'], function (exports) {
 
     // 关闭选项卡弹出卡片事件
     $body.on('click', function (event) {
-        event.preventDefault();
         layout.closeTabAction()
     })
 
