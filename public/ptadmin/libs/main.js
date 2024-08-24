@@ -25,13 +25,13 @@ layui.extend({
             layout.currentBodyIndex = i
             if (id === url) {
                 isExists = true
+                layout.closeShrinkNav()
                 break
             }
         }
 
         if (!isExists) {
             const div = common.create('div', { className: 'ptadmin-iframe-item ptadmin-show' })
-
             const iframe = common.create('iframe', {
                 src: url,
                 frameborder: 0,
@@ -42,6 +42,7 @@ layui.extend({
                         layout.closeTabAction()
                     });
                     common.loadingClose()
+                    layout.closeShrinkNav()
                 }
             })
             common.loading(layout.shadeConfig)
@@ -54,7 +55,6 @@ layui.extend({
                 change: true
             })
             layout.currentBodyIndex = tab_header.length
-
         }
 
         // 激活当前iframe

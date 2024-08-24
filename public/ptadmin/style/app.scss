@@ -84,17 +84,42 @@
         .ptadmin-nav{
             width: var(--theme-shrink-left);
             height: calc(100% - var(--theme-header-top));
-
             .layui-nav, .layui-nav-item{
                 width: var(--theme-shrink-left);
-                position: static;
+                position: relative;
+                > a{
+                    cite, .layui-nav-more{
+                        display: none;
+                        // padding: 8px 0;
+                    }
+                }
             }
-            cite, .layui-nav-child, .layui-nav-more{
-                display: none;
-                padding: 8px 0;
+            .ptadmin-shrink-nav{
+                min-width: 220px;
+                position: absolute;
+                left: 75px;
+                background: var(--lay-color-bg-2);
+                box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+                padding: 5px;
+                &:before{
+                    content: "";
+                    width: 0px;
+                    height: 0px;
+                    border-top: 10px solid transparent;
+                    border-right: 10px solid var(--lay-color-bg-2);
+                    position: absolute;
+                    top: 10px;
+                    left: -10px;
+                }
+                a{
+                    background:transparent !important;
+                }
             }
             .layui-nav-itemed a{
                 background: rgba(0,0,0,.3);
+            }
+            .layui-nav-bar{
+                left: 75px;
             }
         }
     }

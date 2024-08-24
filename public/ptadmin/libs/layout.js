@@ -19,6 +19,10 @@ layui.define(['form', 'common', 'element'], function (exports) {
     const PTADMIN_EVENT = 'ptadmin-event'
     /** layui激活样式 */
     const LAYUI_ACTIVE = 'layui-this'
+    /** 导航 */
+    const PTADMIN_SIDE_MENU = 'ptadmin-side-menu'
+    /** 收缩弹出框 */
+    const PTADMIN_SHRINK_NAV = 'ptadmin-shrink-nav'
     /**  Iframe ID  **/
     const IFRAME_BODY = 'iframe_body'
     const IFRAME_BODY_ITEM = 'ptadmin-iframe-item'
@@ -53,6 +57,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
          * status 为 false 表示当前为搜索状态，切换为展开状态
          * **/
         sideFlexible: (status) => {
+            console.log('当前导航状态', status);
             const eleIcon = $(`#${FLEXIBLE_ICON}`)
             const windowWidth = $win.width()
             if (status) {
@@ -62,12 +67,14 @@ layui.define(['form', 'common', 'element'], function (exports) {
                     app.addClass(SIDE_SHRINK_SM);
                     layout.shadeConfig["--theme-expand-left"] = '0px'
                     layout.shadeConfig.width = `${windowWidth}px`
+                    sideContract(false)
+
                 } else {
                     app.addClass(SIDE_SHRINK)
                     $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '60px')
                     layout.shadeConfig["--theme-expand-left"] = '60px'
                     layout.shadeConfig.width = `${windowWidth - 60}px`
-                    $(".layui-nav-child").removeAttr("style");
+                    sideContract(true)
                 }
                 app.removeClass(SIDE_SPREAD_SM);
             } else {
@@ -78,6 +85,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
                 }
                 layout.shadeConfig["--theme-expand-left"] = '220px'
                 layout.shadeConfig.width = `${windowWidth - 220}px`
+                sideContract(false)
                 $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '200px')
                 app.removeClass(SIDE_SHRINK_SM).removeClass(SIDE_SHRINK)
             }
@@ -128,6 +136,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
             const iframe = layout.findBody(id).find(".ptadmin_iframe")[0];
             iframe.onload = function () {
                 common.loadingClose()
+                layout.closeShrinkNav()
             }
             common.loading(layout.shadeConfig)
             if (url) {
@@ -155,6 +164,35 @@ layui.define(['form', 'common', 'element'], function (exports) {
         closeTabAction: function () {
             action_ele.fadeOut(300)
         },
+
+        /** 关闭弹窗 */
+        closeShrinkNav: function () {
+            if (app.hasClass(SIDE_SHRINK)) {
+                $('.layui-nav-itemed').removeClass('layui-nav-itemed')
+            }
+        }
+    }
+
+    /** 收缩状态下左侧导航展示方式 */
+    const sideContract = function (status) {
+        const ptadminSideMenu = $(`.${SIDE_SHRINK}`).find(`#${PTADMIN_SIDE_MENU}`)
+        const sideScroll = $(`.${SIDE_SHRINK}`).find('.layui-side-scroll')
+        const externalNavChild = $(`#${PTADMIN_SIDE_MENU}`).children('.layui-nav-item ').children('.layui-nav-child')
+        if (status) {
+            // 关闭手风琴效果
+            ptadminSideMenu.removeAttr('lay-shrink')
+            // 超出设置可见
+            sideScroll.css('overflow-x', 'visible')
+            // 新增class
+            externalNavChild.addClass(PTADMIN_SHRINK_NAV)
+        } else {
+            // 开启手风琴效果
+            ptadminSideMenu.attr('lay-shrink', 'all')
+            // 超出设置不可见
+            sideScroll.css('overflow-x', 'hidden')
+            // 移除新增class
+            externalNavChild.removeClass(PTADMIN_SHRINK_NAV)
+        }
     }
 
     /** 左侧导航跟随联动 */
@@ -162,7 +200,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
         const $currentDom = $(currentDom)
         const router = $currentDom.attr('lay-id')
         if ($(currentDom).is(`.${LAYUI_ACTIVE}`)) {
-            const navDoms = $('#ptadmin-side-menu').find('[ptadmin-href]')
+            const navDoms = $(`#${PTADMIN_SIDE_MENU}`).find('[ptadmin-href]')
             $.each(navDoms, function (idx, item) {
                 const $item = $(item)
                 if ($item.attr('ptadmin-href') === router) {
@@ -417,10 +455,11 @@ layui.define(['form', 'common', 'element'], function (exports) {
         dd.parent().removeClass("layui-show")
     })
     // 侧边栏导航点击事件
-    element.on("nav(ptadmin-side-menu)", function (elem) {
-        if (elem.siblings('.layui-nav-child')[0] && app.hasClass(SIDE_SHRINK)) {
-            layout.sideFlexible(false);
-            layer.close(elem.data('index'));
+    element.on(`nav(${PTADMIN_SIDE_MENU})`, function (elem) {
+        if (app.hasClass(SIDE_SHRINK)) {
+            const itemedElem = elem.closest('li').siblings('.layui-nav-item ')
+            itemedElem.removeClass('layui-nav-itemed')
+            itemedElem.find('.layui-nav-itemed').removeClass('layui-nav-itemed')
         }
     })
 
