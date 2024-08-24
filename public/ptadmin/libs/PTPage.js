@@ -55,7 +55,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
     const DEFAULT_BTN = {
         create: {icon: 'layui-icon layui-icon-add-1', event: 'create', theme: 'primary'},
         refresh: {icon: 'layui-icon layui-icon-refresh', event: 'refresh', theme: 'info'},
-        del: {icon: 'layui-icon layui-icon-delete', event: 'batch_del', theme: 'danger'},
+        del: {icon: 'layui-icon layui-icon-delete', event: 'batch_del', theme: 'danger', selected: true},
         export: {icon: 'layui-icon layui-icon-download-circle', event: 'export', theme: 'default'},
         import: {icon: 'layui-icon layui-icon-upload-drag', event: 'import', theme: 'default'},
         search: {icon: 'layui-icon layui-icon-search', event: 'search', theme: 'warn'},
@@ -336,10 +336,9 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
          */
         __wrap(html) {
             html = html + this.__buildSearchBtnHtml()
-
             return `<div class="ptadmin-page-box">
-                        <form class="layui-form layui-form-pane ptadmin-search-form" action="">
-                            <div class="layui-row layui-col-space10">${html}</div>
+                        <form class="layui-form layui-row layui-col-space16 layui-form-pane ptadmin-search-form" action="">
+                            ${html}
                         </form>
                      </div>`
         }
@@ -363,7 +362,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
          * @private
          */
         __buildSearchBtnHtml() {
-            return `<div class="layui-input-inline">
+            return `<div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3">
                         <button class="layui-btn-primary layui-btn layui-btn-sm" lay-submit lay-filter="search-submit">
                             <i class="layui-icon layui-icon-search"></i>
                             搜索
@@ -391,10 +390,9 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
 
             const input = PTSearchFormat[type](rule)
             const label = this.__getLabelHtml(rule)
-            // 1、设置列宽
-            // 2、判断是否需要符号位
-            // 3、是否需要拼接 label
-            return label + this.__getSymbolHtml(rule) + input;
+            const html = label + this.__getSymbolHtml(rule) + input
+
+            return `<div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3 ptadmin-input-group">${html}</div>`
         }
 
         /**
@@ -406,7 +404,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         __getLabelHtml(rule) {
             const label = common.data_get(this.page.config, 'search.label')
             if (label !== false) {
-                return `<label for="${rule.field}">${rule.title}</label>`
+                return `<label for="${rule.field}" class="layui-form-label ptadmin-label">${rule.title}</label>`
             }
             return ""
         }
@@ -454,6 +452,30 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
                     event: event
                 });
             })
+            this.onSearchSubmit()
+        }
+
+        /**
+         * 触发表单监听事件
+         */
+        onSearchSubmit() {
+            if (this.__search === false) {
+                return
+            }
+            const thiz = this
+            const onSearchEvent = ()  => {
+                const keyword = $("input[name=keywords]").val()
+                thiz.page.reload({
+                    keywords: keyword
+                })
+            }
+            this.handle.on("submit", function () {
+                onSearchEvent()
+                return false
+            })
+            this.handle.on("click", "*[ptadmin-event=keywords]", function () {
+                onSearchEvent()
+            })
         }
 
         setOpenSearch() {
@@ -469,8 +491,12 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
             let rightHtml = this.__getBtnHtml(this.config['btn_right'] || undefined)
             // 如果没有显示声明取消按钮分组 则默认加上分组设置
             if (this.config['btn_group'] !== false) {
-                letHtml = `<div class="layui-btn-group">${letHtml}</div>`
-                rightHtml = `<div class="layui-btn-group">${rightHtml}</div>`
+                if (letHtml !== "") {
+                    letHtml = `<div class="layui-btn-group">${letHtml}</div>`
+                }
+                if (rightHtml !== '') {
+                    rightHtml = `<div class="layui-btn-group">${rightHtml}</div>`
+                }
             }
 
             let search = this.__getSearchHtml();
@@ -491,8 +517,10 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
                 return ""
             }
             let html = `<input type="text" placeholder="请输入关键词" value="" name="keywords" class="layui-input">`
-
-            return `<div class="layui-input-inline">${html}</div>`
+            let btn = ` <div class="layui-input-split layui-input-suffix" ptadmin-event="keywords">
+                            <i class="layui-icon layui-icon-search"></i>
+                        </div>`
+            return `<form class="layui-form"><div class="layui-input-group">${html}${btn}</div></form>`
         }
 
         /**

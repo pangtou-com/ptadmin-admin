@@ -964,29 +964,53 @@ html {
 .ptadmin-theme-black {
   background-color: var(--ptadmin-theme-black); }
 
-.ptadmin-page-container > .content {
-  padding: 15px; }
-.ptadmin-page-container .ptadmin-page-box {
-  padding: 10px 15px; }
-  .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form {
-    background: #f8f8f8;
-    padding: 5px; }
-  .ptadmin-page-container .ptadmin-page-box .layui-form-item {
-    margin-bottom: 0; }
-  .ptadmin-page-container .ptadmin-page-box .layui-form-label {
-    height: 35px;
-    padding: 0 8px;
-    line-height: 35px; }
-  .ptadmin-page-container .ptadmin-page-box input {
-    height: 35px; }
 .ptadmin-page-container .ptadmin-header {
-  height: auto;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap; }
-.ptadmin-page-container .layui-table-cell {
-  height: auto;
-  white-space: normal; }
+  line-height: normal !important;
+  padding-top: 10px;
+  align-items: center; }
+  .ptadmin-page-container .ptadmin-header [ptadmin-event=keywords] {
+    cursor: pointer; }
+  .ptadmin-page-container .ptadmin-header .right {
+    display: flex; }
+    .ptadmin-page-container .ptadmin-header .right > .layui-btn-group {
+      margin-left: 5px; }
+    .ptadmin-page-container .ptadmin-header .right .layui-input {
+      height: 30px;
+      line-height: 30px; }
+.ptadmin-page-container .ptadmin-page-box {
+  --prefix-width: 85px;
+  --icon-spacing: 0 25px;
+  padding: 10px 15px;
+  border-bottom: 1px solid #f8f8f8; }
+  .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form {
+    background: #f8f8f8;
+    margin: 0; }
+    .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-input-group {
+      display: flex; }
+      .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-input-group .ptadmin-interval {
+        display: flex;
+        align-items: center;
+        flex: 1; }
+        .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-input-group .ptadmin-interval .icon {
+          padding: var(--icon-spacing); }
+        .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-input-group .ptadmin-interval .layui-input-wrap {
+          width: 100%; }
+    .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-label {
+      border-right: 0;
+      flex-shrink: 0; }
+    .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-prefix {
+      border-width: 0;
+      padding: 0;
+      flex-shrink: 0; }
+      .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-prefix .layui-input {
+        border-right: 0;
+        max-width: var(--prefix-width); }
+        .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-prefix .layui-input:focus {
+          border-color: #e8e8e8 !important;
+          box-shadow: none; }
+        .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-prefix .layui-input:hover {
+          border-color: #e8e8e8 !important; }
 
 /*# sourceMappingURL=app.css.map */

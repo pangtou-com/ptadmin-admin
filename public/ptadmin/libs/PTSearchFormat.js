@@ -13,9 +13,7 @@ layui.define(['PTMultipleSelect'], function (exports) {
      * @returns {string}
      */
     PTSearch.text =  function (obj) {
-        return `<div class="layui-input-inline">
-                    <input type="text" name="${obj.field}[value]" placeholder="${obj.placeholder || '请输入' + obj.title}" autocomplete="off" class="layui-input" />
-                </div>`
+        return `<input type="text" name="${obj.field}[value]" placeholder="${obj.placeholder || '请输入' + obj.title}" autocomplete="off" class="layui-input" />`
     }
 
     /**
@@ -30,12 +28,10 @@ layui.define(['PTMultipleSelect'], function (exports) {
         for (const option of options) {
             html.push(`<option value="${option['value']}">${option['label']}</option>`)
         }
-        return `<div class="layui-input-inline">
-                    <select name="${obj.field}[value]">
-                        <option value="">${obj.placeholder || '请选择' + obj.title}</option>
-                        ${html.join("")}
-                    </select>
-                </div>`;
+        return `<select name="${obj.field}[value]">
+                    <option value="">${obj.placeholder || '请选择' + obj.title}</option>
+                    ${html.join("")}
+                </select>`;
     }
 
     /**
@@ -50,7 +46,7 @@ layui.define(['PTMultipleSelect'], function (exports) {
             html.push(`<option value="${options[key]}">${options[key]}</option>`)
         }
 
-        return `<div class="layui-input-inline" style="width: 65px">
+        return `<div class="ptadmin-prefix">
                     <select name="${obj.field}[op]">${html.join("")}</select>
                 </div>`;
     }
