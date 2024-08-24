@@ -36,17 +36,17 @@ layui.define(['form', 'common', 'element'], function (exports) {
     const app = $('#ptadmin_app')
     const $win = $(window)
     const $body = $('body')
-    // 刷新遮罩样式
-    const shadeConfig = {
-        '--theme-expand-left': '',
-        'width': ''
-    }
     const layout = {
         v: '0.1',
         /** 当前激活body **/
         currentBodyIndex: 0,
         rightClickTab: undefined,
         allTabsDom: undefined,
+        /** 刷新遮罩样式 */
+        shadeConfig: {
+            '--theme-expand-left': '',
+            'width': ''
+        },
         /**
          * 设置侧边栏伸缩功能
          * status 为 true 表示当前为展开状态，切换为收缩状态
@@ -60,13 +60,14 @@ layui.define(['form', 'common', 'element'], function (exports) {
                 eleIcon.removeClass(ICON.spread).addClass(ICON.shrink);
                 if (common.screen() >= common.SIZE_NO.md) {
                     app.addClass(SIDE_SHRINK_SM);
-                    shadeConfig["--theme-expand-left"] = '0px'
-                    shadeConfig.width = `${windowWidth}px`
+                    layout.shadeConfig["--theme-expand-left"] = '0px'
+                    layout.shadeConfig.width = `${windowWidth}px`
                 } else {
                     app.addClass(SIDE_SHRINK)
                     $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '60px')
-                    shadeConfig["--theme-expand-left"] = '60px'
-                    shadeConfig.width = `${windowWidth - 60}px`
+                    layout.shadeConfig["--theme-expand-left"] = '60px'
+                    layout.shadeConfig.width = `${windowWidth - 60}px`
+                    $(".layui-nav-child").removeAttr("style");
                 }
                 app.removeClass(SIDE_SPREAD_SM);
             } else {
@@ -75,8 +76,8 @@ layui.define(['form', 'common', 'element'], function (exports) {
                 if (common.screen() >= common.SIZE_NO.md) {
                     app.addClass(SIDE_SPREAD_SM)
                 }
-                shadeConfig["--theme-expand-left"] = '220px'
-                shadeConfig.width = `${windowWidth - 220}px`
+                layout.shadeConfig["--theme-expand-left"] = '220px'
+                layout.shadeConfig.width = `${windowWidth - 220}px`
                 $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '200px')
                 app.removeClass(SIDE_SHRINK_SM).removeClass(SIDE_SHRINK)
             }
@@ -128,7 +129,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
             iframe.onload = function () {
                 common.loadingClose()
             }
-            common.loading(shadeConfig)
+            common.loading(layout.shadeConfig)
             if (url) {
                 iframe.contentWindow.location.href = url
             } else {
