@@ -29,18 +29,24 @@ layui.define(['form', 'common', 'element'], function (exports) {
 
     /** tab_header */
     const TAB_HEADER = 'ptadmin_app_tab_header'
+    /**  左侧导航 */
+    const PTADMIN_NAV = 'ptadmin-nav'
     /** 选项卡右键元素 */
     const action_ele = $('.ptadmin-layout-tabs-action')
     const app = $('#ptadmin_app')
     const $win = $(window)
     const $body = $('body')
-
     const layout = {
         v: '0.1',
         /** 当前激活body **/
         currentBodyIndex: 0,
         rightClickTab: undefined,
         allTabsDom: undefined,
+        /** 刷新遮罩样式 */
+        shadeConfig: {
+            '--theme-expand-left': '',
+            'width': ''
+        },
         /**
          * 设置侧边栏伸缩功能
          * status 为 true 表示当前为展开状态，切换为收缩状态
@@ -48,22 +54,31 @@ layui.define(['form', 'common', 'element'], function (exports) {
          * **/
         sideFlexible: (status) => {
             const eleIcon = $(`#${FLEXIBLE_ICON}`)
+            const windowWidth = $win.width()
             if (status) {
                 // 切换为收缩
                 eleIcon.removeClass(ICON.spread).addClass(ICON.shrink);
                 if (common.screen() >= common.SIZE_NO.md) {
                     app.addClass(SIDE_SHRINK_SM);
+                    layout.shadeConfig["--theme-expand-left"] = '0px'
+                    layout.shadeConfig.width = `${windowWidth}px`
                 } else {
                     app.addClass(SIDE_SHRINK)
+                    $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '60px')
+                    layout.shadeConfig["--theme-expand-left"] = '60px'
+                    layout.shadeConfig.width = `${windowWidth - 60}px`
+                    $(".layui-nav-child").removeAttr("style");
                 }
                 app.removeClass(SIDE_SPREAD_SM);
-
             } else {
                 // 切换为展开
                 eleIcon.removeClass(ICON.shrink).addClass(ICON.spread);
                 if (common.screen() >= common.SIZE_NO.md) {
                     app.addClass(SIDE_SPREAD_SM)
                 }
+                layout.shadeConfig["--theme-expand-left"] = '220px'
+                layout.shadeConfig.width = `${windowWidth - 220}px`
+                $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '200px')
                 app.removeClass(SIDE_SHRINK_SM).removeClass(SIDE_SHRINK)
             }
         },
@@ -114,7 +129,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
             iframe.onload = function () {
                 common.loadingClose()
             }
-            common.loading()
+            common.loading(layout.shadeConfig)
             if (url) {
                 iframe.contentWindow.location.href = url
             } else {
@@ -452,7 +467,6 @@ layui.define(['form', 'common', 'element'], function (exports) {
 
     // 关闭选项卡弹出卡片事件
     $body.on('click', function (event) {
-        event.preventDefault();
         layout.closeTabAction()
     })
 

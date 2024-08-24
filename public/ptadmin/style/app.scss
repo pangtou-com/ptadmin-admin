@@ -84,6 +84,7 @@
         .ptadmin-nav{
             width: var(--theme-shrink-left);
             height: calc(100% - var(--theme-header-top));
+
             .layui-nav, .layui-nav-item{
                 width: var(--theme-shrink-left);
                 position: static;
@@ -92,7 +93,6 @@
                 display: none;
                 padding: 8px 0;
             }
-
             .layui-nav-itemed a{
                 background: rgba(0,0,0,.3);
             }
@@ -107,6 +107,7 @@
     .ptadmin-layout-left{
         display: none;
     }
+
 }
 // 移动端展开样式
 .ptadmin-spread-sm{
