@@ -2,6 +2,14 @@
 @import "login";
 @import "loading";
 @import "./font/iconfont.css";
+/** 移除隐藏 */
+#ptadmin_app{
+    overflow: hidden;
+}
+.ptadmin-layout-content {
+    position: relative;
+    z-index: 99;
+}
 /** 遮罩 **/
 .ptadmin-shade {
     position: absolute;
@@ -84,6 +92,9 @@
         .ptadmin-nav{
             width: var(--theme-shrink-left);
             height: calc(100% - var(--theme-header-top));
+            .layui-side-scroll{
+                scrollbar-width: none;
+            }
             .layui-nav, .layui-nav-item{
                 width: var(--theme-shrink-left);
                 position: relative;
@@ -95,27 +106,19 @@
                 }
             }
             .ptadmin-shrink-nav{
-                min-width: 220px;
+                width: 145px;
                 position: absolute;
-                left: 75px;
+                left: 65px;
                 background: var(--lay-color-bg-2);
                 box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
                 padding: 5px;
-                &:before{
-                    content: "";
-                    width: 0px;
-                    height: 0px;
-                    border-top: 10px solid transparent;
-                    border-right: 10px solid var(--lay-color-bg-2);
-                    position: absolute;
-                    top: 10px;
-                    left: -10px;
-                }
-                a{
-                    background:transparent !important;
+                z-index: 9999;
+                .layui-nav-child{
+                    background: transparent !important;
+                    padding: 0 !important;
                 }
             }
-            .layui-nav-itemed a{
+            .layui-nav-itemed > a{
                 background: rgba(0,0,0,.3);
             }
             .layui-nav-bar{
