@@ -35,7 +35,6 @@ trait SearchTrait
      *    'field1' => [
      *          'field' => 'field',
      *          'op' => '=', // 搜索条件
-     *          'map' => [], // 数据值映射
      *          'filter' => '' // 参数过滤器，可以对数据进行处理
      *    ]
      * ].
@@ -81,6 +80,11 @@ trait SearchTrait
         $data = $this->buildSearchData($fields, $data);
 
         foreach ($data as $field => $value) {
+            if (isset($value['field']) && \is_array($value['field'])) {
+                $this->buildOrWhere($query, $value);
+
+                continue;
+            }
             $this->buildWhere($query, $field, $value);
         }
 
@@ -103,6 +107,11 @@ trait SearchTrait
         }
         $data = $this->buildSearchData($this->search_scene[$scene], $data);
         foreach ($data as $field => $value) {
+            if (isset($value['field']) && \is_array($value['field'])) {
+                $this->buildOrWhere($query, $value);
+
+                continue;
+            }
             $this->buildWhere($query, $field, $value);
         }
 
@@ -229,8 +238,8 @@ trait SearchTrait
         if (null === $val) {
             return null;
         }
-
-        $results['field'] = $tableField;
+        // 在配置时可能会出现一个字段可查询多个字段数据的情况，可通过配置 fields 的方式实现
+        $results['field'] = isset($field['fields']) && \is_array($field['fields']) ? $field['fields'] : $tableField;
         $results['value'] = $val;
         $results['op'] = $op;
 
@@ -286,7 +295,7 @@ trait SearchTrait
         if (\is_string($filter) && method_exists($this, $filter)) {
             return $this->{$filter}($val);
         }
-        // todo 类过滤器处理
+
         return $val;
     }
 
@@ -404,40 +413,52 @@ trait SearchTrait
      * @param $query
      * @param $field
      * @param $value
+     * @param mixed $boolean
      *
      * @return mixed
      */
-    protected function buildWhere($query, $field, $value)
+    protected function buildWhere($query, $field, $value, $boolean = 'and')
     {
         switch ($value['op']) {
             case 'in':
-                $query->whereIn($field, $value['value']);
+                $query->whereIn($field, $value['value'], $boolean);
 
                 break;
 
             case 'not in':
-                $query->whereNotIn($field, $value['value']);
+                $query->whereNotIn($field, $value['value'], $boolean);
 
                 break;
 
             case 'between':
-                $query->whereBetween($field, $value['value']);
+                $query->whereBetween($field, $value['value'], $boolean);
 
                 break;
 
             case 'not between':
-                $query->whereNotBetween($field, $value['value']);
+                $query->whereNotBetween($field, $value['value'], $boolean);
 
                 break;
 
             case 'like':
-                $query->where($field, 'like', '%'.$value['value'].'%');
+                $query->where($field, 'like', '%'.$value['value'].'%', $boolean);
 
                 break;
 
             default:
-                $query->where($field, $value['op'], $value['value']);
+                $query->where($field, $value['op'], $value['value'], $boolean);
         }
+
+        return $query;
+    }
+
+    protected function buildOrWhere($query, $value)
+    {
+        $query->where(function ($q) use ($value): void {
+            foreach ($value['fields'] as $item) {
+                $this->buildWhere($q, $item, $value, 'or');
+            }
+        });
 
         return $query;
     }
