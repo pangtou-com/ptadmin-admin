@@ -19,6 +19,10 @@ layui.define(['form', 'common', 'element'], function (exports) {
     const PTADMIN_EVENT = 'ptadmin-event'
     /** layui激活样式 */
     const LAYUI_ACTIVE = 'layui-this'
+    /** 导航 */
+    const PTADMIN_SIDE_MENU = 'ptadmin-side-menu'
+    /** 收缩弹出框 */
+    const PTADMIN_SHRINK_NAV = 'ptadmin-shrink-nav'
     /**  Iframe ID  **/
     const IFRAME_BODY = 'iframe_body'
     const IFRAME_BODY_ITEM = 'ptadmin-iframe-item'
@@ -62,12 +66,12 @@ layui.define(['form', 'common', 'element'], function (exports) {
                     app.addClass(SIDE_SHRINK_SM);
                     layout.shadeConfig["--theme-expand-left"] = '0px'
                     layout.shadeConfig.width = `${windowWidth}px`
+                    sideContract(false)
                 } else {
                     app.addClass(SIDE_SHRINK)
-                    $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '60px')
                     layout.shadeConfig["--theme-expand-left"] = '60px'
                     layout.shadeConfig.width = `${windowWidth - 60}px`
-                    $(".layui-nav-child").removeAttr("style");
+                    sideContract(true)
                 }
                 app.removeClass(SIDE_SPREAD_SM);
             } else {
@@ -78,9 +82,13 @@ layui.define(['form', 'common', 'element'], function (exports) {
                 }
                 layout.shadeConfig["--theme-expand-left"] = '220px'
                 layout.shadeConfig.width = `${windowWidth - 220}px`
-                $(`.${PTADMIN_NAV} .layui-side-scroll`).css('width', '200px')
+                sideContract(false)
                 app.removeClass(SIDE_SHRINK_SM).removeClass(SIDE_SHRINK)
             }
+            // 切换的时候默认关闭已打开导航
+            $(`#${PTADMIN_SIDE_MENU}`).find('.layui-nav-itemed').removeClass('layui-nav-itemed')
+            // 清除收缩导航设置的样式
+            $(`.${PTADMIN_NAV}`).find('.layui-nav-child').removeAttr('style')
         },
 
         /**  打开全屏  **/
@@ -128,6 +136,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
             const iframe = layout.findBody(id).find(".ptadmin_iframe")[0];
             iframe.onload = function () {
                 common.loadingClose()
+                layout.closeShrinkNav()
             }
             common.loading(layout.shadeConfig)
             if (url) {
@@ -155,14 +164,63 @@ layui.define(['form', 'common', 'element'], function (exports) {
         closeTabAction: function () {
             action_ele.fadeOut(300)
         },
+
+        /** 关闭弹窗 */
+        closeShrinkNav: function () {
+            if (app.hasClass(SIDE_SHRINK)) {
+                $('.layui-nav-itemed').removeClass('layui-nav-itemed')
+            }
+            layout.setLight()
+        },
+
+        /** 设置收缩导航高亮 */
+        setLight: function () {
+            const navItems = $(`#${PTADMIN_SIDE_MENU}`).find('.layui-nav-item')
+            if (app.hasClass(SIDE_SHRINK)) {
+                // 设置高亮
+                $.each(navItems, function (idx, item) {
+                    const $item = $(item)
+                    if ($item.find('.layui-this').length > 0) {
+                        // 需要高亮
+                        $(item).children('a').css('background', ' rgba(0, 0, 0, 0.3)')
+                    } else {
+                        // 取消高亮
+                        $(item).children('a').css('background', 'none')
+                    }
+                })
+            }
+        }
+
     }
+
+    /** 收缩状态下左侧导航展示方式 */
+    const sideContract = function (status) {
+        const ptadminSideMenu = $(`.${SIDE_SHRINK}`).find(`#${PTADMIN_SIDE_MENU}`)
+        const externalNavChild = $(`#${PTADMIN_SIDE_MENU}`).children('.layui-nav-item ').children('.layui-nav-child')
+        if (status) {
+            // 关闭手风琴效果
+            ptadminSideMenu.removeAttr('lay-shrink')
+            // 新增class
+            externalNavChild.addClass(PTADMIN_SHRINK_NAV)
+            // 搜索导航设置高亮
+            layout.setLight()
+        } else {
+            // 开启手风琴效果
+            ptadminSideMenu.attr('lay-shrink', 'all')
+            // 移除新增class
+            externalNavChild.removeClass(PTADMIN_SHRINK_NAV)
+            // 展开导航移除收缩导航的高亮
+            $(`#${PTADMIN_SIDE_MENU}`).find('.layui-nav-item').children('a').removeAttr('style')
+        }
+    }
+
 
     /** 左侧导航跟随联动 */
     const setRouterNav = function (currentDom) {
         const $currentDom = $(currentDom)
         const router = $currentDom.attr('lay-id')
         if ($(currentDom).is(`.${LAYUI_ACTIVE}`)) {
-            const navDoms = $('#ptadmin-side-menu').find('[ptadmin-href]')
+            const navDoms = $(`#${PTADMIN_SIDE_MENU}`).find('[ptadmin-href]')
             $.each(navDoms, function (idx, item) {
                 const $item = $(item)
                 if ($item.attr('ptadmin-href') === router) {
@@ -172,6 +230,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
                 }
             })
         }
+        layout.setLight()
     }
 
     /** 循环关闭标签删除元素 */
@@ -417,13 +476,32 @@ layui.define(['form', 'common', 'element'], function (exports) {
         dd.parent().removeClass("layui-show")
     })
     // 侧边栏导航点击事件
-    element.on("nav(ptadmin-side-menu)", function (elem) {
-        if (elem.siblings('.layui-nav-child')[0] && app.hasClass(SIDE_SHRINK)) {
-            layout.sideFlexible(false);
-            layer.close(elem.data('index'));
+    element.on(`nav(${PTADMIN_SIDE_MENU})`, function (elem) {
+        if (app.hasClass(SIDE_SHRINK)) {
+            const itemEle = elem.closest('li')
+            const itemedElem = itemEle.siblings('.layui-nav-item')
+            // 隐藏其它已打开导航
+            itemedElem.removeClass('layui-nav-itemed')
+            // 隐藏子元素已打开导航
+            itemedElem.find('.layui-nav-itemed').removeClass('layui-nav-itemed')
+            // 存在下级导航
+            const belowEle = itemEle.find(`.${PTADMIN_SHRINK_NAV}`)
+            if (belowEle.length > 0) {
+                // 窗口高度
+                const winHeight = $win.height() - 60;
+                // 当前下级元素存在的a标签数量
+                const countNum = belowEle.find(`a`)
+                // 元素顶部距离
+                const top = belowEle.offset().top - 60
+                // 计算当前盒子的高度
+                const countHeight = countNum.length * 40 + 10 + top
+                const offsetTop = countHeight - winHeight
+                if (offsetTop < top && offsetTop > 0) {
+                    belowEle.css('top', -offsetTop)
+                }
+            }
         }
     })
-
     // 选项卡切换事件
     element.on(`tab(${LAYOUT_TABS})`, function (data) {
         layout.activeBody(data.index)
@@ -469,7 +547,6 @@ layui.define(['form', 'common', 'element'], function (exports) {
     $body.on('click', function (event) {
         layout.closeTabAction()
     })
-
     // 选项卡删除事件
     element.on(`tabDelete(${LAYOUT_TABS})`, function (data) {
         layout.findBody(data.index).remove()
