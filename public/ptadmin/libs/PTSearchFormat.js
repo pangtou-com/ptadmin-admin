@@ -1,10 +1,8 @@
 /**
  * 搜索功能表单
  */
-layui.define(['PTMultipleSelect'], function (exports) {
+layui.define(function (exports) {
     const MOD_NAME = "PTSearchFormat"
-    const { $, PTMultipleSelect } = layui;
-    //text|select|date|range|date_range|select_multiple
     const PTSearch = {}
 
     /**
@@ -13,7 +11,8 @@ layui.define(['PTMultipleSelect'], function (exports) {
      * @returns {string}
      */
     PTSearch.text =  function (obj) {
-        return `<input type="text" name="${obj.field}[value]" placeholder="${obj.placeholder || '请输入' + obj.title}" autocomplete="off" class="layui-input" />`
+        const placeholder = obj.search.placeholder || '请输入' + obj.title
+        return `<input type="text" name="${obj.field}[value]" placeholder="${placeholder}" autocomplete="off" class="layui-input" />`
     }
 
     /**
@@ -56,7 +55,7 @@ layui.define(['PTMultipleSelect'], function (exports) {
      * @param obj
      * @returns {string}
      */
-    PTSearch.select_multiple = function(obj){
+    PTSearch.select_multiple = function(obj) {
         return ""
     }
 
@@ -65,9 +64,22 @@ layui.define(['PTMultipleSelect'], function (exports) {
      * @param obj
      * @returns {string}
      */
-    PTSearch.range = function(obj){
+    PTSearch.number_range = function(obj) {
+        const placeholder = obj.search.placeholder || '请输入' + obj.title
+        const min = `<input type="number" name="${obj.field}[min]" placeholder="${placeholder}" class="layui-input" lay-affix="number">`
+        const max = `<input type="number" name="${obj.field}[max]" placeholder="${placeholder}" class="layui-input" lay-affix="number">`
+        return `<div class="ptadmin-interval">${min} <span>-</span> ${max}</div>`
+    }
 
-        return ""
+    /**
+     * 数字搜索
+     * @param obj
+     * @returns {string}
+     */
+    PTSearch.number = function(obj) {
+        const placeholder = obj.search.placeholder || '请输入' + obj.title
+        return `<input type="number" name="${obj.field}[value]" placeholder="${placeholder}" class="layui-input" lay-affix="number">
+`
     }
 
     /**
@@ -75,8 +87,9 @@ layui.define(['PTMultipleSelect'], function (exports) {
      * @param obj
      * @returns {string}
      */
-    PTSearch.date = function(obj){
-        return ""
+    PTSearch.date = function(obj) {
+        const placeholder = obj.search.placeholder || '请选择' + obj.title
+        return `<input ptadmin-type="date" type="text" class="layui-input" name="${obj.field}[value]" placeholder="${placeholder}">`
     }
 
     /**
@@ -84,8 +97,11 @@ layui.define(['PTMultipleSelect'], function (exports) {
      * @param obj
      * @returns {string}
      */
-    PTSearch.date_range = function(obj){
-        return ""
+    PTSearch.date_range = function(obj) {
+        const placeholder = obj.search.placeholder || '请选择' + obj.title
+        const min = `<input ptadmin-type="date_range" type="text" name="${obj.field}[min]" placeholder="${placeholder}" class="layui-input">`
+        const max = `<input ptadmin-type="date_range" type="text" name="${obj.field}[max]" placeholder="${placeholder}" class="layui-input">`
+        return `<div class="ptadmin-interval">${min} <span>-</span> ${max}</div>`
     }
 
     /**
@@ -93,8 +109,9 @@ layui.define(['PTMultipleSelect'], function (exports) {
      * @param obj
      * @returns {string}
      */
-    PTSearch.datetime = function(obj){
-        return ""
+    PTSearch.datetime = function(obj) {
+        const placeholder = obj.search.placeholder || '请选择' + obj.title
+        return `<input ptadmin-type="datetime" type="text" class="layui-input" name="${obj.field}[value]" placeholder="${placeholder}">`
     }
 
 

@@ -6,6 +6,7 @@ REPO_PATH=$(pwd)  # 自动获取当前目录作为仓库路径
 MASTER_BRANCH="main"
 GITHUB_REPO="git@github.com:pangtou-com/ptadmin-admin.git"  # 替换为你的GitHub仓库地址
 COMPOSER_JSON_PATH="$REPO_PATH/composer.json"  # composer.json的路径
+INDEX_PATH="$REPO_PATH/public/index.php"  # index 文件路径
 NEW_VERSION="" # 新版本号
 
 
@@ -163,13 +164,14 @@ handle_tag(){
 
     # 更新composer.json版本信息
     sed -i '' "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" "$COMPOSER_JSON_PATH"
+    sed -i '' "s/ PTADMIN_FRAME_VERSION = \'.*\'/ PTADMIN_FRAME_VERSION = \'$NEW_VERSION\'/" "$INDEX_PATH"
 
     if [ $? -ne 0 ]; then
         error "更新composer.json版本信息失败。$NEW_VERSION 最新标签内容：$latest_tag"
     fi
 
     # 提交更改
-    git add "$COMPOSER_JSON_PATH"
+    git add "$COMPOSER_JSON_PATH" "$INDEX_PATH"
     git commit -m "fix: Update version to $NEW_VERSION"
     if [ $? -ne 0 ]; then
         error "提交更新失败。"

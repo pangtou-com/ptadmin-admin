@@ -1119,8 +1119,9 @@
                     display: flex;
                     align-items: center;
                     flex: 1;
-                    .icon {
+                    span {
                         padding: var(--icon-spacing);
+                        display: inline-block;
                     }
                     .layui-input-wrap {
                         width: 100%;

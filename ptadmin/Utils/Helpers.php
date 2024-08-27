@@ -701,13 +701,13 @@ if (!function_exists('get_current_user')) {
      */
     function get_current_user($key = null)
     {
-        if (\Illuminate\Support\Facades\Auth::check()) {
-            $user = \Illuminate\Support\Facades\Auth::user();
+        $user = request()->user();
+        if (null !== $user) {
             if (!blank($key)) {
-                return $user[$key] ?? '';
+                return data_get($user, $key);
             }
 
-            return $user->toArray();
+            return $user;
         }
 
         return null;

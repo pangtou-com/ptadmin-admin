@@ -68,13 +68,15 @@ class UserService
     {
         $model = new User();
         $allow = [
-            'username' => ['op' => 'like', 'field' => 'username'],
-            'nickname' => ['op' => 'like', 'field' => 'nickname'],
-            'mobile' => ['op' => 'like', 'field' => 'mobile'],
-            'email' => ['op' => 'like', 'field' => 'email'],
+            'username' => ['op' => 'like'],
+            'nickname' => ['op' => 'like'],
+            'mobile' => ['op' => 'like'],
+            'email' => ['op' => 'like'],
+            'money' => ['filter' => 'toFloat'],
+            'score' => ['filter' => 'toInt'],
             'status' => ['op' => 'IN', 'field' => 'status'],
         ];
-        $model = $model->search($search, $allow);
+        $model = $model->search($allow, $search);
 
         return $model->orderBy('id', 'desc')->paginate()->toArray();
     }

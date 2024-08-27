@@ -993,8 +993,9 @@ html {
         display: flex;
         align-items: center;
         flex: 1; }
-        .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-input-group .ptadmin-interval .icon {
-          padding: var(--icon-spacing); }
+        .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-input-group .ptadmin-interval span {
+          padding: var(--icon-spacing);
+          display: inline-block; }
         .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-input-group .ptadmin-interval .layui-input-wrap {
           width: 100%; }
     .ptadmin-page-container .ptadmin-page-box .ptadmin-search-form .ptadmin-label {

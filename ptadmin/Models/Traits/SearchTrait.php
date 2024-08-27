@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Models\Traits;
 
-use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 
 trait SearchTrait
 {
@@ -59,6 +59,11 @@ trait SearchTrait
     protected $search_ignore = [];
 
     /**
+     * @var array 需要值为数组的运算符号
+     */
+    protected $operator_array = ['in', 'not in', 'between', 'not between'];
+
+    /**
      * 搜索条件.
      *
      * @param $query
@@ -70,6 +75,9 @@ trait SearchTrait
     public function scopeSearch($query, array $fields = [], array $data = []): \Illuminate\Database\Eloquent\Builder
     {
         $fields = \count($fields) > 0 ? $fields : $this->search_fields;
+        if (0 === \count($fields)) {
+            return $query;
+        }
         $data = $this->buildSearchData($fields, $data);
 
         foreach ($data as $field => $value) {
@@ -130,8 +138,8 @@ trait SearchTrait
     /**
      * 构建查询条件数据.
      *
-     * @param array $fields
-     * @param array $data
+     * @param array $fields 允许查询的字段信息
+     * @param array $data   搜索条件
      *
      * @return array
      */
@@ -147,117 +155,247 @@ trait SearchTrait
         }
         $results = [];
         foreach ($fields as $key => $field) {
-            // 当key为数字时，表示字段为表字段
-            $table_field = $data_key = $key;
-            if (is_numeric($key)) {
-                $data_key = \is_string($field) ? $field : $field['field'] ?? null;
-                if (null === $data_key) {
-                    continue;
-                }
-                $table_field = $data_key;
-            } elseif (\is_array($field)) {
-                $table_field = $field['field'] ?? $table_field;
-            }
-
-            if (!isset($data[$data_key]) || '' === $data[$data_key]) {
+            $table_field = $this->getSearchTableField($key, $field);
+            if (null === $table_field) {
                 continue;
             }
-
-            $results[$table_field] = $this->parserSearchData($table_field, $data[$data_key], $field, $data_key);
+            $val = $this->buildSearchParams($table_field, $field, $data);
+            if (null === $val) {
+                continue;
+            }
+            $results[$table_field] = $val;
         }
 
         return $results;
     }
 
     /**
-     * 获取搜索字段.
+     * 获取查询数据表字段信息呢.
      *
-     * @return array
-     */
-    protected function getSearchTableFields(): array
-    {
-        if (method_exists($this, 'getTableFields')) {
-            return $this->getTableFields();
-        }
-
-        return [];
-    }
-
-    /**
-     * 解析搜索数据.
-     *
+     * @param $key
      * @param $field
-     * @param $value
-     * @param $allow
-     * @param $data_key
      *
-     * @return array
+     * @return string
      */
-    protected function parserSearchData($field, $value, $allow, $data_key): array
+    protected function getSearchTableField($key, $field): ?string
     {
-        $results = ['field' => $field, 'value' => $value, 'op' => '=', 'data_key' => $data_key];
-        if (\is_string($allow)) {
-            $results['field'] = $allow;
-        } elseif (\is_array($allow) && isset($allow['field'])) {
-            $results['field'] = $allow['field'];
+        if (\is_array($field) && isset($field['field']) && \is_string($field['field'])) {
+            return $field['field'];
+        }
+        if (\is_string($field) && is_numeric($key)) {
+            return $field;
+        }
+        if (\is_string($key)) {
+            return $key;
         }
 
-        // 当定义了字读映射时处理映射
-        if (isset($allow['map']) && \is_array($allow['map'])) {
-            $results['value'] = $allow['map'][$value] ?? $value;
+        return null;
+    }
+
+    /**
+     * 获取请求参数.
+     *
+     * @param $tableField
+     * @param $field
+     *
+     * @return mixed
+     */
+    protected function getQueryField($tableField, $field)
+    {
+        if (\is_array($field) && isset($field['query_field'])) {
+            return $field['query_field'];
         }
 
-        if (isset($allow['op'])) {
-            $opMap = ['NE' => '!=', 'LE' => '<=', 'GE' => '>=', 'LT' => '<', 'GT' => '>', 'LIKE' => 'like'];
-            $key = strtoupper($allow['op']);
-            $results['op'] = $opMap[$key] ?? $key;
+        return $tableField;
+    }
+
+    /**
+     * 构建搜索所需的参数数组信息.
+     *
+     * @param string $tableField
+     * @param array  $data
+     * @param mixed  $field
+     *
+     * @return null|array
+     */
+    protected function buildSearchParams(string $tableField, $field, array $data): ?array
+    {
+        $query_field = $this->getQueryField($tableField, $field);
+        $value = $data[$query_field] ?? null;
+        if (blank($value)) {
+            return null;
+        }
+        list($val, $op) = $this->getFilterValue($value, $field);
+        if (null === $val) {
+            return null;
         }
 
-        // 当定义了过滤器时
-        if (isset($allow['filter'])) {
-            if (\is_callable($allow['filter'])) {
-                $results['value'] = $allow['filter']($value);
-            } else {
-                $results['value'] = method_exists($this, $allow['filter']) ? $this->{$allow['filter']}($value) : $value;
-            }
-        } else {
-            // 默认过滤器处理
-            $results = $this->filter($results);
-        }
-
-        if ('like' === $results['op']) {
-            $results['value'] = '%'.$results['value'].'%';
-        }
+        $results['field'] = $tableField;
+        $results['value'] = $val;
+        $results['op'] = $op;
 
         return $results;
     }
 
-    protected function filter($results)
+    /**
+     * 获取过滤后的值
+     *
+     * @param mixed $value 请求参数值
+     * @param mixed $field 配置字段信息
+     *
+     * @return null|array
+     */
+    protected function getFilterValue($value, $field): ?array
     {
-        // 设置忽略处理的字段
-        if (\in_array($results['value'], $this->search_ignore, true)) {
-            return $results;
+        $val = $this->getValue($value);
+        if (blank($val)) {
+            return null;
         }
-        if (Str::endsWith('_id', $results['data_key'])) {
-            if (false !== strpos(',', $results['value'])) {
-                $results['value'] = explode(',', $results['value']);
-                $results['op'] = 'IN';
+        $op = '=';
+        if (\is_array($value)) {
+            $op = $value['op'] ?? $field['op'] ?? '=';
+            $op = $this->getSearchOperator($val, $op);
+        }
+        $op = strtolower($op);
+        // 当值不为数组但符号需要数值类型时需要重置为数组类型，默认情况下按照 `,` 分隔
+        if (\in_array($op, $this->operator_array, true) && !\is_array($val)) {
+            $val = explode(',', $val);
+        }
+        // 参数过滤或转换处理
+        $val = $this->actionFilter($val, $field['filter'] ?? null);
+
+        return [$val, $op];
+    }
+
+    /**
+     * 执行过滤器处理.
+     *
+     * @param $val
+     * @param $filter
+     *
+     * @return mixed
+     */
+    protected function actionFilter($val, $filter)
+    {
+        if (null === $filter) {
+            return $val;
+        }
+        if (\function_exists($filter)) {
+            return $filter($val);
+        }
+        if (\is_string($filter) && method_exists($this, $filter)) {
+            return $this->{$filter}($val);
+        }
+        // todo 类过滤器处理
+        return $val;
+    }
+
+    /**
+     * 将参数转换为数字类型.
+     *
+     * @param $val
+     *
+     * @return array|int
+     */
+    protected function toInt($val)
+    {
+        if (\is_array($val)) {
+            return array_map(static function ($v) {
+                return (int) $v;
+            }, $val);
+        }
+
+        return (int) $val;
+    }
+
+    /**
+     * 将参数转换为浮点类型.
+     *
+     * @param $val
+     *
+     * @return array|float
+     */
+    protected function toFloat($val)
+    {
+        if (\is_array($val)) {
+            return array_map(static function ($v) {
+                return (float) $v;
+            }, $val);
+        }
+
+        return (float) $val;
+    }
+
+    /**
+     * 将参数转换为时间戳.
+     *
+     * @param $val
+     *
+     * @return array|int|int[]
+     */
+    protected function toTime($val)
+    {
+        if (\is_array($val)) {
+            return array_map(static function ($v) {
+                return Carbon::make($v)->getTimestamp();
+            }, $val);
+        }
+
+        return Carbon::make($val)->getTimestamp();
+    }
+
+    protected function getSearchOperator($val, $op): string
+    {
+        // 在根据数据类型重新对符号进行处理
+        // 当值为数组但符号不在in,not in,between中，则需要重置符号
+        if (!\is_array($val) || \in_array($op, $this->operator_array, true)) {
+            return $op;
+        }
+        // 如果为两个元素的数组，则默认为between
+        if (2 === \count($val)) {
+            return 'between';
+        }
+        if (1 === \count($val)) {
+            if (isset($val['min'])) {
+                return '>=';
             }
-
-            return $results;
-        }
-
-        if (Str::endsWith('_range', $results['data_key'])) {
-            if (false !== strpos(',', $results['value'])) {
-                $value = explode(',', $results['value']);
-                $results['value'] = [reset($value), end($value)];
-                $results['op'] = 'BETWEEN';
+            if (isset($val['max'])) {
+                return '<=';
             }
-
-            return $results;
         }
 
-        return $results;
+        return 'in';
+    }
+
+    /**
+     * 获取请求值
+     *
+     * @param $value
+     *
+     * @return array|mixed
+     */
+    protected function getValue($value)
+    {
+        if (!\is_array($value)) {
+            return $value;
+        }
+        if (isset($value['value'])) {
+            return $value['value'];
+        }
+        $temp = [];
+        if (isset($value['min']) && !blank($value['min'])) {
+            $temp['min'] = $value['min'];
+        }
+        if (isset($value['max']) && !blank($value['max'])) {
+            $temp['max'] = $value['max'];
+        }
+        if (2 === \count($temp)) {
+            sort($temp);
+
+            return $temp;
+        }
+
+        return $temp;
     }
 
     /**
@@ -271,24 +409,35 @@ trait SearchTrait
      */
     protected function buildWhere($query, $field, $value)
     {
-        $op = $value['op'];
-        $func = 'where';
-        if ('IN' === $op) {
-            $query->whereIn($field, $value['value']);
+        switch ($value['op']) {
+            case 'in':
+                $query->whereIn($field, $value['value']);
 
-            return $query;
-        }
-        if ('NOT_IN' === $op) {
-            $query->whereNotIn($field, $value['value']);
+                break;
 
-            return $query;
-        }
-        if ('BETWEEN' === $op) {
-            $query->whereBetween($field, $value['value']);
+            case 'not in':
+                $query->whereNotIn($field, $value['value']);
 
-            return $query;
+                break;
+
+            case 'between':
+                $query->whereBetween($field, $value['value']);
+
+                break;
+
+            case 'not between':
+                $query->whereNotBetween($field, $value['value']);
+
+                break;
+
+            case 'like':
+                $query->where($field, 'like', '%'.$value['value'].'%');
+
+                break;
+
+            default:
+                $query->where($field, $value['op'], $value['value']);
         }
-        $query->{$func}($field, $op, $value['value']);
 
         return $query;
     }
