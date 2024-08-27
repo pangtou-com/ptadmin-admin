@@ -74,22 +74,6 @@ trait ModelField
     }
 
     /**
-     * 获取表字段.
-     *
-     * @return array
-     */
-    public function getTableFields(): array
-    {
-        $results = $this->getCacheTableFields();
-        // 去除主键
-        if (isset($results[$this->getKeyName()])) {
-            unset($results[$this->getKeyName()]);
-        }
-
-        return array_keys($results);
-    }
-
-    /**
      * 模型中定义的语言包
      * 定义格式为：['field' => "", 'field1' => ""].
      *
@@ -125,7 +109,7 @@ trait ModelField
      */
     public static function initTableFields(): void
     {
-        self::$table_fields = (new static())->getTableFields();
+        self::$table_fields = (new static())->getFillable();
     }
 
     /**
@@ -155,9 +139,12 @@ trait ModelField
         $sql = "select column_name, column_default from information_schema.columns where table_name='{$table}' and table_schema='{$database}'";
         $obj = DB::select($sql);
         $results = [];
+        $fill = $this->getFillable();
         if (null !== $obj && \count($obj) > 0) {
             foreach ($obj as $val) {
-                $results[$val->column_name] = $val->column_default;
+                if (\in_array($val->column_name, $fill, true)) {
+                    $results[$val->column_name] = $val->column_default;
+                }
             }
         }
 

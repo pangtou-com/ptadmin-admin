@@ -17,6 +17,7 @@
                     create_url: "{{admin_route('user')}}",
                     edit_url: "{{admin_route('user')}}/{id}",
                     del_url: "{{admin_route('user')}}/{id}",
+                    status_url: "{{admin_route('user')}}-status/{id}",
                 },
                 table: [
                     {type: 'checkbox'},

@@ -33,6 +33,14 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         status: 'status_url'
     }
 
+    /** 各场景中路由地址需要增加后缀的情况 */
+    const SCENE_URL_SUFFIX = {
+        [SCENE_URL.edit]: '/{id}',
+        [SCENE_URL.del]: '/{id}',
+        [SCENE_URL.show]: '/{id}',
+        [SCENE_URL.status]: '-status/{id}'
+    }
+
     /** 默认页面配置信息 */
     const DEFAULT_CONFIG = {
         urls: {index_url: "", create_url: "", edit_url: "", del_url: "", show_url: "", status_url: "", import_url:'', export_url: ''},
@@ -712,8 +720,8 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
                 return url
             }
             url = common.getUrl()
-            if (scene !== SCENE_URL.index) {
-                url = `${url}/{id}`
+            if (SCENE_URL_SUFFIX[scene] !== undefined) {
+                url = `${url}${SCENE_URL_SUFFIX[scene]}`
             }
             return url
         }

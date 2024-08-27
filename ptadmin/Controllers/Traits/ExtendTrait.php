@@ -70,7 +70,10 @@ trait ExtendTrait
         $ids = $this->getIds();
         $model = model_build($this->getModel());
         $field = request()->get('field', 'status');
-        $fields = $model->getTableFields();
+        $fields = ['status'];
+        if (method_exists($model, 'getFillable')) {
+            $fields = $model->getFillable();
+        }
         // 当字段不存在时需要提示错误
         if (!\in_array($field, $fields, true)) {
             throw new ServiceException("字段：【{$field}】未在数据表中定义");
