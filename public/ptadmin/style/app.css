@@ -162,6 +162,14 @@ html {
   width: 100vw;
   height: 100vh; }
 
+/** 移除隐藏 */
+#ptadmin_app {
+  overflow: hidden; }
+
+.ptadmin-layout-content {
+  position: relative;
+  z-index: 99; }
+
 /** 遮罩 **/
 .ptadmin-shade {
   position: absolute;
@@ -222,14 +230,28 @@ html {
   .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav {
     width: var(--theme-shrink-left);
     height: calc(100% - var(--theme-header-top)); }
+    .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-side-scroll {
+      scrollbar-width: none; }
     .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav, .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav-item {
       width: var(--theme-shrink-left);
-      position: static; }
-    .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav cite, .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav-child, .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav-more {
-      display: none;
-      padding: 8px 0; }
-    .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav-itemed a {
+      position: relative; }
+      .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav > a cite, .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav > a .layui-nav-more, .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav-item > a cite, .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav-item > a .layui-nav-more {
+        display: none; }
+    .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .ptadmin-shrink-nav {
+      width: 145px;
+      position: absolute;
+      left: 65px;
+      background: var(--lay-color-bg-2);
+      box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+      padding: 5px;
+      z-index: 9999; }
+      .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .ptadmin-shrink-nav .layui-nav-child {
+        background: transparent !important;
+        padding: 0 !important; }
+    .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav-itemed > a {
       background: rgba(0, 0, 0, 0.3); }
+    .ptadmin-shrink .ptadmin-layout-left .ptadmin-nav .layui-nav-bar {
+      left: 75px; }
 .ptadmin-shrink .ptadmin-layout-right {
   width: 100%; }
 
