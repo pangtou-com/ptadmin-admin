@@ -118,11 +118,12 @@
         </div>
     </div>
 </div>
-<script id="password-html" type="text/html"></script>
 @endsection
 
 @section("script")
 <script>
-
+    layui.extend({main: 'main'}).use(['main', 'layout'], function() {
+        const { layout, main } = layui
+    })
 </script>
 @endsection
