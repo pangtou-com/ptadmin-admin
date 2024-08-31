@@ -32,13 +32,14 @@ class CSPMiddleware
     {
         $response = $next($request);
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        $response->headers->set('X-Powered-By', 'ptadmin');
         $csp = [
             "default-src 'self'",
             "frame-ancestors 'self'",
             "style-src 'self' 'unsafe-inline'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
             "font-src 'self' data:",
-            "img-src 'self' https://www.pangtou.com data:",
+            "img-src 'self' data:",
         ];
         $response->headers->set('Content-Security-Policy', implode(';', $csp));
 

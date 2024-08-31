@@ -35,7 +35,6 @@
                     {fixed: 'right', width: 120, title: '{{ __("system.btn_handle") }}', align: 'center', operate: true},
                 ]
             })
-
         })
     </script>
 

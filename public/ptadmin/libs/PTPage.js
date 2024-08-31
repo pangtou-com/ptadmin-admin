@@ -46,7 +46,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         urls: {index_url: "", create_url: "", edit_url: "", del_url: "", show_url: "", status_url: "", import_url:'', export_url: ''},
         title: { create: 'New Add', edit: 'Edit', export: 'Export', del_confirm: '' }, // 各个事件对应名称
         btn_left: ['create', 'refresh', 'del'], // 左侧按钮组
-        // btn_right: ['export', 'import'], // 右侧按钮组
+        btn_right: [], // 右侧按钮组 'export', 'import'
         search: {
             label: false, // 搜索区域是否展示label
         },
@@ -417,6 +417,12 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
             return ""
         }
 
+        /**
+         * 获取符号html
+         * @param rule
+         * @returns {string|*}
+         * @private
+         */
         __getSymbolHtml(rule) {
             const { op } = rule.search || {}
             if (op === undefined) {
