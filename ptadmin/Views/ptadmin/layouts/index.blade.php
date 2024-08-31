@@ -123,22 +123,6 @@
 
 @section("script")
 <script>
-    layui.extend({
-        main: 'main',
-    }).use(["form", 'main', 'layout'], function() {
-        const {
-            layout,
-            $
-        } = layui
-        // 仪表盘iframe事件
-        const iframe = document.querySelector('.ptadmin_iframe')
-        iframe.onload = function() {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            iframeDoc.body.addEventListener('click', function(event) {
-                event.preventDefault();
-                layout.closeTabAction()
-            });
-        };
-    })
+
 </script>
 @endsection

@@ -6,17 +6,19 @@
                 <div class="layui-card">
                     <div class="layui-card-body">
                         <div class="bless">
-                            <p class="text">亲爱的 <span
-                                        class="layui-badge layui-bg-orange">{{\PTAdmin\Admin\Utils\SystemAuth::user()->nickname}}</span>
-                                欢迎您！</p>
-                            <p class="text"> 每一天，您的努力都在推动我们共同的事业向前发展。
+                            <p class="text">亲爱的
+                                <span class="layui-badge layui-bg-orange">
+                                    {{\PTAdmin\Admin\Utils\SystemAuth::user()->nickname}}</span>
+                                    欢迎您！
+                            </p>
+                            <p class="text">
+                                每一天，您的努力都在推动我们共同的事业向前发展。
                                 在【PTAdmin】
                                 您可以轻松访问各种工具和资源，帮助您高效完成工作。
                                 如果在使用过程中遇到任何问题，或者只是想要分享一下您的想法，我们的团队随时欢迎您的反馈。
                                 您的支持是我们的源动力。感谢您的贡献和努力！</p>
                             <div class="btn">
-                                <a href="https://www.pangtou.com" class="layui-badge layui-bg-blue"
-                                   target="_blank">我要反馈</a>
+                                <a href="https://www.pangtou.com" class="layui-badge layui-bg-blue" target="_blank">我要反馈</a>
                             </div>
                         </div>
                     </div>

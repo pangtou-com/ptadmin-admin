@@ -445,7 +445,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
     /** 监听按键 **/
     document.addEventListener('keydown', (e) => {
         if (((e.metaKey && common.isMac()) || e.ctrlKey) && e.key === 'k') {
-            e.preventDefault()
+            // e.preventDefault()
             // 弹出搜索框功能
             console.log('打开搜索框')
         }
@@ -513,7 +513,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
     // 选项卡右键事件
     $body.on("contextmenu", `#${TAB_HEADER}>li`, function (event) {
         // 阻止浏览器默认事件
-        event.preventDefault();
+        // event.preventDefault();
         action_ele.fadeIn(300)
         action_ele.css('top', event.pageY + 25)
         action_ele.css('left', event.pageX)
