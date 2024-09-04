@@ -12,7 +12,8 @@
     <script>
         layui.use(['PTPage'], function () {
             const { PTPage } = layui;
-            PTPage.make({
+            {{--@json(admin_route("user", ['index', 'edit', 'del', 'status']))--}}
+            const page = PTPage.make({
                 urls: {
                     create_url: "{{admin_route('user')}}",
                     edit_url: "{{admin_route('user')}}/{id}",
@@ -36,6 +37,7 @@
                 ]
             })
         })
+
     </script>
 
 @endsection

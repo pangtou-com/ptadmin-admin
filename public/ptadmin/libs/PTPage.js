@@ -48,7 +48,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         btn_left: ['create', 'refresh', 'del'], // 左侧按钮组
         btn_right: [], // 右侧按钮组 'export', 'import'
         search: {
-            label: false, // 搜索区域是否展示label
+            label: true, // 搜索区域是否展示label
         },
         info: {             // 信息展示区域设置（暂未实现）
             theme: 'default',

@@ -67,7 +67,7 @@ class UserService
     public function page($search = []): array
     {
         $allow = [
-            'username' => ['op' => 'like'],
+            'username ' => ['op' => 'like'],
             'nickname' => ['op' => 'like'],
             'mobile' => ['op' => 'like'],
             'email' => ['op' => 'like'],
@@ -76,6 +76,7 @@ class UserService
             'status' => ['op' => 'IN', 'field' => 'status'],
         ];
         $model = User::search($allow, $search);
+        User::searchScene('lists');
 
         return $model->orderBy('id', 'desc')->paginate()->toArray();
     }
