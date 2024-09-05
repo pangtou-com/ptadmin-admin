@@ -3,7 +3,7 @@
     "type": "project",
     "description": "PTAdmin是一款快速构建企业网站、电子商务平台和知识付费系统。我们精选的模板范围广泛，专为加速项目部署和优化用户体验设计。无论您是寻求打造品牌网站，搭建在线商店，还是创建知识付费课程，这里都有合适的模板帮助您实现业务目标。启动快速，效果卓越，赋能您的业务增长.",
     "keywords": ["framework", "laravel", "企业建站", "快速开发"],
-    "version": "v0.0.1",
+    "version": "v0.0.2",
     "license": "Apache-2.0",
     "authors": [
         {"name": "Zane", "email": "873934580@qq.com"}

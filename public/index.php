@@ -25,7 +25,7 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 
 define('PTADMIN_START', microtime(true));
-const PTADMIN_FRAME_VERSION = 'v0.0.1';
+const PTADMIN_FRAME_VERSION = 'v0.0.2';
 
 if (version_compare(PHP_VERSION, '7.3', '<')) {
     $version = PHP_VERSION;
