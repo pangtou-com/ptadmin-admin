@@ -513,7 +513,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
     // 选项卡右键事件
     $body.on("contextmenu", `#${TAB_HEADER}>li`, function (event) {
         // 阻止浏览器默认事件
-        // event.preventDefault();
+        event.preventDefault();
         action_ele.fadeIn(300)
         action_ele.css('top', event.pageY + 25)
         action_ele.css('left', event.pageX)
@@ -521,6 +521,7 @@ layui.define(['form', 'common', 'element'], function (exports) {
         layout.rightClickTab = $(this)
         const disabledRefresh = $(this).is(`.${LAYUI_ACTIVE}`)
         const rightAllDom = $(this).nextAll()
+        $('.ptadmin-layout-tabs-action-shade').show()
         // 刷新只存在当前打开标签
         if (!disabledRefresh) {
             action_ele.find('[type="refresh"]').addClass('disabled').removeAttr(`${PTADMIN_EVENT}`)

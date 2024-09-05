@@ -80,6 +80,7 @@
                 <div class="ptadmin-iframe-item ptadmin-show">
                     <iframe src="{{admin_route('console')}}" frameborder="0" class="ptadmin_iframe"></iframe>
                 </div>
+                <div class="ptadmin-layout-tabs-action-shade"></div>
             </div>
             <!-- 底部区域 -->
             <div class="ptadmin-layout-footer"></div>
@@ -115,6 +116,7 @@
                     </li>
                 </ul>
             </div>
+
         </div>
     </div>
 </div>
@@ -123,7 +125,10 @@
 @section("script")
 <script>
     layui.extend({main: 'main'}).use(['main', 'layout'], function() {
-        const { layout, main } = layui
+        const { layout, main, $ } = layui
+        $('.ptadmin-layout-tabs-action-shade').click(function(){
+            $(this).hide()
+        })
     })
 </script>
 @endsection

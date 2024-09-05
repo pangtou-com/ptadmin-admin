@@ -48,6 +48,7 @@ layui.extend({
             common.loading(layout.shadeConfig)
             div.appendChild(iframe)
             $(`#iframe_body`)[0].appendChild(div)
+
             element.tabAdd(LAYOUT_TABS, {
                 id: url,
                 url: url,

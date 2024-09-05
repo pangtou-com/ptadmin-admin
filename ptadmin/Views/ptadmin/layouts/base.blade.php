@@ -18,7 +18,6 @@
 
 <body class="ptadmin-layout-body">
     @yield('content')
-
     <script src="{{_asset('/ptadmin/js/jquery-1.12.4.min.js')}}"></script>
     <script src="{{_asset('/ptadmin/bin/layui.js')}}"></script>
     @if(setting('editor', 'tiny') === 'tiny')
@@ -54,7 +53,6 @@
         });
     </script>
     @yield('script')
-
 </body>
 
 </html>
