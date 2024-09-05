@@ -38,7 +38,7 @@ return [
         'name' => '菜单权限',
         'title' => '菜单名称',
         'route' => '路由地址',
-        'parent_id' => '上级栏目',
+        'parent_name' => '上级栏目',
         'type' => '导航类型',
         'icon' => '菜单图标',
         'sort' => '排序',

@@ -50,10 +50,12 @@ class System extends Authenticate
     protected $guard_name;
     protected $fillable = ['username', 'nickname', 'mobile', 'email', 'avatar', 'login_at', 'login_ip', 'status'];
 
-    public function __construct()
+    public function __construct(array $attributes = [])
     {
-        $this->guard_name = SystemAuth::getGuard();
-        parent::__construct();
+        $guardName = $attributes['guard_name'] ?? SystemAuth::getGuard();
+        $this->guard_name = $guardName;
+        $attributes['guard_name'] = $guardName;
+        parent::__construct($attributes);
     }
 
     public function guardName()

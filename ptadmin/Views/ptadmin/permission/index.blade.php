@@ -90,7 +90,7 @@
                     common.formOpen("{{admin_route('permission')}}", "新增权限")
                 },
                 add: function (data) {
-                    common.formOpen(`{{admin_route('permission')}}?parent_id=${data.id}`, "新增权限")
+                    common.formOpen(`{{admin_route('permission')}}?parent_name=${data.name}`, "新增权限")
                 },
                 edit: function (data) {
                     common.formOpen("{{admin_route('permission')}}/" + data.id, "编辑权限")

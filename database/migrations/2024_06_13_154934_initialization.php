@@ -162,7 +162,7 @@ class Initialization extends Migration
         if (!Schema::hasTable('permissions')) {
             Schema::create('permissions', function (Blueprint $table): void {
                 $table->id();
-                $table->unsignedBigInteger('parent_id')->default(0)->comment('父级ID');
+                $table->string('parent_name', 255)->default(0)->nullable()->comment('父级名称');
                 $table->string('name', 255)->comment('权限名称，验证使用');
                 $table->string('title', 255)->comment('权限标题，展示使用');
                 $table->string('route', 255)->nullable()->comment('路由地址');
@@ -176,10 +176,10 @@ class Initialization extends Migration
                 $table->char('type', 4)->comment('规则类型 dir = 菜单目录 ｜ nav = 菜单项目（只有这种类型才会有组件内容） | btn 按钮权限 | link 外部链接地址	');
                 $table->unsignedTinyInteger('status')->default(1)->comment('状态');
                 $table->unsignedTinyInteger('is_nav')->default(1)->comment('是否显示为导航');
-                $table->unsignedTinyInteger('is_inner')->default(0)->comment('是否用于内部链接，在可能出现页面内导航时使用	');
                 $table->unsignedInteger('deleted_at')->nullable()->comment('是否删除');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->unique('name', 'uk_name');
             });
             DB::statement('ALTER TABLE `'.get_table_name('permissions').'` COMMENT = "权限表"');
         }

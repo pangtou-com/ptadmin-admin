@@ -81,7 +81,7 @@ class RoleController extends AbstractBackgroundController
      */
     public function getPermission($id)
     {
-        $permission = $this->permissionService->getLabel();
+        $permission = Permission::getAllData();
         $role = Role::findById((int) $id, config('auth.app_guard_name'));
         $results = $checked = [];
 
@@ -93,7 +93,7 @@ class RoleController extends AbstractBackgroundController
             }
             $results[] = $item;
         }
-        $results = infinite_tree($results);
+        $results = infinite_tree($results, null, 'parent_name', 'name');
         $result = [
             'checked' => $checked,
             'results' => $results,

@@ -41,7 +41,6 @@
 <script>
     layui.use(['form', 'layer', 'common'], function () {
         const {form, layer, common} = layui
-
         document.onkeydown = function (e) {
             if (e.keyCode === 13) {
                 $('[lay-submit]').click()

@@ -27,20 +27,37 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use PTAdmin\Admin\Enum\MenuTypeEnum;
 use PTAdmin\Admin\Enum\StatusEnum;
+use PTAdmin\Admin\Exceptions\BackgroundException;
 use PTAdmin\Admin\Models\Permission;
 use PTAdmin\Admin\Models\System;
 use PTAdmin\Html\Html;
 
 class PermissionService
 {
-    /**
-     * @return array
-     */
-    public function getLabel(): array
+    public function store($data): void
     {
-        return Permission::query()
-            ->select(['id', 'name', 'title', 'parent_id'])
-            ->orderBy('weight', 'desc')->get()->toArray();
+        $data['group_name'] = $data['group_name'] ?? config('auth.app_guard_name');
+        if (isset($data['parent_name']) && Permission::TOP_PERMISSION_NAME !== (string) $data['parent_name']) {
+            $parent = Permission::query()->where('name', $data['parent_name'])->firstOrFail();
+            $data['paths'] = array_merge($parent->paths ?? [], [$parent->name]);
+        }
+
+        Permission::create($data);
+    }
+
+    public function edit($data, $id): void
+    {
+        $perm = Permission::query()->findOrFail($id);
+        if ($data['parent_name'] === $perm->name) {
+            throw new BackgroundException('父级菜单不能为自身');
+        }
+        if (isset($data['parent_name']) && Permission::TOP_PERMISSION_NAME !== (string) $data['parent_name'] && $perm->parent_name !== $data['parent_name']) {
+            $parent = Permission::query()->where('name', $data['parent_name'])->firstOrFail();
+            $data['paths'] = array_merge($parent->paths ?? [], [$parent->name]);
+        }
+        $perm->update($data);
+        // 需要如果存在子集的情况需要同步更新子集路径
+        Permission::renewChildrenPaths($perm->name, $perm->paths ?? []);
     }
 
     /**
@@ -54,7 +71,7 @@ class PermissionService
     {
         $results = $this->bySystemIdPermission($member->id);
 
-        return infinite_tree($results);
+        return infinite_tree($results, Permission::TOP_PERMISSION_NAME, 'parent_name', 'name');
     }
 
     /**
@@ -70,15 +87,10 @@ class PermissionService
         $system = System::query()->findOrFail($systemId);
         // 创始人获取全部数据
         if ($system->is_founder) {
-            return Permission::query()
-                ->select(['id', 'parent_id', 'name', 'title', 'route', 'component', 'icon', 'type', 'status', 'is_nav'])
-                ->where('status', StatusEnum::ENABLE)
-                ->whereNull('deleted_at')
-                ->orderBy('weight', 'desc')
-                ->orderBy('id')
-                ->get()->toArray();
+            return Permission::getAllData(['status' => StatusEnum::ENABLE]);
         }
         $results = [];
+        $full_paths = [];
         // 根据管理员角色获取权限
         foreach ($system->roles()->get() as $item) {
             $permissions = $item->permissions()
@@ -87,15 +99,19 @@ class PermissionService
                 ->orderBy('weight', 'desc')
                 ->orderBy('id')
                 ->get()->toArray();
+
             foreach ($permissions as $value) {
                 if (isset($results[$value['id']])) {
                     continue;
                 }
                 $results[$value['id']] = $value;
+                $full_paths = array_merge($full_paths, $value['paths'] ?? []);
             }
         }
+        $full_paths = array_unique($full_paths);
+        $full_results = Permission::query()->whereIn('name', $full_paths)->get()->toArray();
 
-        return $results;
+        return array_merge($results, $full_results);
     }
 
     /**
@@ -120,7 +136,7 @@ class PermissionService
             }
             $str = 0 === $parent ? '<li class="layui-nav-item '.$layuiThis.'">' : '<dd>';
             if ($datum['route']) {
-                if (Str::startsWith($datum['route'], 'http')) {
+                if (Str::startsWith($datum['route'], 'http') && MenuTypeEnum::LINK === $datum['type']) {
                     $str .= '<a href="'.$datum['route'].'" target="_blank">';
                 } else {
                     $str .= '<a href="javascript:;" ptadmin-href="'.admin_route($datum['route']).'" ptadmin-id="'.$datum['id'].'">';
@@ -197,17 +213,15 @@ class PermissionService
         return implode('', $html);
     }
 
-    public function getOption($field = null, $value = null): array
+    /**
+     * 返回下拉菜单选项格式数据.
+     *
+     * @return array[]
+     */
+    public function getOption(): array
     {
-        $results = Permission::query()
-            ->select(['id', 'title', 'parent_id'])
-            ->orderBy('weight', 'desc')
-            ->get()->toArray();
-        $data = [];
-        infinite_level($results, $data);
-        $res = [
-            ['label' => '顶级栏目', 'value' => 0],
-        ];
+        $data = Permission::getLevels();
+        $res = [['label' => '顶级栏目', 'value' => Permission::TOP_PERMISSION_NAME]];
         foreach ($data as $datum) {
             $line = '';
             if ($datum['lv'] > 0) {
@@ -215,7 +229,7 @@ class PermissionService
             }
             $res[] = [
                 'label' => $line.' '.$datum['title'],
-                'value' => $datum['id'],
+                'value' => $datum['name'],
             ];
         }
 
@@ -237,6 +251,7 @@ class PermissionService
         }
         $data = @json_decode(Cache::get($key), true);
         $results = [];
+
         /** @var System $system */
         $system = System::query()->findOrFail($systemId);
         if (1 === $system->is_founder) {
@@ -294,7 +309,7 @@ class PermissionService
             return;
         }
         $results = Permission::query()
-            ->select(['id', 'parent_id', 'name', 'title', 'route', 'component', 'icon', 'type', 'status', 'is_nav'])
+            ->select(['id', 'parent_name', 'name', 'title', 'route', 'component', 'icon', 'type', 'status', 'is_nav'])
             ->whereIn('id', $data)
             ->where('status', StatusEnum::ENABLE)
             ->whereNull('deleted_at')
@@ -315,17 +330,17 @@ class PermissionService
      */
     public static function addonInstallMenu($addonInfo, $menu, $parentName = null): void
     {
-        $parentId = 0;
+        $parentId = null;
         if (null !== $parentName) {
             $parent = Permission::query()->where('name', $parentName)->first();
             if (null !== $parent) {
-                $parentId = $parent->id;
+                $parentId = $parent->name;
             }
         }
         $instance = new self();
         if (null === $parentId) {
             $parent = $instance->installParentMenu($addonInfo);
-            $parentId = $parent->id;
+            $parentId = $parent->name;
         }
         $instance->installChildMenu($addonInfo, $menu, $parentId);
     }
@@ -339,7 +354,7 @@ class PermissionService
             $permission->title = $item['title'];
             $permission->note = $item['note'] ?? '';
             $permission->route = $item['route'] ?? '';
-            $permission->parent_id = $parentId;
+            $permission->parent_name = $parentId;
             $permission->type = $item['type'];
             $permission->is_nav = $item['is_nav'] ?? 1;
             $permission->icon = $item['icon'] ?? '';

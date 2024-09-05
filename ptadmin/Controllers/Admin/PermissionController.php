@@ -23,54 +23,61 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Controllers\Admin;
 
-use PTAdmin\Admin\Controllers\Traits\EditTrait;
 use PTAdmin\Admin\Controllers\Traits\ExtendTrait;
-use PTAdmin\Admin\Controllers\Traits\StoreTrait;
-use PTAdmin\Admin\Controllers\Traits\ValidateTrait;
 use PTAdmin\Admin\Models\Permission;
+use PTAdmin\Admin\Request\PermissionRequest;
+use PTAdmin\Admin\Service\PermissionService;
 use PTAdmin\Admin\Utils\ResultsVo;
 
 class PermissionController extends AbstractBackgroundController
 {
-    use EditTrait;
     use ExtendTrait;
-    use StoreTrait;
-    use ValidateTrait;
+
+    protected $permissionService;
+
+    public function __construct(PermissionService $permissionService)
+    {
+        $this->permissionService = $permissionService;
+        parent::__construct();
+    }
 
     public function index()
     {
         if (request()->expectsJson()) {
-            $per = Permission::query()->select([
-                'id', 'parent_id', 'title', 'name', 'status', 'route', 'component', 'weight', 'type', 'is_nav', 'icon',
-            ])->orderBy('weight', 'desc')->get()->toArray();
-            $per = infinite_tree($per);
-
-            return ResultsVo::success(['results' => $per]);
+            return ResultsVo::success(['results' => Permission::getTrees()]);
         }
 
         return $this->view();
     }
 
+    public function store(PermissionRequest $request)
+    {
+        if ($request->expectsJson()) {
+            $this->permissionService->store($request->all());
+
+            return ResultsVo::success();
+        }
+        $dao = new Permission();
+
+        return $this->view(compact('dao'));
+    }
+
+    public function edit(PermissionRequest $request, $id)
+    {
+        if ($request->expectsJson()) {
+            $this->permissionService->edit($request->all(), $id);
+
+            return ResultsVo::success();
+        }
+        $dao = Permission::query()->findOrFail($id);
+
+        return $this->view(compact('dao'));
+    }
+
     public function lists(): \Illuminate\Http\JsonResponse
     {
-        $results = Permission::query()->select([
-            'id', 'parent_id', 'title',
-        ])->orderBy('weight', 'desc')->get()->toArray();
-        $data = $result = [];
+        $data = $this->permissionService->getOption();
 
-        infinite_level($results, $data);
-
-        $result[] = ['value' => 0, 'label' => '顶级栏目'];
-        foreach ($data as $item) {
-            if ($item['lv'] > 0) {
-                $item['title'] = '|'.str_repeat('-', $item['lv']).$item['title'];
-            }
-            $result[] = [
-                'value' => $item['id'],
-                'label' => $item['title'],
-            ];
-        }
-
-        return ResultsVo::success($result);
+        return ResultsVo::success($data);
     }
 }

@@ -1,6 +1,6 @@
 layui.define(['element'], function (exports) {
     const MOD_NAME = "common"
-    const { $, element } = layui
+    const { $ } = layui
     const win = $(window)
 
     const SIZE = { xs: 768, sm: 992, md: 1200, lg: 1600 }

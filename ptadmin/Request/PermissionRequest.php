@@ -23,28 +23,37 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Request;
 
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use PTAdmin\Admin\Enum\MenuTypeEnum;
 use PTAdmin\Admin\Models\Permission;
 
-class PermissionRequest
+class PermissionRequest extends FormRequest
 {
     public function rules(): array
     {
+        if (!$this->expectsJson()) {
+            return [];
+        }
         $id = (int) request()->route('id');
-        $parentId = (int) request()->get('parent_id');
+        $parentName = (string) request()->get('parent_name', '');
 
         return [
-            'parent_id' => $parentId ? ['integer', Rule::exists(Permission::class, 'id')] : [],
-            'name' => ['required', 'max:255', Rule::unique(Permission::class)->ignore($id)],
+            'parent_name' => '' !== $parentName && Permission::TOP_PERMISSION_NAME !== $parentName ? [
+                'string',
+                Rule::exists(Permission::class, 'name'),
+            ] : [],
+            'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:255', Rule::unique(Permission::class)->ignore($id)],
             'title' => ['required', 'max:255', Rule::unique(Permission::class)->ignore($id)],
-            'route' => [
-                'required_if:type,nav',
-                'max:255',
-                Rule::unique(Permission::class)->whereNotNull('route')->ignore($id),
-            ],
-            // 前后端分离开发时需要此字段
-            // 'component' => ['required_if:type,nav', 'max:255'],
+            'route' => [Rule::requiredIf(function (): bool {
+                return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::LINK], true);
+            }), 'max:255', function ($attribute, $value, $fail): void {
+                $type = $this->get('type');
+                if (MenuTypeEnum::LINK === $type && (blank($value) || !Str::startsWith($value, ['http', 'https']))) {
+                    $fail('路由不能为空, 且必须以 http:// 或 https:// 开头');
+                }
+            }],
             'icon' => 'max:50',
             'weight' => 'integer|min:0|max:255',
             'note' => 'max:500',
@@ -53,5 +62,10 @@ class PermissionRequest
             'is_nav' => 'required|integer|in:0,1',
             'controller' => 'max:255',
         ];
+    }
+
+    public function attributes()
+    {
+        return __('table.permissions');
     }
 }

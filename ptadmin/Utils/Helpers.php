@@ -81,23 +81,24 @@ if (!function_exists('infinite_level')) {
     /**
      * 将无限分类进行分级别,设定lv值
      *
-     * @param string $primary
-     * @param array  $arr
-     * @param array  $arr2
-     * @param int    $perId
-     * @param int    $lv
+     * @param string     $primary
+     * @param array      $arr
+     * @param array      $arr2
+     * @param int|string $perId
+     * @param int        $lv
+     * @param mixed      $parentName
      */
-    function infinite_level(array $arr, array &$arr2 = [], string $primary = 'id', int $perId = 0, int $lv = 0): void
+    function infinite_level(array $arr, array &$arr2 = [], string $primary = 'id', $parentName = 'parent_id', $perId = 0, int $lv = 0): void
     {
         if (0 === count($arr)) {
             return;
         }
         foreach ($arr as $value) {
-            if (isset($value['parent_id']) && $value['parent_id'] === $perId) {
+            if (array_key_exists($parentName, $value) && $value[$parentName] === $perId) {
                 $value['lv'] = $lv;
                 $arr2[$value[$primary]] = $value;
                 ++$lv;
-                infinite_level($arr, $arr2, $primary, $value[$primary], $lv--);
+                infinite_level($arr, $arr2, $primary, $parentName, $value[$primary], $lv--);
             }
         }
     }
@@ -107,14 +108,15 @@ if (!function_exists('infinite_tree')) {
     /**
      * 树形结构返回数据.
      *
-     * @param array  $data
-     * @param int    $parentId
-     * @param string $parentIdName
-     * @param string $childrenName
+     * @param array      $data
+     * @param int|string $parentId
+     * @param string     $parentIdName
+     * @param string     $keyName
+     * @param string     $childrenName
      *
      * @return array
      */
-    function infinite_tree(array $data, int $parentId = 0, string $parentIdName = 'parent_id', string $childrenName = 'children'): array
+    function infinite_tree(array $data, $parentId = 0, string $parentIdName = 'parent_id', string $keyName = 'id', string $childrenName = 'children'): array
     {
         if (!$data) {
             return [];
@@ -125,7 +127,7 @@ if (!function_exists('infinite_tree')) {
             if ($parentId === $val[$parentIdName]) {
                 unset($data[$key]);
                 $result[$i] = $val;
-                $result[$i][$childrenName] = infinite_tree($data, $val['id'], $parentIdName, $childrenName);
+                $result[$i][$childrenName] = infinite_tree($data, $val[$keyName], $parentIdName, $keyName, $childrenName);
                 ++$i;
             }
         }
@@ -798,6 +800,44 @@ if (!function_exists('get_mix_user_id')) {
         }
 
         return strtoupper("PT{$temp}Z".base_convert($userId, 10, 34));
+    }
+}
+
+if (!function_exists('whenBlank')) {
+    /**
+     * 当值为空时执行回调.
+     *
+     * @param $value
+     * @param null|callable $callback
+     *
+     * @return mixed
+     */
+    function whenBlank($value, callable $callback = null)
+    {
+        if (null === $callback) {
+            return $value;
+        }
+
+        return blank($value) ? $callback() : $value;
+    }
+}
+
+if (!function_exists('whenNotBlank')) {
+    /**
+     * 当值不为空时执行回调.
+     *
+     * @param $value
+     * @param null|callable $callback
+     *
+     * @return mixed
+     */
+    function whenNotBlank($value, callable $callback = null)
+    {
+        if (null === $callback) {
+            return $value;
+        }
+
+        return blank($value) ? $value : $callback($value);
     }
 }
 
