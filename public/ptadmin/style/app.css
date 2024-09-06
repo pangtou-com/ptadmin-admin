@@ -905,15 +905,16 @@ html {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
+  padding: 0px 15px;
   border-bottom: 1px solid var(--hover-bg);
+  height: 50px;
 }
 .ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs {
   display: flex;
   overflow-x: auto;
   flex-wrap: nowrap;
   box-sizing: border-box;
-  white-space: nowrap;
+  flex: 1;
 }
 .ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs::-webkit-scrollbar {
   display: none;
@@ -924,6 +925,7 @@ html {
   border-radius: 2px;
   transition: all 0.3s;
   position: relative;
+  flex-shrink: 0;
 }
 .ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs .tab::before {
   transition: all 0.3s;
@@ -956,7 +958,7 @@ html {
 }
 .ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main > .layui-card > .layui-card-body {
   overflow-y: auto;
-  height: calc(100vh - var(--header-height) - 135px);
+  height: calc(100vh - var(--header-height) - 145px);
 }
 .ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main > .layui-card > .layui-card-body::-webkit-scrollbar {
   width: 6px;

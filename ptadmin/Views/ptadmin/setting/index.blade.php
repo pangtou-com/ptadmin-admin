@@ -33,6 +33,15 @@
                             @foreach($data['results'] as $key => $item)
                                 <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
                             @endforeach
+                            @foreach($data['results'] as $key => $item)
+                                <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
+                            @endforeach
+                            @foreach($data['results'] as $key => $item)
+                                <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
+                            @endforeach
+                            @foreach($data['results'] as $key => $item)
+                                <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
+                            @endforeach
                         </ul>
                         <div class="layui-btn-group">
                             <input type="hidden" id="cate_id" value="{{$data['cateId']}}">
