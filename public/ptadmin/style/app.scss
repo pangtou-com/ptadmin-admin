@@ -63,6 +63,9 @@
         }
         .ptadmin-nav{
             height: calc(100% - var(--theme-header-top));
+            .layui-nav{
+                width: 220px;
+            }
         }
     }
     .ptadmin-layout-header{
@@ -645,138 +648,207 @@
 
 /** PTICON End */
 
-/** 配置分类 **/
-.configure{
-    display: flex;
-    --height: 50px;
-    --title-font-size: 18px;
-    .left {
-        flex-shrink: 0;
-        width: 200px;
-        background-color: white;
-        height: 100vh;
-        .category{
-            display: flex;
-            justify-content: space-between;
-            height: var(--height);
-            align-items: center;
-            padding: 0 20px;
-            border-bottom: 1px solid var(--theme-body-bg);
-            div:first-child{
-                font-size: var(--title-font-size);
-            }
-            div:last-child{
-                cursor: pointer;
-                i{
-                    font-size: 20px;
+/** ptadmin-categorize */
+@keyframes fade {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+}
+/** 滚动条样式 */
+@mixin scrollbar($width:6px,$radius:5px){
+    &::-webkit-scrollbar {
+        width: $width;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: $radius;
+    }
+}
+.ptadmin-categorize-box{
+    --header-height:50px;
+    --hover-bg:#f8f8f8;
+    --active:#16baaa;
+    .ptadmin-categorize-header{
+        height: var(--header-height);
+        background: #FFF;
+        display: flex;
+        justify-content: space-between;
+        line-height: var(--header-height);
+        padding: 0 15px;
+        border-radius: 2px 2px 2px 0;
+        .title{
+            font-size: 16px;
+            font-weight: 600;
+        }
+    }
+    .ptadmin-categorize-container{
+        display: flex;
+        .ptadmin-categorize-aside{
+            flex-shrink: 0;
+            width: 180px;
+            background: #FFF;
+            height:calc( 100vh - var(--header-height));
+            overflow-y: auto;
+            border-top: 1px solid  var(--hover-bg);
+            box-sizing: border-box;
+            border-radius: 0 0 2px 2px;
+            @include scrollbar();
+            .lists{
+                padding: 5px 0;
+                >li{
+                    padding: 10px 15px;
+                    transition: all .3s;
+                    display: flex;
+                    align-items: center;
+                    cursor: pointer;
+                    position: relative;
+                    &:not(.active){
+                        &:hover{
+                            background:var(--hover-bg);
+                        }
+                    }
+                    .layui-btn-group{
+                        transition: all .3s;
+                        position: absolute;
+                        right: 15px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        opacity: 0;
+                        z-index: -1;
+                    }
+                    &:hover{
+                        .layui-btn-group{
+                            opacity: 1;
+                            z-index: 2;
+                        }
+                    }
+                }
+                .active{
+                    background: var(--active);
+                    color: #FFF;
                 }
             }
         }
-        .lists {
-            overflow-y: auto;
-            li {
-                height: var(--height);
-                line-height: var(--height);
-                text-indent: 20px;
-                cursor: pointer;
-                position: relative;
-                .layui-btn-group {
-                    position: absolute;
-                    right: 5px;
-                    top: 0;
-                    display: none;
-                    .layui-btn{
-                        padding: 0;
-                        height: 20px;
-                        line-height: 20px;
+        .ptadmin-categorize-main{
+            flex: 1;
+            padding: 10px 0 65px 10px;
+            height:calc( 100vh - var(--header-height));
+            box-sizing: border-box;
+            .card-header{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px 15px;
+                border-bottom: 1px solid var(--hover-bg);
+                .ptadmin-categorize-tabs{
+                    display: flex;
+                    overflow-x: auto;
+                    flex-wrap: nowrap;
+                    &::-webkit-scrollbar {
+                        display: none;
+                    }
+                    box-sizing: border-box;
+                    white-space: nowrap;
+                    .tab{
+                        padding: 8px 20px;
+                        cursor: pointer;
+                        border-radius: 2px;
+                        transition: all .3s;
+                        position: relative;
+                        &::before{
+                            transition: all .3s;
+                            content: '';
+                            width: 0;
+                            height: 2px;
+                            background: var(--active);
+                            position: absolute;
+                            left: 50%;
+                            bottom: 0;
+                            transform: translateX(-50%);
+                            border-radius: 2px;
+                        }
+                        &:hover{
+                            background: var(--hover-bg);
+                            color: var(--active);
+                            &::before{
+                                width: 100%;
+                            }
+                        }
+                    }
+                    .active{
+                        color: var(--active);
+                        &::before{
+                            width: 50%;
+                        }
                     }
                 }
-                &.active, &:hover{
-                    background-color: var(--theme-main-bg);
-                    color: white;
-
-                }
-                &:hover{
-                    .layui-btn-group{
-                        display: block;
-                    }
+                .layui-btn-group{
+                    flex-shrink: 0;
+                    margin-left: 20px;
                 }
             }
-            .category-created {
-                text-align: center;
-                border-top: 1px solid var(--theme-main-bg);
-                &:hover{
-                    background-color: white;
-                    color: var(--theme-main-bg);
-                }
+            > .layui-card > .layui-card-body{
+                overflow-y: auto;
+                @include scrollbar();
+                height:calc( 100vh - var(--header-height) - 135px);
             }
         }
     }
-    .right{
-        width: calc(100% - 200px - 10px - 10px);
-        margin-left: 10px;
-        background-color: white;
-        .header-title{
+}
+
+/** ptadmin-categorize End */
+
+/** 配置分类 **/
+.configure{
+
+    .box-right{
+        flex-grow: 1;
+        .box-item{
             display: flex;
-            justify-content: space-between;
-            height: var(--height);
-            align-items: center;
-            padding: 0 20px;
-            border-bottom: 1px solid var(--theme-body-bg);
-            .title{
-                font-size:  var(--title-font-size);
+            justify-content: flex-start;
+            >div{
+                width: 50%;
+            }
+            .box-content{
+                padding-right: 10px;
             }
         }
-        .box {
-            display: flex;
-            .left-title{
-                width: 170px;
-                p.title{
-                    line-height: 50px;
-                    text-align: center;
-                    cursor: pointer;
-                    border-bottom: 1px solid  var(--theme-body-bg);
-                }
-                p.active{
-                    background-color: var(--theme-body-bg);
-                }
+        .box-content{
+            .box-content-item{
+                display: none;
             }
-            .box-right{
-                flex-grow: 1;
-                padding: 20px;
-                border-bottom: 1px solid var(--theme-body-bg);
-                border-left: 1px solid var(--theme-body-bg);
-                .box-item{
-                    display: flex;
-                    justify-content: flex-start;
-                    >div{
-                        width: 50%;
-                    }
-                    .box-content{
-                        padding-right: 10px;
-                    }
-                }
-                .box-content{
-                    .box-content-item{
-                        display: none;
-                    }
-                    .active{
-                        display: block;
-                    }
-                }
-            }
-        }
-        .container-item {
-            padding: 0 20px;
-            overflow-y: auto;
-            >div:first-child{
-                border-bottom: none;
+            .active{
+                animation: fade .3s ease-in-out;
+                display: block;
             }
         }
     }
     .container-footer{
+        width: 100%;
+        background: #FFF;
+        position: fixed;
+        bottom: 0;
+        margin: 0 -15px;
+        padding: 8px 15px;
         text-align: center;
-        padding: 20px;
+    }
+
+    .container-item {
+        padding: 0 20px;
+        overflow-y: auto;
+        >div:first-child{
+            border-bottom: none;
+        }
+        .layui-card{
+            display: none;
+        }
+        .active{
+            display: block;
+            animation: fade .3s ease-in-out;
+        }
     }
 }
 

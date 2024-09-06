@@ -272,6 +272,9 @@ html {
 .ptadmin-layout .ptadmin-layout-left .ptadmin-nav {
   height: calc(100% - var(--theme-header-top));
 }
+.ptadmin-layout .ptadmin-layout-left .ptadmin-nav .layui-nav {
+  width: 220px;
+}
 .ptadmin-layout .ptadmin-layout-header {
   background-color: var(--lay-color-bg-2);
   display: flex;
@@ -813,134 +816,200 @@ html {
 }
 
 /** PTICON End */
-/** 配置分类 **/
-.configure {
-  display: flex;
-  --height: 50px;
-  --title-font-size: 18px;
+/** ptadmin-categorize */
+@keyframes fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
-.configure .left {
-  flex-shrink: 0;
-  width: 200px;
-  background-color: white;
-  height: 100vh;
+/** 滚动条样式 */
+.ptadmin-categorize-box {
+  --header-height:50px;
+  --hover-bg:#f8f8f8;
+  --active:#16baaa;
 }
-.configure .left .category {
+.ptadmin-categorize-box .ptadmin-categorize-header {
+  height: var(--header-height);
+  background: #FFF;
   display: flex;
   justify-content: space-between;
-  height: var(--height);
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--theme-body-bg);
+  line-height: var(--header-height);
+  padding: 0 15px;
+  border-radius: 2px 2px 2px 0;
 }
-.configure .left .category div:first-child {
-  font-size: var(--title-font-size);
+.ptadmin-categorize-box .ptadmin-categorize-header .title {
+  font-size: 16px;
+  font-weight: 600;
 }
-.configure .left .category div:last-child {
-  cursor: pointer;
+.ptadmin-categorize-box .ptadmin-categorize-container {
+  display: flex;
 }
-.configure .left .category div:last-child i {
-  font-size: 20px;
-}
-.configure .left .lists {
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside {
+  flex-shrink: 0;
+  width: 180px;
+  background: #FFF;
+  height: calc(100vh - var(--header-height));
   overflow-y: auto;
+  border-top: 1px solid var(--hover-bg);
+  box-sizing: border-box;
+  border-radius: 0 0 2px 2px;
 }
-.configure .left .lists li {
-  height: var(--height);
-  line-height: var(--height);
-  text-indent: 20px;
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside::-webkit-scrollbar {
+  width: 6px;
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 5px;
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside .lists {
+  padding: 5px 0;
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside .lists > li {
+  padding: 10px 15px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
   cursor: pointer;
   position: relative;
 }
-.configure .left .lists li .layui-btn-group {
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside .lists > li:not(.active):hover {
+  background: var(--hover-bg);
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside .lists > li .layui-btn-group {
+  transition: all 0.3s;
   position: absolute;
-  right: 5px;
-  top: 0;
-  display: none;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  z-index: -1;
 }
-.configure .left .lists li .layui-btn-group .layui-btn {
-  padding: 0;
-  height: 20px;
-  line-height: 20px;
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside .lists > li:hover .layui-btn-group {
+  opacity: 1;
+  z-index: 2;
 }
-.configure .left .lists li.active, .configure .left .lists li:hover {
-  background-color: var(--theme-main-bg);
-  color: white;
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside .lists .active {
+  background: var(--active);
+  color: #FFF;
 }
-.configure .left .lists li:hover .layui-btn-group {
-  display: block;
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main {
+  flex: 1;
+  padding: 10px 0 65px 10px;
+  height: calc(100vh - var(--header-height));
+  box-sizing: border-box;
 }
-.configure .left .lists .category-created {
-  text-align: center;
-  border-top: 1px solid var(--theme-main-bg);
-}
-.configure .left .lists .category-created:hover {
-  background-color: white;
-  color: var(--theme-main-bg);
-}
-.configure .right {
-  width: calc(100% - 200px - 10px - 10px);
-  margin-left: 10px;
-  background-color: white;
-}
-.configure .right .header-title {
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header {
   display: flex;
   justify-content: space-between;
-  height: var(--height);
   align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--theme-body-bg);
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--hover-bg);
 }
-.configure .right .header-title .title {
-  font-size: var(--title-font-size);
-}
-.configure .right .box {
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs {
   display: flex;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
-.configure .right .box .left-title {
-  width: 170px;
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs::-webkit-scrollbar {
+  display: none;
 }
-.configure .right .box .left-title p.title {
-  line-height: 50px;
-  text-align: center;
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs .tab {
+  padding: 8px 20px;
   cursor: pointer;
-  border-bottom: 1px solid var(--theme-body-bg);
+  border-radius: 2px;
+  transition: all 0.3s;
+  position: relative;
 }
-.configure .right .box .left-title p.active {
-  background-color: var(--theme-body-bg);
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs .tab::before {
+  transition: all 0.3s;
+  content: "";
+  width: 0;
+  height: 2px;
+  background: var(--active);
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  border-radius: 2px;
 }
-.configure .right .box .box-right {
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs .tab:hover {
+  background: var(--hover-bg);
+  color: var(--active);
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs .tab:hover::before {
+  width: 100%;
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs .active {
+  color: var(--active);
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .ptadmin-categorize-tabs .active::before {
+  width: 50%;
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main .card-header .layui-btn-group {
+  flex-shrink: 0;
+  margin-left: 20px;
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main > .layui-card > .layui-card-body {
+  overflow-y: auto;
+  height: calc(100vh - var(--header-height) - 135px);
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main > .layui-card > .layui-card-body::-webkit-scrollbar {
+  width: 6px;
+}
+.ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-main > .layui-card > .layui-card-body::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 5px;
+}
+
+/** ptadmin-categorize End */
+/** 配置分类 **/
+.configure .box-right {
   flex-grow: 1;
-  padding: 20px;
-  border-bottom: 1px solid var(--theme-body-bg);
-  border-left: 1px solid var(--theme-body-bg);
 }
-.configure .right .box .box-right .box-item {
+.configure .box-right .box-item {
   display: flex;
   justify-content: flex-start;
 }
-.configure .right .box .box-right .box-item > div {
+.configure .box-right .box-item > div {
   width: 50%;
 }
-.configure .right .box .box-right .box-item .box-content {
+.configure .box-right .box-item .box-content {
   padding-right: 10px;
 }
-.configure .right .box .box-right .box-content .box-content-item {
+.configure .box-right .box-content .box-content-item {
   display: none;
 }
-.configure .right .box .box-right .box-content .active {
+.configure .box-right .box-content .active {
+  animation: fade 0.3s ease-in-out;
   display: block;
 }
-.configure .right .container-item {
+.configure .container-footer {
+  width: 100%;
+  background: #FFF;
+  position: fixed;
+  bottom: 0;
+  margin: 0 -15px;
+  padding: 8px 15px;
+  text-align: center;
+}
+.configure .container-item {
   padding: 0 20px;
   overflow-y: auto;
 }
-.configure .right .container-item > div:first-child {
+.configure .container-item > div:first-child {
   border-bottom: none;
 }
-.configure .container-footer {
-  text-align: center;
-  padding: 20px;
+.configure .container-item .layui-card {
+  display: none;
+}
+.configure .container-item .active {
+  display: block;
+  animation: fade 0.3s ease-in-out;
 }
 
 /** 分类 End**/
