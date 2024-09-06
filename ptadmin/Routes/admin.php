@@ -36,7 +36,6 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
     Route::get('console', [Admin\HomeController::class, 'console']);
     Route::match(['get', 'post'], 'quick-nav', [Admin\HomeController::class, 'quickNav']);
 
-    Route::get('icon', [Admin\HomeController::class, 'icon']);
     // 附件列表
     Route::get('attachments', [Admin\AttachmentController::class, 'index']);
     Route::delete('attachment/{id?}', [Admin\AttachmentController::class, 'delete']);

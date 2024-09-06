@@ -1,12 +1,11 @@
 @extends('ptadmin.layouts.base')
 @section('content')
-
     <div class="configure ptadmin-categorize-box">
 	    <header class="ptadmin-categorize-header">
             <div class="title">配置分组</div>
             <div class="right layui-btn-group">
                 <button type="button" class="layui-btn category-created" id="created"><i class="layui-icon layui-icon-addition"></i>新增配置</button>
-                <button type="button" class="layui-btn category-created" id="created"><i class="layui-icon layui-icon-addition"></i>新增分组</button>
+                <button type="button" class="layui-btn category-created" id="created_next"><i class="layui-icon layui-icon-addition"></i>新增分组</button>
             </div>
         </header>
         <div class="ptadmin-categorize-container">
@@ -175,8 +174,6 @@
                     }
                 }
             })
-
-
             // 新增分组
             $("#created").on('click', function () {
                 common.formOpen('{{admin_route("setting-group")}}', '新增分组')

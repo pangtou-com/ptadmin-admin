@@ -57,11 +57,6 @@ class HomeController extends AbstractBackgroundController
         return view('ptadmin.layouts.console', compact('quick_nav'));
     }
 
-    public function icon()
-    {
-        return view('ptadmin.layouts.icon');
-    }
-
     /**
      * 快捷导航.
      *
