@@ -1,48 +1,67 @@
 @extends('ptadmin.layouts.base')
 @section('content')
-    <div class="configure">
-        <div class="left">
-            <div class="category">
-                <div>配置分组</div>
-                <div class="category-created" id="created"><i class="layui-icon layui-icon-addition"></i></div>
+
+    <div class="configure ptadmin-categorize-box">
+	    <header class="ptadmin-categorize-header">
+            <div class="title">配置分组</div>
+            <div class="right layui-btn-group">
+                <button type="button" class="layui-btn category-created" id="created"><i class="layui-icon layui-icon-addition"></i>新增配置</button>
+                <button type="button" class="layui-btn category-created" id="created"><i class="layui-icon layui-icon-addition"></i>新增分组</button>
             </div>
-            <ul class="lists">
-                @foreach($data['cate'] as $item)
-                    <li class="@if($item['id'] == $data['cateId'])active @endif" date-id="{{$item['id']}}">
-                        {{$item['title']}}
-                        <div class="layui-btn-group" data-id="{{$item['id']}}">
-                            <button class="layui-btn layui-bg-orange" ptadmin-event="edit" ptadmin-tips="编辑内容"><i
-                                        class="layui-icon layui-icon-edit"></i></button>
-                            <button class="layui-btn layui-bg-red" ptadmin-event="delete" ptadmin-tips="删除内容"><i
-                                        class="layui-icon layui-icon-delete"></i></button>
+        </header>
+        <div class="ptadmin-categorize-container">
+            <aside class="ptadmin-categorize-aside">
+                <ul class="lists">
+                    @foreach($data['cate'] as $item)
+                        <li class="@if($item['id'] == $data['cateId'])active @endif" date-id="{{$item['id']}}">
+                            {{$item['title']}}
+                            <div class="layui-btn-group" data-id="{{$item['id']}}">
+                                <button class="layui-btn-xs layui-btn layui-bg-orange" ptadmin-event="edit" ptadmin-tips="编辑内容">
+                                    <i class="layui-icon layui-icon-edit"></i>
+                                </button>
+                                <button class="layui-btn-xs layui-btn layui-bg-red" ptadmin-event="delete" ptadmin-tips="删除内容">
+                                    <i class="layui-icon layui-icon-delete"></i>
+                                </button>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            </aside>
+            <main class="ptadmin-categorize-main">
+                <div class="layui-card">
+                    <div class="card-header">
+                        <ul class="ptadmin-categorize-tabs">
+                            @foreach($data['results'] as $key => $item)
+                                <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
+                            @endforeach
+                        </ul>
+                        <div class="layui-btn-group">
+                            <input type="hidden" id="cate_id" value="{{$data['cateId']}}">
+                            <a href="{{admin_route("settings")}}?cate_id={{$data['cateId']}}&type=form" ptadmin-tips="编辑配置内容"
+                            class="layui-btn layui-btn-sm @if($data['type'] == 'form')layui-bg-blue @endif">
+                                <i class="layui-icon layui-icon-form"></i>
+                            </a>
+                            <a href="{{admin_route("settings")}}?cate_id={{$data['cateId']}}&type=lists"
+                            ptadmin-tips="查看当前分组下的字段信息，可编辑设置子集分类字段"
+                            class="layui-btn layui-btn-sm @if($data['type'] == 'lists')layui-bg-blue @endif">
+                             <i class="layui-icon layui-icon-cols"></i>
+                            </a>
+                            <button class="layui-btn layui-btn-sm layui-bg-purple" ptadmin-tips="在当前分组下新增下级分类" id="create-parent">
+                                    <i class="layui-icon layui-icon-addition"></i>
+                            </button>
                         </div>
-                    </li>
-                @endforeach
-            </ul>
-        </div>
-        <div class="right">
-            <div class="header-title">
-                <div class="title">{{$data['title']}}</div>
-                <div class="layui-btn-group">
-                    <input type="hidden" id="cate_id" value="{{$data['cateId']}}">
-                    <a href="{{admin_route("settings")}}?cate_id={{$data['cateId']}}&type=form" ptadmin-tips="编辑配置内容"
-                       class="layui-btn layui-btn-sm @if($data['type'] == 'form')layui-bg-blue @endif"><i
-                                class="layui-icon layui-icon-form"></i></a>
-                    <a href="{{admin_route("settings")}}?cate_id={{$data['cateId']}}&type=lists"
-                       ptadmin-tips="查看当前分组下的字段信息，可编辑设置子集分类字段"
-                       class="layui-btn layui-btn-sm @if($data['type'] == 'lists')layui-bg-blue @endif"><i
-                                class="layui-icon layui-icon-cols"></i></a>
-                    <button class="layui-btn layui-btn-sm layui-bg-purple" ptadmin-tips="在当前分组下新增下级分类"
-                            id="create-parent"><i class="layui-icon layui-icon-addition"></i></button>
+                    </div>
+                    <div class="layui-card-body">
+                        <input type="hidden" id="cate_id" value="{{$data['cateId']}}">
+                        @if($data['type'] === 'form')
+                            @include('ptadmin.setting._form', ['data' => $data['results']])
+                        @else
+                            @include('ptadmin.setting._table', ['data' => $data['results']])
+                        @endif
+                    </div>
                 </div>
-            </div>
-            {{-- 当前选中的分组根ID --}}
-            <input type="hidden" id="cate_id" value="{{$data['cateId']}}">
-            @if($data['type'] === 'form')
-                @include('ptadmin.setting._form', ['data' => $data['results']])
-            @else
-                @include('ptadmin.setting._table', ['data' => $data['results']])
-            @endif
+
+            </main>
         </div>
     </div>
 @endsection
@@ -51,8 +70,8 @@
     <script>
         const mark = @json($data['mark'])
 
-        layui.use(['PTForm', 'form', 'common'], function () {
-            const {PTForm, common, form} = layui;
+        layui.use(['PTForm', 'form', 'common','layer'], function () {
+            const {PTForm, common, form ,layer} = layui;
             const events = {
                 edit: function (id) {
                     common.formOpen(`{{admin_route("setting-group")}}/${id}`, '编辑分组')
@@ -97,6 +116,7 @@
 
             // 分类事件处理
             $(".lists").on('click', 'li', function (e) {
+                layer.load(0);
                 if (!$(e.target).is('i') && !$(e.target).is('button')) {
                     location.href = `{{admin_route("settings")}}?cate_id=${$(this).attr('date-id')}`
                 }
@@ -127,11 +147,26 @@
             });
 
             // 表单左侧分类点击事件
-            $(".left-title").on('click', ".title", function () {
+            $(".ptadmin-categorize-tabs").on('click', ".tab", function () {
+
+                // 隐藏导航自动滚动
+                const tabsBox = $(`.ptadmin-categorize-tabs`)
+                const tabBoxWidth = tabsBox.outerWidth()
+                const currentOffSetLeft = $(this)[0].offsetLeft
+                const currentOffSetWidth = $(this)[0].offsetWidth
+                // 获取到当前点击元素的 offsetLeft  - 包裹盒子 offsetWidth 的一半 + 当前点击元素 offsetWidth 的一半
+                const scrollLeft = currentOffSetLeft - tabBoxWidth / 2 + currentOffSetWidth / 2
+                tabsBox.animate({
+                    scrollLeft,
+                }, 300);
+
+
                 let id = $(this).attr('data-id')
                 let item = $('.box-content-item')
-                $(this).parent().find('.title').removeClass("active")
-                $(this).addClass('active')
+                let table = $('#tableData .layui-card')
+                let idx = $(this).index()
+                table.eq(idx).addClass('active').siblings().removeClass("active")
+                $(this).addClass('active').siblings().removeClass("active")
                 item.removeClass('active')
                 for (let i = 0; i < item.length; i++) {
                     if ($(item[i]).attr('data-id') === id) {
@@ -176,7 +211,6 @@
                 });
                 return false;
             });
-
             @endif
         });
     </script>
