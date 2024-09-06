@@ -33,15 +33,6 @@
                             @foreach($data['results'] as $key => $item)
                                 <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
                             @endforeach
-                            @foreach($data['results'] as $key => $item)
-                                <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
-                            @endforeach
-                            @foreach($data['results'] as $key => $item)
-                                <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
-                            @endforeach
-                            @foreach($data['results'] as $key => $item)
-                                <li class="tab {!! $key ? '':'active' !!}" data-id="{{$item['id']}}">{{$item['title']}}</li>
-                            @endforeach
                         </ul>
                         <div class="layui-btn-group">
                             <input type="hidden" id="cate_id" value="{{$data['cateId']}}">
@@ -78,7 +69,7 @@
     <script>
         const mark = @json($data['mark'])
 
-        layui.use(['PTForm', 'form', 'common','layer'], function () {
+        layui.use(['PTForm', 'form', 'PTSetting'], function () {
             const {PTForm, common, form ,layer} = layui;
             const events = {
                 edit: function (id) {
