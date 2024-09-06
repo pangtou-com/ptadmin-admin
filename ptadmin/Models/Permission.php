@@ -53,7 +53,7 @@ class Permission extends \Spatie\Permission\Models\Permission
     use ModelCache;
     use SoftDeletes;
 
-    /** @var string 顶级菜单的名称，用于上下层级关联时定义 */
+    /** @var string 顶级菜单键值，用于上下层级关联时定义 */
     public const TOP_PERMISSION_NAME = '0';
 
     protected $fillable = [

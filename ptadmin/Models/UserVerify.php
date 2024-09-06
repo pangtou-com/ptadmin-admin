@@ -30,7 +30,7 @@ namespace PTAdmin\Admin\Models;
  * @property string $target
  * @property int    $type
  * @property int    $scene
- * @property string $send_param
+ * @property array  $send_param
  * @property int    $verify_num
  * @property int    $send_status
  * @property int    $status
@@ -39,4 +39,6 @@ namespace PTAdmin\Admin\Models;
  */
 class UserVerify extends AbstractModel
 {
+    protected $fillable = ['target', 'type', 'scene', 'send_param', 'verify_num', 'send_status', 'status', 'ip', 'send_at'];
+    protected $casts = ['send_param' => 'array'];
 }

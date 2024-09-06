@@ -31,6 +31,60 @@ use Illuminate\Support\Facades\Schema;
  */
 class Initialization extends Migration
 {
+    /**
+     * 默认后台数据.
+     *
+     * @var array
+     */
+    private $menu = [
+        ['name' => 'console', 'parent_name' => '0', 'title' => '仪表盘', 'route' => 'console', 'icon' => 'layui-icon layui-icon-console', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'user', 'parent_name' => '0', 'title' => '用户管理', 'route' => null, 'icon' => 'layui-icon layui-icon-table', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'dir', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'user.users', 'parent_name' => 'user', 'title' => '会员列表', 'route' => 'users', 'icon' => null, 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["user"]', 'controller' => null, 'weight' => '0', 'note' => '', 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system', 'parent_name' => '0', 'title' => '系统管理', 'route' => null, 'icon' => 'layui-icon layui-icon-engine', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'dir', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.role', 'parent_name' => 'system', 'title' => '系统角色', 'route' => 'roles', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.system', 'parent_name' => 'system', 'title' => '系统管理员', 'route' => 'systems', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.permissions', 'parent_name' => 'system', 'title' => '菜单栏目', 'route' => 'permissions', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.login', 'parent_name' => 'system', 'title' => '登录日志', 'route' => 'system/login', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => '查看后端用户的登录日志信息', 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.operate', 'parent_name' => 'system', 'title' => '操作日志', 'route' => 'operations', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => '查看后端管理操作日志信息', 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.setting', 'parent_name' => 'system', 'title' => '系统配置', 'route' => 'settings', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.attachments', 'parent_name' => 'system', 'title' => '附件管理', 'route' => 'attachments', 'icon' => null, 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'addon', 'parent_name' => '0', 'title' => '插件管理', 'route' => null, 'icon' => 'layui-icon layui-icon-align-left', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'dir', 'status' => '0', 'is_nav' => '1'],
+        ['name' => 'addon.addons', 'parent_name' => 'addon', 'title' => '插件列表', 'route' => 'addons', 'icon' => null, 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+    ];
+
+    private $setting = [
+        ['id' => '1', 'title' => '基础设置', 'name' => 'base', 'weight' => '99', 'parent_id' => '0', 'intro' => null],
+        ['id' => '2', 'title' => '第三方登录设置', 'name' => 'title', 'weight' => '99', 'parent_id' => '0', 'intro' => null],
+        ['id' => '3', 'title' => 'QQ登录', 'name' => 'qq_login', 'weight' => '99', 'parent_id' => '2', 'intro' => null, 'fields' => [
+            ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+            ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+            ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+        ]],
+        ['id' => '4', 'title' => '微信登录', 'name' => 'wechat_login', 'weight' => '99', 'parent_id' => '2', 'intro' => null, 'fields' => [
+            ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+            ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+            ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+        ]],
+        ['id' => '5', 'title' => '站点设置', 'name' => 'website', 'weight' => '99', 'parent_id' => '1', 'intro' => null, 'fields' => [
+            ['title' => '站点状态', 'name' => 'website_status', 'value' => 'PTAdmin 建站工具', 'type' => 'text'],
+            ['title' => '站点名称', 'name' => 'website_title', 'value' => 'PTAdmin 建站工具', 'type' => 'text'],
+            ['title' => 'LOGO', 'name' => 'website_logo', 'value' => '', 'type' => 'radio', 'extra' => ['options' => ['关闭', '启用']]],
+            ['title' => '关键词', 'name' => 'website_keyword', 'value' => '', 'type' => 'text'],
+            ['title' => '描述', 'name' => 'website_description', 'value' => '', 'type' => 'text'],
+        ]],
+        ['id' => '6', 'title' => '第三方登录', 'name' => 'oauth', 'weight' => '0', 'parent_id' => '0', 'intro' => ''],
+        ['id' => '7', 'title' => 'QQ登录', 'name' => 'qq_login', 'weight' => '0', 'parent_id' => '6', 'intro' => 'qq登录第三方授权', 'fields' => [
+            ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+            ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+            ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+        ]],
+        ['id' => '8', 'title' => '微博登录', 'name' => 'weibo_login', 'weight' => '0', 'parent_id' => '6', 'intro' => null, 'fields' => [
+            ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+            ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+            ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+        ]],
+    ];
+
     public function up(): void
     {
         $this->create_addons_table();
@@ -116,7 +170,7 @@ class Initialization extends Migration
                 $table->unsignedTinyInteger('weight')->default(99)->comment('配置权重');
                 $table->string('type', 20)->comment('配置类型');
                 $table->string('intro', 255)->nullable()->comment('配置说明');
-                $table->string('extra', 255)->nullable()->comment('扩展参数');
+                $table->json('extra')->nullable()->comment('扩展参数');
                 $table->string('value', 255)->nullable()->comment('配置的值');
                 $table->string('default_val', 100)->nullable()->comment('配置默认值');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
@@ -377,7 +431,7 @@ class Initialization extends Migration
                 $table->string('target', 255)->comment('验证目标，如邮箱，手机等');
                 $table->unsignedTinyInteger('type')->default(0)->comment('验证码类型：0 = 邮件验证，1 = 短信验证');
                 $table->unsignedTinyInteger('scene')->default(0)->comment('使用场景：0=注册验证，1、登录验证，2 = 找回密码等配置');
-                $table->string('send_param', 255)->nullable()->comment('发送参数内容');
+                $table->json('send_param')->nullable()->comment('发送参数内容');
                 $table->unsignedTinyInteger('verify_num')->default(0)->comment('验证次数');
                 $table->unsignedTinyInteger('send_status')->default(0)->comment('发送状态');
                 $table->unsignedTinyInteger('status')->default(0)->comment('是否已经使用，0：未使用，1:已使用	');

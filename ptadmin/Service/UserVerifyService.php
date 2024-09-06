@@ -85,7 +85,7 @@ class UserVerifyService
             'type' => $type,
             'scene' => $scene,
             'target' => $target,
-            'send_param' => random(6, true),
+            'send_param' => ['code' => random(6, true)],
             'ip' => (int) ip2long($ip),
             'user_id' => $obj->getUserId($scene),
             'send_status' => 1, // TODO 这里模拟认为发送成功，正式数据应为0
@@ -94,7 +94,7 @@ class UserVerifyService
         $model->save();
         // 发送验证码
         // TODO 发送验证码
-        return $model->send_param;
+        return $model->send_param['code'];
     }
 
     /**
@@ -124,7 +124,7 @@ class UserVerifyService
         if ($model->send_at < $time) {
             throw new BackgroundException('验证码已过期');
         }
-        if ($model->send_param !== $code) {
+        if (data_get($model->send_param, 'code') !== $code) {
             throw new BackgroundException('验证码错误');
         }
 

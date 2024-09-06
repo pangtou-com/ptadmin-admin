@@ -26,18 +26,29 @@ namespace PTAdmin\Admin\Models;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PTAdmin\Admin\Utils\SystemAuth;
 
+/**
+ * @property int    $parent_id
+ * @property string $guard_name
+ * @property string $name
+ * @property string $title
+ * @property string $note
+ * @property int    $status
+ */
 class Role extends \Spatie\Permission\Models\Role
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'title', 'guard_name', 'status', 'note'];
+    protected $fillable = ['name', 'parent_id', 'title', 'guard_name', 'status', 'note'];
 
     protected $guard_name;
 
-    public function __construct()
+    public function __construct(array $attributes = [])
     {
-        $this->guard_name = SystemAuth::getGuard();
-        parent::__construct(['guard_name' => $this->guard_name]);
+        $guardName = $attributes['guard_name'] ?? SystemAuth::getGuard();
+        $this->guard_name = $guardName;
+        $attributes['guard_name'] = $guardName;
+
+        parent::__construct($attributes);
     }
 
     public function freshTimestamp(): int

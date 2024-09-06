@@ -32,6 +32,8 @@ namespace PTAdmin\Admin\Models;
  */
 class SystemLog extends AbstractModel
 {
+    protected $fillable = ['system_id', 'login_at', 'login_ip', 'status'];
+
     public function getLoginAtAttribute()
     {
         return date('Y-m-d H:i:s', $this->attributes['login_at']);

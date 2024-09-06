@@ -58,11 +58,6 @@ class System extends Authenticate
         parent::__construct($attributes);
     }
 
-    public function guardName()
-    {
-        return SystemAuth::getGuard();
-    }
-
     public function getRoleIdAttribute()
     {
         $role = $this->roles()->pluck('id')->toArray();

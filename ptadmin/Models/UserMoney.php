@@ -26,16 +26,17 @@ namespace PTAdmin\Admin\Models;
 /**
  * 用户余额变化模型.
  *
- * @property string $money
- * @property string $m_before
- * @property string $m_after
- * @property string $type
- * @property string $scene
- * @property string $intro
- * @property string $user_id
- * @property string $target_id
- * @property string $target_module
+ * @property float  $money         变动金额
+ * @property string $m_before      变动之前金额
+ * @property string $m_after       变动之后金额
+ * @property string $type          变动类型：增加或者减少
+ * @property string $scene         变动场景
+ * @property string $intro         备注说明信息
+ * @property string $user_id       用户ID
+ * @property string $target_id     变动对象ID
+ * @property string $target_module 变动对象模块
  */
 class UserMoney extends AbstractModel
 {
+    protected $fillable = ['money', 'm_before', 'm_after', 'type', 'scene', 'intro', 'user_id', 'target_id', 'target_module'];
 }

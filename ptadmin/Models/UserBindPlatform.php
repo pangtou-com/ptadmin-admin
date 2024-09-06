@@ -35,8 +35,16 @@ namespace PTAdmin\Admin\Models;
  */
 class UserBindPlatform extends AbstractModel
 {
-    public static function byOpenId($openId, $openEnum)
+    protected $fillable = ['source', 'open_id', 'nickname', 'avatar', 'union_id', 'user_id'];
+
+    /**
+     * 根据open_id获取用户绑定信息.
+     *
+     * @param mixed $openId
+     * @param mixed $type
+     */
+    public static function byOpenId($openId, $type)
     {
-        return self::query()->where('open_id', $openId)->where('source', $openEnum)->first();
+        return self::query()->where('open_id', $openId)->where('source', $type)->first();
     }
 }

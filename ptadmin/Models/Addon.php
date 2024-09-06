@@ -37,8 +37,12 @@ namespace PTAdmin\Admin\Models;
  * @property int    $enabled
  * @property int    $develop
  * @property array  $extra
- * @property string $error_reason
  */
 class Addon extends AbstractModel
 {
+    protected $fillable = [
+        'title', 'code', 'version', 'require_version', 'intro', 'email', 'homepage', 'docs', 'is_upload',
+        'is_local', 'enabled', 'develop', 'extra',
+    ];
+    protected $casts = ['extra' => 'array'];
 }

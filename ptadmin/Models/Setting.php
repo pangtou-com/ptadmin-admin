@@ -30,10 +30,18 @@ namespace PTAdmin\Admin\Models;
  * @property int    $weight
  * @property string $type
  * @property string $intro
- * @property string $extra
+ * @property array  $extra
+ * @property string $value
+ * @property string $default_val
  */
 class Setting extends AbstractModel
 {
+    protected $fillable = ['title', 'name', 'setting_group_id', 'weight', 'type', 'intro', 'extra', 'value', 'default_val'];
+    protected $casts = ['extra' => 'array'];
+
+    /**
+     * 关联分组.
+     */
     public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(SettingGroup::class, 'setting_group_id', 'id');

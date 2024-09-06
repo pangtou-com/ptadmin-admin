@@ -38,7 +38,6 @@ namespace PTAdmin\Admin\Models;
  * @property string $response
  * @property int    $response_code
  * @property int    $response_time
- * @property string $sql_param
  */
 class OperationRecord extends AbstractModel
 {
