@@ -803,6 +803,8 @@
 
 /** ptadmin-categorize End */
 
+
+
 /** 配置分类 **/
 .configure{
 
@@ -1264,3 +1266,177 @@
     }
 }
 
+
+
+/** 插件列表 */
+.ptadmin-addon-content{
+    --border-color:#f8f8f8;
+    --height: calc(100vh - 50px);
+    >.layui-card{
+        box-shadow: none;
+    }
+    .layui-elem-quote{
+        margin-bottom: 0;
+    }
+    .ptadmin-card-header{
+        height: 50px;
+        line-height: 50px;
+        align-items: center;
+        box-sizing: border-box;
+    }
+    .ptadmin-categorize-container{
+        .ptadmin-categorize-aside{
+            border-top: 0;
+            height: var(--height);
+            border-right:1px solid var(--border-color);
+            .lists{
+                padding: 10px 0;
+            }
+        }
+        .ptadmin-categorize-main{
+            padding: 10px 10px 0 10px;
+            background: var(--theme-body-bg);
+            height: var(--height);
+            display: flex;
+            flex-direction: column;
+            .addon-header{
+                margin-right: -10px;
+                background: #FFF;
+                border-radius: 2px 2px 0 0;
+            }
+            .addon-body{
+                margin-right: -10px;
+                border-radius:  0 0 2px 2px;
+                background: #FFF;
+                flex: 1;
+                box-sizing: border-box;
+                flex-shrink: 0;
+                overflow-y: auto;
+                padding: 8px 15px;
+                @include scrollbar();
+                .laypage{
+                    text-align: center;
+                }
+                .addon-lists{
+                    display: flex;
+                    flex-wrap: wrap;
+                    .item{
+                        box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+                        transition: all .3s;
+                        &:hover{
+                            transform: translateY(-5px);
+                            .image{
+                                cursor: pointer;
+                                img{
+                                    transform: scale(1.05);
+                                }
+                            }
+                        }
+                        .display-box{
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                        }
+                        .addon-details{
+                            --price-color:#ff5722;
+                            padding: 8px 15px 0 15px;
+                            border-radius:  0 0 2px 2px;
+                            .title{
+                                overflow: hidden;
+                                white-space: nowrap;
+                                text-overflow: ellipsis;
+                            }
+                            .rate-box{
+                                padding: 8px 0;
+                                @extend .display-box;
+                                .layui-rate{
+                                    padding: 0;
+                                }
+                                .price{
+                                    color: var(--price-color);
+                                    font-size: 16px;
+                                }
+                            }
+                        }
+                        .operate{
+                            @extend .display-box;
+                            padding: 8px 15px;
+                            border-top: 1px solid var(--border-color);
+                            .badges{
+                                .layui-badge{
+                                    height: 22px;
+                                    line-height: 22px;
+                                }
+                            }
+                        }
+                        .image{
+                            width: 100%;
+                            padding-top: 65%;
+                            position: relative;
+                            overflow: hidden;
+                            img{
+                                border-radius: 2px 2px 0 0;
+                                position: absolute;
+                                left: 0;
+                                top: 0;
+                                width: 100%;
+                                height: 100%;
+                                transition: all .3s;
+                                object-fit: cover;
+                            }
+                        }
+                        margin: 0 20px 20px 0;
+
+                        @media (min-width: 2200px) {
+                            width: calc((100% - 120px) / 7);
+                            &:nth-child(7n){
+                                margin-right: 0;
+                            }
+                        }
+
+                        @media (min-width: 1900px) and (max-width: 2199.98px) {
+                            width: calc((100% - 100px) / 6);
+                            &:nth-child(6n){
+                                margin-right: 0;
+                            }
+                        }
+
+                        @media (min-width: 1400px) and (max-width: 1899.98px) {
+                            width: calc((100% - 80px) / 5);
+                            &:nth-child(5n){
+                                margin-right: 0;
+                            }
+                        }
+
+                        @media (min-width: 1200px) and (max-width: 1399.98px) {
+                            width: calc((100% - 60px) / 4);
+                            &:nth-child(4n){
+                                margin-right: 0;
+                            }
+                        }
+
+                        @media (min-width: 992px) and (max-width: 1199.98px) {
+                            width: calc((100% - 40px) / 3);
+                            &:nth-child(3n){
+                                margin-right: 0;
+                            }
+                        }
+
+                        @media (min-width: 768px) and (max-width: 991.98px) {
+                            width: calc((100% - 20px) / 2);
+                            &:nth-child(2n){
+                                margin-right: 0;
+                            }
+                        }
+
+                        @media (max-width: 767.98px) {
+                            width: 100%;
+                            margin-right: 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+/** 插件列表end*/
