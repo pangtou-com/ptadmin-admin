@@ -177,6 +177,7 @@ class PermissionService
         if (!$results) {
             return '';
         }
+
         $html = [];
         foreach ($results as $result) {
             $str = Html::checkbox($result['id'], '', $result['checked'] ?? false, [

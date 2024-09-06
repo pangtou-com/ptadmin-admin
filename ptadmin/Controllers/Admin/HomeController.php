@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Controllers\Admin;
 
 use Illuminate\Http\Request;
+use PTAdmin\Admin\Models\Permission;
 use PTAdmin\Admin\Service\PermissionService;
 use PTAdmin\Admin\Utils\ResultsVo;
 use PTAdmin\Admin\Utils\SystemAuth;
@@ -90,7 +91,8 @@ class HomeController extends AbstractBackgroundController
             unset($value);
         }
 
-        $view = $this->permissionService->getRolePermissionHtml(infinite_tree($results));
+        $results = infinite_tree($results, Permission::TOP_PERMISSION_NAME, 'parent_name', 'name');
+        $view = $this->permissionService->getRolePermissionHtml($results);
 
         return view('ptadmin.layouts.quick_nav', compact('view'));
     }
