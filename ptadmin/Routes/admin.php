@@ -104,15 +104,8 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
 
     // 插件管理
     Route::get('addons', [Admin\AddonController::class, 'index']);
-//    Route::post('addon-local', [Admin\AddonController::class, 'getAddonLocal']);
-//    Route::match(['get', 'post'], 'local-addon', [Admin\AddonController::class, 'store']);
-//    Route::match(['get', 'post'], 'local-install', [Admin\AddonController::class, 'localInstall']);
-//    Route::match(['get', 'put'], 'local-addon-upload/{id}', [Admin\AddonController::class, 'upLoadAddon']);
-//    Route::post('local-addon-sql', [Admin\AddonController::class, 'setSql']);
     Route::post('addon-download', [Admin\AddonController::class, 'getAddonDownloadUrl']);
     Route::post('my-addon', [Admin\AddonController::class, 'myAddon']);
-//    Route::match(['get', 'post'], 'addon-setting', [Admin\AddonController::class, 'addonSetting']);
-//    Route::get('show-image/{code}', [Admin\AddonController::class, 'showImage']);
     Route::delete('addon-uninstall/{code}', [Admin\AddonController::class, 'uninstall']);
     Route::post('addon-cloud', [Admin\AddonController::class, 'addonCloud']);
 

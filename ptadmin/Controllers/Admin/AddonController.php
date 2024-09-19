@@ -23,7 +23,6 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Controllers\Admin;
 
-use App\Service\AddonService;
 use Illuminate\Http\Request;
 use PTAdmin\Addon\AddonApi;
 use PTAdmin\Addon\Service\AddonInstall;
@@ -34,13 +33,11 @@ use PTAdmin\Admin\Utils\ResultsVo;
 
 class AddonController extends AbstractBackgroundController
 {
-    public $addonService;
     public $unAddon;
 
-    public function __construct(AddonService $addonService)
+    public function __construct()
     {
         parent::__construct();
-        $this->addonService = $addonService;
 
         view()->share('ptadmin_addon_user', AddonApi::getCloudUserinfo());
     }
@@ -65,8 +62,6 @@ class AddonController extends AbstractBackgroundController
     public function store(AddonRequest $addonRequest)
     {
         if (request()->expectsJson()) {
-            $this->addonService->store($addonRequest->all());
-
             return ResultsVo::success();
         }
         $dao = new Addon();
@@ -97,8 +92,6 @@ class AddonController extends AbstractBackgroundController
     public function localInstall(Request $request)
     {
         if (request()->expectsJson()) {
-            // $this->addonService->uploadFile($request);
-
             return ResultsVo::success();
         }
 
@@ -121,7 +114,6 @@ class AddonController extends AbstractBackgroundController
         }
         $result = AddonApi::getAddonDownloadUrl($data);
         // $this->unAddon->unsetAddon($result);
-        // $this->addonService->saveLocalAddon(parser_addon_ini(ucfirst($result['code'])));
 
         AddonInstall::make($result['code'])->install();
 

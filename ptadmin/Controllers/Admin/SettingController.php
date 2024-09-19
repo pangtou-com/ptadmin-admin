@@ -28,7 +28,6 @@ use PTAdmin\Admin\Controllers\Traits\EditTrait;
 use PTAdmin\Admin\Controllers\Traits\ExtendTrait;
 use PTAdmin\Admin\Controllers\Traits\StoreTrait;
 use PTAdmin\Admin\Controllers\Traits\ValidateTrait;
-use PTAdmin\Admin\Models\SettingGroup;
 use PTAdmin\Admin\Service\SettingGroupService;
 use PTAdmin\Admin\Service\SettingService;
 use PTAdmin\Admin\Utils\ResultsVo;
@@ -54,36 +53,13 @@ class SettingController extends AbstractBackgroundController
 
     public function index(Request $request)
     {
-        $cateId = (int) $request->get('cate_id');
-        $type = $request->get('type', 'form');
-        $cate = $this->settingGroupService->getRoot();
-        if (!$cateId) {
-            $cateId = data_get($cate, '0.id', 0);
-        }
-        $results = $this->settingGroupService->getRootConfigureCategoryId($cateId);
+        if ($request->expectsJson()) {
+            $data = $this->settingGroupService->getGroupAndSettingAll();
 
-        $mark = [];
-        foreach ($results as $key => $result) {
-            if ($result['children']) {
-                $results[$key]['view'] = $this->settingGroupService->formView($result['children'], $result);
-                foreach ($result['children'] as $item) {
-                    $name = "{$result['name']}_{$item['name']}";
-                    $mark[$name] = [
-                        'intro' => $item['intro'],
-                        'template_tag' => '{{sys("'.$result['name'].'.'.$item['name'].'")}}',
-                        'system' => 'sys("'.$result['name'].'.'.$item['name'].'")',
-                    ];
-                }
-            }
+            return ResultsVo::success($data);
         }
 
-        $title = '';
-        if (0 !== $cateId) {
-            $current = SettingGroup::query()->findOrFail($cateId);
-            $title = $current->title;
-        }
-
-        return $this->view(['data' => compact('cate', 'cateId', 'type', 'results', 'title', 'mark')]);
+        return $this->view();
     }
 
     /**

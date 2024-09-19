@@ -44,6 +44,43 @@ class SettingGroupService
     }
 
     /**
+     * 获取全部分组的配置信息.
+     *
+     * @return array
+     */
+    public function getGroupAndSettingAll(): array
+    {
+        $results = SettingGroup::query()
+            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'intro', 'status'])
+            ->with(['setting' => function ($query): void {
+                $query->orderBy('weight', 'desc')->orderBy('id');
+            }])
+            ->orderBy('parent_id')
+            ->orderBy('weight', 'desc')->orderBy('id')->get()->toArray();
+
+        $group = $data = [];
+        foreach ($results as $result) {
+            if (0 === $result['parent_id']) {
+                $group[$result['id']] = $result;
+
+                continue;
+            }
+            $result['setting'] = $result['setting'] ?? [];
+            $result['view'] = '';
+            if ($result['setting']) {
+                $result['view'] = $this->formView($result['setting'], $result);
+            }
+
+            $data[$group[$result['parent_id']]['name']][] = $result;
+        }
+
+        return [
+            'group' => $group,
+            'data' => $data,
+        ];
+    }
+
+    /**
      * 获取根分类节点数据.
      *
      * @return array
@@ -141,7 +178,9 @@ class SettingGroupService
                 $view->hint($item['intro']);
             }
             if ($item['extra']) {
-                $view->optionString($item['extra']);
+                if (isset($item['extra']['options'])) {
+                    $view->options($item['extra']['options']);
+                }
             }
 
             $html[] = $view->render();

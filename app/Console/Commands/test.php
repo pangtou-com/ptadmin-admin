@@ -37,10 +37,20 @@ class test extends Command
 
     public function handle(): int
     {
-        $this->info('进入测试');
-        $out = $this->call('admin:init', ['-u' => '1231', '-p' => '121dd3', '-f' => true]);
-        $this->info('查看返回只');
-        $this->info($out);
+        $a = 1 << 0;
+        $b = 1 << 1;
+        $c = 1 << 2;
+        $d = 1 << 3;
+
+        $qa = $b | $a;
+        echo sprintf("查看权限值： %b === %b , %b , %b \n ", $b, $a, $c, $d);
+        echo sprintf("查看权限值： %b \n", $qa);
+        $this->info($qa);
+        if ($qa & $a) {
+            $this->info('有权限');
+        } else {
+            $this->error('无权限');
+        }
 
         return 0;
     }

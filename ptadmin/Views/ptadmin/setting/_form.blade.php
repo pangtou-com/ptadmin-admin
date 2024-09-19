@@ -27,8 +27,5 @@
             </div>
         @endif
     </div>
-    <div class="container-footer layui-btn-group" >
-            <button class="layui-btn layui-bg-blue" lay-submit lay-filter="config">保存</button>
-            <button class="layui-btn ">列表</button>
-    </div>
+
 </form>

@@ -23,8 +23,6 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Models;
 
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 /**
  * @property string $title
  * @property string $name
@@ -36,8 +34,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class SettingGroup extends AbstractModel
 {
-    use SoftDeletes;
-
     protected $fillable = ['title', 'name', 'weight', 'parent_id', 'addon_code', 'intro', 'status'];
 
     public function setting(): \Illuminate\Database\Eloquent\Relations\HasMany

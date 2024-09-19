@@ -2,18 +2,6 @@
 <div class="container-item" id="tableData">
     @foreach($data as $key => $item)
         <div class="layui-card {!! $key ? "":"active" !!} ">
-            <div class="layui-card-header">
-                <div class="">{{$item['title']}}
-                    @if($item['intro'])
-                        <i class="layui-icon layui-icon-question" ptadmin-tips="{{$item['intro']}}"></i>
-                    @endif
-                </div>
-                <div class="btn layui-btn-group" data-id="{{$item['id']}}">
-                    <button class="layui-btn layui-btn-xs layui-bg-blue" ptadmin-event="field-create"><i class="layui-icon layui-icon-addition"></i></button>
-                    <button class="layui-btn layui-btn-xs" ptadmin-event="edit"><i class="layui-icon layui-icon-edit"></i></button>
-                    <button class="layui-btn layui-btn-xs layui-btn-danger" ptadmin-event="delete"><i class="layui-icon layui-icon-delete"></i></button>
-                </div>
-            </div>
             <div class="layui-card-body">
                     <table class="layui-table">
                         <colgroup>

@@ -790,6 +790,22 @@
                 .layui-btn-group{
                     flex-shrink: 0;
                     margin-left: 20px;
+                    [data-type=form]{
+                        .layui-icon-cols {
+                            display: none;
+                        }
+                        .layui-icon-form {
+                            display: block;
+                        }
+                    }
+                    [data-type=table]{
+                        .layui-icon-cols {
+                            display: block;
+                        }
+                        .layui-icon-form {
+                            display: none;
+                        }
+                    }
                 }
             }
             > .layui-card > .layui-card-body{
