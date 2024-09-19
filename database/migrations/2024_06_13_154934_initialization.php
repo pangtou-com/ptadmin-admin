@@ -222,6 +222,7 @@ class Initialization extends Migration
                 $table->string('route', 255)->nullable()->comment('路由地址');
                 $table->string('component', 255)->nullable()->comment('组件地址前后端分离开发使用');
                 $table->string('icon', 50)->nullable()->comment('图标');
+                $table->json('paths')->nullable()->comment('节点完整路径');
                 $table->string('addon_code', 50)->nullable()->comment('插件编码');
                 $table->string('guard_name', 50)->nullable()->comment('分组名称');
                 $table->string('controller', 255)->nullable()->comment('控制器信息');
