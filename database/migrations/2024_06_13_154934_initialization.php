@@ -40,16 +40,16 @@ class Initialization extends Migration
         ['name' => 'console', 'parent_name' => '0', 'title' => '仪表盘', 'route' => 'console', 'icon' => 'layui-icon layui-icon-console', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
         ['name' => 'user', 'parent_name' => '0', 'title' => '用户管理', 'route' => null, 'icon' => 'layui-icon layui-icon-table', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'dir', 'status' => '1', 'is_nav' => '1'],
         ['name' => 'user.users', 'parent_name' => 'user', 'title' => '会员列表', 'route' => 'users', 'icon' => null, 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["user"]', 'controller' => null, 'weight' => '0', 'note' => '', 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
-        ['name' => 'system', 'parent_name' => '0', 'title' => '系统管理', 'route' => null, 'icon' => 'layui-icon layui-icon-engine', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'dir', 'status' => '1', 'is_nav' => '1'],
-        ['name' => 'system.role', 'parent_name' => 'system', 'title' => '系统角色', 'route' => 'roles', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
-        ['name' => 'system.system', 'parent_name' => 'system', 'title' => '系统管理员', 'route' => 'systems', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
-        ['name' => 'system.permissions', 'parent_name' => 'system', 'title' => '菜单栏目', 'route' => 'permissions', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
-        ['name' => 'system.login', 'parent_name' => 'system', 'title' => '登录日志', 'route' => 'system/login', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => '查看后端用户的登录日志信息', 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
-        ['name' => 'system.operate', 'parent_name' => 'system', 'title' => '操作日志', 'route' => 'operations', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => '查看后端管理操作日志信息', 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
-        ['name' => 'system.setting', 'parent_name' => 'system', 'title' => '系统配置', 'route' => 'settings', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
-        ['name' => 'system.attachments', 'parent_name' => 'system', 'title' => '附件管理', 'route' => 'attachments', 'icon' => null, 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system', 'parent_name' => '0', 'title' => '系统管理', 'route' => null, 'icon' => 'layui-icon layui-icon-engine', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["system"]', 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'dir', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.role', 'parent_name' => 'system', 'title' => '系统角色', 'route' => 'roles', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["system"]', 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.system', 'parent_name' => 'system', 'title' => '系统管理员', 'route' => 'systems', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["system"]', 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.permissions', 'parent_name' => 'system', 'title' => '菜单栏目', 'route' => 'permissions', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["system"]', 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.login', 'parent_name' => 'system', 'title' => '登录日志', 'route' => 'system/login', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["system"]', 'controller' => null, 'weight' => '0', 'note' => '查看后端用户的登录日志信息', 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.operate', 'parent_name' => 'system', 'title' => '操作日志', 'route' => 'operations', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["system"]', 'controller' => null, 'weight' => '0', 'note' => '查看后端管理操作日志信息', 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.setting', 'parent_name' => 'system', 'title' => '系统配置', 'route' => 'settings', 'icon' => '', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["system"]', 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'system.attachments', 'parent_name' => 'system', 'title' => '附件管理', 'route' => 'attachments', 'icon' => null, 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["system"]', 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
         ['name' => 'addon', 'parent_name' => '0', 'title' => '插件管理', 'route' => null, 'icon' => 'layui-icon layui-icon-align-left', 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'dir', 'status' => '0', 'is_nav' => '1'],
-        ['name' => 'addon.addons', 'parent_name' => 'addon', 'title' => '插件列表', 'route' => 'addons', 'icon' => null, 'addon_code' => null, 'guard_name' => 'admin', 'paths' => null, 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
+        ['name' => 'addon.addons', 'parent_name' => 'addon', 'title' => '插件列表', 'route' => 'addons', 'icon' => null, 'addon_code' => null, 'guard_name' => 'admin', 'paths' => '["addon"]', 'controller' => null, 'weight' => '0', 'note' => null, 'type' => 'nav', 'status' => '1', 'is_nav' => '1'],
     ];
 
     private $setting = [
@@ -92,6 +92,7 @@ class Initialization extends Migration
         $this->create_settings_table();
         $this->create_system_table();
         $this->create_user_table();
+        $this->create_menu();
     }
 
     public function down(): void
@@ -113,6 +114,14 @@ class Initialization extends Migration
         Schema::dropIfExists('user_money');
         Schema::dropIfExists('user_tokens');
         Schema::dropIfExists('user_verifies');
+    }
+
+    private function create_menu(): void
+    {
+        foreach ($this->menu as $menu) {
+            $perm = new \PTAdmin\Admin\Models\Permission();
+            $perm->fill($menu)->save();
+        }
     }
 
     /**
