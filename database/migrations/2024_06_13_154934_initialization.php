@@ -203,7 +203,7 @@ class Initialization extends Migration
             DB::statement('ALTER TABLE `'.get_table_name('model_has_roles').'` COMMENT = "用户所关联角色"');
         }
 
-        if (!Schema::hasTable('model_has_roles')) {
+        if (!Schema::hasTable('role_has_permissions')) {
             Schema::create('role_has_permissions', function (Blueprint $table): void {
                 $table->unsignedBigInteger('permission_id')->default(0);
                 $table->unsignedBigInteger('role_id')->default(0);
