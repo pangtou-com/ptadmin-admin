@@ -34,7 +34,7 @@ use PTAdmin\Html\Html;
 
 class PermissionService
 {
-    public function store($data): void
+    public function store($data)
     {
         $data['group_name'] = $data['group_name'] ?? config('auth.app_guard_name');
         if (isset($data['parent_name']) && Permission::TOP_PERMISSION_NAME !== (string) $data['parent_name']) {
@@ -42,7 +42,7 @@ class PermissionService
             $data['paths'] = array_merge($parent->paths ?? [], [$parent->name]);
         }
 
-        Permission::create($data);
+        return Permission::create($data);
     }
 
     public function edit($data, $id): void
@@ -346,6 +346,13 @@ class PermissionService
         $instance->installChildMenu($addonInfo, $menu, $parentId);
     }
 
+    /**
+     * 创建下级菜单信息.
+     *
+     * @param $addonInfo
+     * @param $menu
+     * @param $parentId
+     */
     public function installChildMenu($addonInfo, $menu, $parentId): void
     {
         foreach ($menu as $item) {
@@ -363,7 +370,7 @@ class PermissionService
             $permission->save();
 
             if (isset($item['children']) && $item['children']) {
-                $this->installChildMenu($addonInfo, $item['children'], $permission->id);
+                $this->installChildMenu($addonInfo, $item['children'], $permission->name);
             }
         }
     }
