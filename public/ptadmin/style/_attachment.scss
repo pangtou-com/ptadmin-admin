@@ -1,0 +1,597 @@
+/** 图片列表*/
+@mixin attachmentLists() {
+	.lists {
+		display: flex;
+		flex-wrap: wrap;
+		.item {
+			background: #fff;
+			box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+			box-sizing: border-box;
+			cursor: pointer;
+			position: relative;
+			border: 1px solid transparent;
+			overflow: hidden;
+			.layui-icon-ok {
+				position: absolute;
+				bottom: 0;
+				right: 0;
+				font-size: 12px;
+				color: #fff;
+				display: none;
+			}
+			.image {
+				&:hover {
+					.mask-operate {
+						opacity: 1;
+						z-index: 9;
+					}
+				}
+				padding: 10px;
+				width: calc(100% - 20px);
+				height: 100px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				background: #f8f8f8;
+				position: relative;
+				img {
+					width: 100%;
+					height: 100%;
+					object-fit: cover;
+				}
+				.mask-operate {
+					position: absolute;
+					left: 0;
+					top: 0;
+					background: rgba(0, 0, 0, 0.25);
+					width: 100%;
+					height: 100%;
+					opacity: 0;
+					z-index: -1;
+					display: flex;
+					align-items: flex-start;
+					justify-content: end;
+					padding: 5px;
+					box-sizing: border-box;
+					transition: all 0.3s;
+				}
+			}
+			.special-image {
+				img {
+					object-fit: contain;
+				}
+			}
+			.section {
+				display: flex;
+				align-items: center;
+				padding: 5px 10px;
+				.count {
+					flex: 1;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					display: -webkit-box;
+					-webkit-line-clamp: 1;
+					-webkit-box-orient: vertical;
+					.icon-tap {
+						color: #4397fd;
+						margin-right: 5px;
+					}
+				}
+			}
+			.title {
+				padding: 5px 10px;
+				border-top: 1px solid var(--ptadmin-border-color);
+				color: #999;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+		}
+		.active {
+			border: 1px solid #1e9fff;
+			&::before {
+				content: '';
+				position: absolute;
+				right: 0;
+				bottom: 0;
+				width: 0;
+				height: 0;
+				border-bottom: 18px solid #1e9fff;
+				border-left: 18px solid transparent;
+			}
+			.layui-icon-ok {
+				display: block;
+			}
+		}
+	}
+}
+/** 图片列表 end */
+
+/** 附件管理通用样式 */
+.ptadmin-attachment-box {
+	--ptadmin-spacing: 8px 15px;
+	--ptadmin-layout-bg: #fff;
+	--ptadmin-aside-width: 300px;
+	--ptadmin-border-color: #f8f8f8;
+	--ptadmin-hover-color: #f8f8f8;
+	--ptadmin-active-color: #1e9fff;
+	--ptadmin-nav-bg: #eee;
+	@mixin scroll() {
+		&::-webkit-scrollbar {
+			width: 6px;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background: #ccc;
+			border-radius: 5px;
+		}
+	}
+
+	.ptadmin-attachment-header {
+		height: 55px;
+		box-sizing: border-box;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		background: var(--ptadmin-layout-bg);
+		padding: var(--ptadmin-spacing);
+	}
+	.ptadmin-attachment-container {
+		display: flex;
+		.ptadmin-attachment-aside {
+			border-top: 1px solid var(--ptadmin-border-color);
+			box-sizing: border-box;
+			width: var(--ptadmin-aside-width);
+			background: var(--ptadmin-layout-bg);
+			height: calc(100vh - 55px);
+			overflow-y: auto;
+			flex-shrink: 0;
+            @media (max-width: 1000.98px) {
+                display: none;
+                height: 100vh;
+            }
+			@include scroll();
+			padding: 10px 0px;
+			.ptadmin-attachment-nav {
+				.layui-menu-item-checked {
+					&::after {
+						right: 0;
+					}
+				}
+				.layui-menu-body-title {
+					position: relative;
+					padding-right: 100px;
+					&:hover {
+						background: #f8f8f8;
+						.layui-btn-group {
+							display: inline-block;
+						}
+					}
+					.layui-btn-group {
+						position: absolute;
+						top: 50%;
+						transform: translateY(-50%);
+						right: 45px;
+						display: none;
+					}
+				}
+				.ptadmin-children {
+					.layui-menu-body-title {
+						@extend .layui-menu-body-title;
+						.layui-btn-group {
+							right: 15px;
+						}
+						padding-right: 45px;
+					}
+				}
+				.layui-menu-item-group > .layui-menu-body-title {
+					color: #000;
+				}
+			}
+		}
+		.layer-aside{
+			display: block !important;
+		}
+		.ptadmin-attachment-main {
+			box-sizing: border-box;
+			width: 100%;
+			position: relative;
+			flex: 1;
+			.content {
+				padding: 60px 15px;
+				background: var(--ptadmin-layout-bg);
+				height: 100%;
+				margin: 10px 0 0 10px;
+				box-sizing: border-box;
+				height: calc(100vh - 65px);
+                @media (max-width: 1000.98px) {
+                    margin: 10px 0 0 0px;
+                }
+				overflow-y: auto;
+				@include scroll();
+				@include attachmentLists();
+				.empty-box {
+					background: #f8f8f8;
+					height: 100%;
+					display: none;
+					align-items: center;
+					justify-content: center;
+					flex-direction: column;
+					color: #999;
+					.layui-icon {
+						margin-bottom: 15px;
+						font-size: 50px;
+					}
+				}
+				.empty-active {
+					display: flex;
+				}
+			}
+			.attachment-top,
+			.attachment-footer {
+				z-index: 999;
+				padding: var(--ptadmin-spacing);
+				position: absolute;
+				width: calc(100% - 10px);
+                @media (max-width: 1000.98px) {
+                    width: 100%;
+                }
+				height: 50px;
+				background: var(--ptadmin-layout-bg);
+				box-sizing: border-box;
+				box-shadow: 0 0 10px 1px rgba(99, 99, 99, 0.2);
+			}
+			.attachment-top {
+				left: 10px;
+                @media (max-width: 1000.98px) {
+                    left: 0;
+                }
+				top: 10px;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				flex-wrap: wrap;
+				.attachment-top-l {
+					display: flex;
+					align-items: center;
+					.layui-btn-group {
+						margin-right: 15px;
+						.layui-badge[count]{
+							display: none;
+						}
+					}
+				}
+				.attachment-top-r {
+					.search-item {
+						@media (max-width: 1299.98px) {
+							display: none;
+						}
+					}
+					display: flex;
+					align-items: center;
+					.select {
+						margin-right: 10px;
+					}
+				}
+                .attachment-top-r-sm{
+                    display: none;
+                    @media (max-width: 1000.98px) {
+                        display: block;
+                    }
+                }
+			}
+			.attachment-footer {
+				left: 10px;
+                @media (max-width: 1000.98px) {
+                    left: 0;
+                }
+				bottom: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				.layui-laypage {
+					margin: 0;
+					user-select: none;
+					a {
+						margin: 0 -1px 0 0;
+						&:hover {
+							color: var(--ptadmin-active-color);
+						}
+					}
+					span {
+						margin: 0 -1px 0 0;
+					}
+					.layui-laypage-em {
+						background-color: var(--ptadmin-active-color);
+					}
+				}
+			}
+		}
+	}
+}
+/** 附件管理通用样式end */
+
+/** 附件管理弹层*/
+.ptadmin-attachment-dialog-box {
+	--ptadmin-aside-width: 200px;
+	display: none;
+	height: 100%;
+	.ptadmin-attachment-container {
+		height: 100%;
+		background: #f8f8f8;
+		.ptadmin-attachment-aside {
+			padding: 0;
+			border-top: 0;
+			height: 100%;
+			width: var(--ptadmin-aside-width);
+			border-right: 1px solid #eee;
+			.ptadmin-attachment-nav {
+				.layui-menu-body-title {
+					padding-right: 38px;
+				}
+				.ptadmin-children {
+					.layui-menu-body-title {
+						padding-right: 38px;
+					}
+				}
+			}
+		}
+		.ptadmin-attachment-main {
+			.attachment-top,
+			.attachment-footer {
+				height: 55px;
+			}
+			.attachment-top {
+				left: 0;
+				top: 0;
+				width: 100%;
+				box-shadow: none;
+				border-bottom: 1px solid var(--ptadmin-border-color);
+			}
+			.attachment-footer {
+				left: 0;
+				width: 100%;
+				box-shadow: none;
+			}
+			.content {
+				padding: 10px;
+				margin: 65px 10px;
+				height: calc(100% - 130px);
+			}
+		}
+	}
+}
+/** 附件管理弹层end*/
+
+
+/** 不同屏幕宽度 */
+.ptadmin-default-attachment-box {
+	.lists {
+		.item {
+			margin: 0 10px 10px 0;
+			@media (min-width: 2300px) {
+				width: calc((100% - 90px) / 10);
+				&:nth-child(10n) {
+					margin-right: 0;
+				}
+			}
+			@media (min-width: 1920px) and (max-width: 2299.98px) {
+				width: calc((100% - 80px) / 9);
+				&:nth-child(9n) {
+					margin-right: 0;
+				}
+			}
+			@media (min-width: 1800px) and (max-width: 1919.98px) {
+				width: calc((100% - 70px) / 8);
+				&:nth-child(8n) {
+					margin-right: 0;
+				}
+			}
+			@media (min-width: 1600px) and (max-width: 1799.98px) {
+				width: calc((100% - 60px) / 7);
+				&:nth-child(7n) {
+					margin-right: 0;
+				}
+			}
+			@media (min-width: 1400px) and (max-width: 1599.98px) {
+				width: calc((100% - 40px) / 5);
+				&:nth-child(5n) {
+					margin-right: 0;
+				}
+			}
+			@media (min-width: 992px) and (max-width: 1399.98px) {
+				width: calc((100% - 30px) / 4);
+				&:nth-child(4n) {
+					margin-right: 0;
+				}
+			}
+			@media (max-width: 991.98px) {
+				width: calc((100% - 10px) / 2);
+				&:nth-child(2n) {
+					margin-right: 0;
+				}
+			}
+		}
+	}
+}
+/** 不同屏幕宽度end */
+
+/** 弹出层在不同屏幕的宽度 */
+.ptadmin-attachment-dialog-box {
+	.content {
+		.lists {
+			.item {
+				margin: 0 10px 10px 0;
+				@media (min-width: 1250px) {
+					width: calc((100% - 40px) / 5);
+					&:nth-child(5n) {
+						margin-right: 0;
+					}
+				}
+				@media (max-width: 1249.98px) {
+					width: calc((100% - 10px) / 2);
+					&:nth-child(2n) {
+						margin-right: 0;
+					}
+				}
+			}
+		}
+	}
+}
+/** 弹出层在不同屏幕的宽度 end */
+
+
+
+
+/** 默认上传样式 */
+// 重置layui样式
+@mixin resetLayuiInput() {
+	.layui-input {
+		&:focus {
+			border-color: var(--ptadmin-active-color) !important;
+			box-shadow: none !important;
+		}
+	}
+}
+.ptadmin-attachment-upload {
+	--ptadmin-size: 150px;
+	--ptadmin-border-color: #e2e2e2;
+	--ptadmin-icon-color: #999;
+	--ptadmin-active-color: #1e9fff;
+	--ptadmin-spacing: 10px;
+	--ptadmin-mask-bg: rgba(0, 0, 0, 0.45);
+	--ptadmin-input-size: 300px;
+	@mixin attachmentBox() {
+		width: var(--ptadmin-size);
+		height: var(--ptadmin-size);
+		border: 1px dashed var(--ptadmin-border-color);
+		text-align: center;
+		background: #fff;
+		cursor: pointer;
+		box-sizing: border-box;
+	}
+	.ptadmin-attachment-upload-btn {
+		@include attachmentBox();
+		align-content: center;
+		transition: all 0.3s;
+		position: relative;
+		display: none;
+		&:hover {
+			border-color: var(--ptadmin-active-color);
+			.layui-icon {
+				color: var(--ptadmin-active-color);
+			}
+			.attachment-operate {
+				display: flex;
+			}
+		}
+		> .layui-icon {
+			font-size: 46px;
+			color: var(--ptadmin-icon-color);
+			transition: all 0.3s;
+		}
+		.attachment-operate {
+			position: absolute;
+			left: 0;
+			top: 0;
+			display: none;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			height: 100%;
+			background: var(--ptadmin-mask-bg);
+		}
+	}
+	.ptadmin-attachment-upload-btn[show]{
+		display: block;
+	}
+	.section {
+		width: var(--ptadmin-size) !important;
+		margin: var(--ptadmin-spacing) var(--ptadmin-spacing) 0 0;
+		.file {
+			@include attachmentBox();
+			padding: var(--ptadmin-spacing);
+			box-sizing: border-box;
+			position: relative;
+			transition: all 0.3s;
+			text-align: left;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			&:hover {
+				border-color: var(--ptadmin-active-color);
+			}
+			img {
+				max-width: 100%;
+				max-height: 100%;
+			}
+			.delete-btn {
+				right: 5px;
+				top: 5px;
+				position: absolute;
+				background: var(--ptadmin-mask-bg);
+				width: 20px;
+				height: 20px;
+				text-align: center;
+				align-content: center;
+				border-radius: 50%;
+				color: #fff;
+				&:hover {
+					width: 21px;
+					height: 21px;
+					.layui-icon {
+						width: 21px;
+						height: 21px;
+						line-height: 21px;
+					}
+				}
+				.layui-icon {
+					position: absolute;
+					left: 0%;
+					top: 0%;
+					border-radius: 50%;
+					width: 20px;
+					height: 20px;
+					line-height: 20px;
+				}
+			}
+		}
+		@include resetLayuiInput();
+		.layui-input {
+			height: 30px;
+			line-height: 30px;
+			margin-top: var(--ptadmin-spacing);
+			padding: 0 30px 0 10px;
+		}
+		.layui-input-affix {
+			line-height: 30px;
+		}
+	}
+	.upload-success {
+		display: flex;
+		flex-wrap: wrap;
+
+	}
+}
+.ptadmin-attachment-transverse {
+	display: flex;
+	flex-wrap: wrap;
+	.ptadmin-attachment-upload-btn {
+		margin-top: var(--ptadmin-spacing);
+	}
+}
+/** 默认上传样式 end */
+
+/** 远程提取 */
+.ptadmin-attachment-direction {
+	.ptadmin-remote {
+		display: flex;
+		align-items: center;
+		@include resetLayuiInput();
+		.layui-input {
+			max-width: var(--ptadmin-input-size);
+			margin-right: var(--ptadmin-spacing);
+		}
+	}
+}
+/** 远程提取 end*/

@@ -1,0 +1,598 @@
+@charset "UTF-8";
+/** 图片列表*/
+/** 图片列表 end */
+/** 附件管理通用样式 */
+.ptadmin-attachment-box {
+  --ptadmin-spacing: 8px 15px;
+  --ptadmin-layout-bg: #fff;
+  --ptadmin-aside-width: 300px;
+  --ptadmin-border-color: #f8f8f8;
+  --ptadmin-hover-color: #f8f8f8;
+  --ptadmin-active-color: #1e9fff;
+  --ptadmin-nav-bg: #eee;
+}
+.ptadmin-attachment-box .ptadmin-attachment-header {
+  height: 55px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--ptadmin-layout-bg);
+  padding: var(--ptadmin-spacing);
+}
+.ptadmin-attachment-box .ptadmin-attachment-container {
+  display: flex;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside {
+  border-top: 1px solid var(--ptadmin-border-color);
+  box-sizing: border-box;
+  width: var(--ptadmin-aside-width);
+  background: var(--ptadmin-layout-bg);
+  height: calc(100vh - 55px);
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 10px 0px;
+}
+@media (max-width: 1000.98px) {
+  .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside {
+    display: none;
+    height: 100vh;
+  }
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside::-webkit-scrollbar {
+  width: 6px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 5px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .layui-menu-item-checked::after {
+  right: 0;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .layui-menu-body-title, .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .ptadmin-children .layui-menu-body-title {
+  position: relative;
+  padding-right: 100px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .layui-menu-body-title:hover {
+  background: #f8f8f8;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .layui-menu-body-title:hover .layui-btn-group {
+  display: inline-block;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .layui-menu-body-title .layui-btn-group {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 45px;
+  display: none;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .ptadmin-children .layui-menu-body-title {
+  padding-right: 45px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .ptadmin-children .layui-menu-body-title .layui-btn-group {
+  right: 15px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .layui-menu-item-group > .layui-menu-body-title {
+  color: #000;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .layer-aside {
+  display: block !important;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main {
+  box-sizing: border-box;
+  width: 100%;
+  position: relative;
+  flex: 1;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content {
+  padding: 60px 15px;
+  background: var(--ptadmin-layout-bg);
+  height: 100%;
+  margin: 10px 0 0 10px;
+  box-sizing: border-box;
+  height: calc(100vh - 65px);
+  overflow-y: auto;
+}
+@media (max-width: 1000.98px) {
+  .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content {
+    margin: 10px 0 0 0px;
+  }
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content::-webkit-scrollbar {
+  width: 6px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 5px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists {
+  display: flex;
+  flex-wrap: wrap;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item {
+  background: #fff;
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+  box-sizing: border-box;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .layui-icon-ok {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 12px;
+  color: #fff;
+  display: none;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .image {
+  padding: 10px;
+  width: calc(100% - 20px);
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f8f8;
+  position: relative;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .image:hover .mask-operate {
+  opacity: 1;
+  z-index: 9;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .image img {
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .image .mask-operate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: rgba(0, 0, 0, 0.25);
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: -1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: end;
+  padding: 5px;
+  box-sizing: border-box;
+  transition: all 0.3s;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .special-image img {
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .section {
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .section .count {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .section .count .icon-tap {
+  color: #4397fd;
+  margin-right: 5px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .item .title {
+  padding: 5px 10px;
+  border-top: 1px solid var(--ptadmin-border-color);
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .active {
+  border: 1px solid #1e9fff;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .active::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-bottom: 18px solid #1e9fff;
+  border-left: 18px solid transparent;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .lists .active .layui-icon-ok {
+  display: block;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .empty-box {
+  background: #f8f8f8;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: #999;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .empty-box .layui-icon {
+  margin-bottom: 15px;
+  font-size: 50px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .content .empty-active {
+  display: flex;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top,
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer {
+  z-index: 999;
+  padding: var(--ptadmin-spacing);
+  position: absolute;
+  width: calc(100% - 10px);
+  height: 50px;
+  background: var(--ptadmin-layout-bg);
+  box-sizing: border-box;
+  box-shadow: 0 0 10px 1px rgba(99, 99, 99, 0.2);
+}
+@media (max-width: 1000.98px) {
+  .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top,
+  .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer {
+    width: 100%;
+  }
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top {
+  left: 10px;
+  top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+@media (max-width: 1000.98px) {
+  .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top {
+    left: 0;
+  }
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top .attachment-top-l {
+  display: flex;
+  align-items: center;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top .attachment-top-l .layui-btn-group {
+  margin-right: 15px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top .attachment-top-l .layui-btn-group .layui-badge[count] {
+  display: none;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top .attachment-top-r {
+  display: flex;
+  align-items: center;
+}
+@media (max-width: 1299.98px) {
+  .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top .attachment-top-r .search-item {
+    display: none;
+  }
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top .attachment-top-r .select {
+  margin-right: 10px;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top .attachment-top-r-sm {
+  display: none;
+}
+@media (max-width: 1000.98px) {
+  .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top .attachment-top-r-sm {
+    display: block;
+  }
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer {
+  left: 10px;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 1000.98px) {
+  .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer {
+    left: 0;
+  }
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer .layui-laypage {
+  margin: 0;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer .layui-laypage a {
+  margin: 0 -1px 0 0;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer .layui-laypage a:hover {
+  color: var(--ptadmin-active-color);
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer .layui-laypage span {
+  margin: 0 -1px 0 0;
+}
+.ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer .layui-laypage .layui-laypage-em {
+  background-color: var(--ptadmin-active-color);
+}
+
+/** 附件管理通用样式end */
+/** 附件管理弹层*/
+.ptadmin-attachment-dialog-box {
+  --ptadmin-aside-width: 200px;
+  display: none;
+  height: 100%;
+}
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container {
+  height: 100%;
+  background: #f8f8f8;
+}
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-aside {
+  padding: 0;
+  border-top: 0;
+  height: 100%;
+  width: var(--ptadmin-aside-width);
+  border-right: 1px solid #eee;
+}
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .layui-menu-body-title, .ptadmin-attachment-dialog-box .ptadmin-attachment-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .ptadmin-children .layui-menu-body-title, .ptadmin-attachment-box .ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .ptadmin-children .layui-menu-body-title {
+  padding-right: 38px;
+}
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-aside .ptadmin-attachment-nav .ptadmin-children .layui-menu-body-title {
+  padding-right: 38px;
+}
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top,
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer {
+  height: 55px;
+}
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-top {
+  left: 0;
+  top: 0;
+  width: 100%;
+  box-shadow: none;
+  border-bottom: 1px solid var(--ptadmin-border-color);
+}
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-main .attachment-footer {
+  left: 0;
+  width: 100%;
+  box-shadow: none;
+}
+.ptadmin-attachment-dialog-box .ptadmin-attachment-container .ptadmin-attachment-main .content {
+  padding: 10px;
+  margin: 65px 10px;
+  height: calc(100% - 130px);
+}
+
+/** 附件管理弹层end*/
+/** 不同屏幕宽度 */
+.ptadmin-default-attachment-box .lists .item {
+  margin: 0 10px 10px 0;
+}
+@media (min-width: 2300px) {
+  .ptadmin-default-attachment-box .lists .item {
+    width: calc((100% - 90px) / 10);
+  }
+  .ptadmin-default-attachment-box .lists .item:nth-child(10n) {
+    margin-right: 0;
+  }
+}
+@media (min-width: 1920px) and (max-width: 2299.98px) {
+  .ptadmin-default-attachment-box .lists .item {
+    width: calc((100% - 80px) / 9);
+  }
+  .ptadmin-default-attachment-box .lists .item:nth-child(9n) {
+    margin-right: 0;
+  }
+}
+@media (min-width: 1800px) and (max-width: 1919.98px) {
+  .ptadmin-default-attachment-box .lists .item {
+    width: calc((100% - 70px) / 8);
+  }
+  .ptadmin-default-attachment-box .lists .item:nth-child(8n) {
+    margin-right: 0;
+  }
+}
+@media (min-width: 1600px) and (max-width: 1799.98px) {
+  .ptadmin-default-attachment-box .lists .item {
+    width: calc((100% - 60px) / 7);
+  }
+  .ptadmin-default-attachment-box .lists .item:nth-child(7n) {
+    margin-right: 0;
+  }
+}
+@media (min-width: 1400px) and (max-width: 1599.98px) {
+  .ptadmin-default-attachment-box .lists .item {
+    width: calc((100% - 40px) / 5);
+  }
+  .ptadmin-default-attachment-box .lists .item:nth-child(5n) {
+    margin-right: 0;
+  }
+}
+@media (min-width: 992px) and (max-width: 1399.98px) {
+  .ptadmin-default-attachment-box .lists .item {
+    width: calc((100% - 30px) / 4);
+  }
+  .ptadmin-default-attachment-box .lists .item:nth-child(4n) {
+    margin-right: 0;
+  }
+}
+@media (max-width: 991.98px) {
+  .ptadmin-default-attachment-box .lists .item {
+    width: calc((100% - 10px) / 2);
+  }
+  .ptadmin-default-attachment-box .lists .item:nth-child(2n) {
+    margin-right: 0;
+  }
+}
+
+/** 不同屏幕宽度end */
+/** 弹出层在不同屏幕的宽度 */
+.ptadmin-attachment-dialog-box .content .lists .item {
+  margin: 0 10px 10px 0;
+}
+@media (min-width: 1250px) {
+  .ptadmin-attachment-dialog-box .content .lists .item {
+    width: calc((100% - 40px) / 5);
+  }
+  .ptadmin-attachment-dialog-box .content .lists .item:nth-child(5n) {
+    margin-right: 0;
+  }
+}
+@media (max-width: 1249.98px) {
+  .ptadmin-attachment-dialog-box .content .lists .item {
+    width: calc((100% - 10px) / 2);
+  }
+  .ptadmin-attachment-dialog-box .content .lists .item:nth-child(2n) {
+    margin-right: 0;
+  }
+}
+
+/** 弹出层在不同屏幕的宽度 end */
+/** 默认上传样式 */
+.ptadmin-attachment-upload {
+  --ptadmin-size: 150px;
+  --ptadmin-border-color: #e2e2e2;
+  --ptadmin-icon-color: #999;
+  --ptadmin-active-color: #1e9fff;
+  --ptadmin-spacing: 10px;
+  --ptadmin-mask-bg: rgba(0, 0, 0, 0.45);
+  --ptadmin-input-size: 300px;
+}
+.ptadmin-attachment-upload .ptadmin-attachment-upload-btn {
+  width: var(--ptadmin-size);
+  height: var(--ptadmin-size);
+  border: 1px dashed var(--ptadmin-border-color);
+  text-align: center;
+  background: #fff;
+  cursor: pointer;
+  box-sizing: border-box;
+  align-content: center;
+  transition: all 0.3s;
+  position: relative;
+  display: none;
+}
+.ptadmin-attachment-upload .ptadmin-attachment-upload-btn:hover {
+  border-color: var(--ptadmin-active-color);
+}
+.ptadmin-attachment-upload .ptadmin-attachment-upload-btn:hover .layui-icon {
+  color: var(--ptadmin-active-color);
+}
+.ptadmin-attachment-upload .ptadmin-attachment-upload-btn:hover .attachment-operate {
+  display: flex;
+}
+.ptadmin-attachment-upload .ptadmin-attachment-upload-btn > .layui-icon {
+  font-size: 46px;
+  color: var(--ptadmin-icon-color);
+  transition: all 0.3s;
+}
+.ptadmin-attachment-upload .ptadmin-attachment-upload-btn .attachment-operate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--ptadmin-mask-bg);
+}
+.ptadmin-attachment-upload .ptadmin-attachment-upload-btn[show] {
+  display: block;
+}
+.ptadmin-attachment-upload .section {
+  width: var(--ptadmin-size) !important;
+  margin: var(--ptadmin-spacing) var(--ptadmin-spacing) 0 0;
+}
+.ptadmin-attachment-upload .section .file {
+  width: var(--ptadmin-size);
+  height: var(--ptadmin-size);
+  border: 1px dashed var(--ptadmin-border-color);
+  text-align: center;
+  background: #fff;
+  cursor: pointer;
+  box-sizing: border-box;
+  padding: var(--ptadmin-spacing);
+  box-sizing: border-box;
+  position: relative;
+  transition: all 0.3s;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ptadmin-attachment-upload .section .file:hover {
+  border-color: var(--ptadmin-active-color);
+}
+.ptadmin-attachment-upload .section .file img {
+  max-width: 100%;
+  max-height: 100%;
+}
+.ptadmin-attachment-upload .section .file .delete-btn {
+  right: 5px;
+  top: 5px;
+  position: absolute;
+  background: var(--ptadmin-mask-bg);
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  align-content: center;
+  border-radius: 50%;
+  color: #fff;
+}
+.ptadmin-attachment-upload .section .file .delete-btn:hover {
+  width: 21px;
+  height: 21px;
+}
+.ptadmin-attachment-upload .section .file .delete-btn:hover .layui-icon {
+  width: 21px;
+  height: 21px;
+  line-height: 21px;
+}
+.ptadmin-attachment-upload .section .file .delete-btn .layui-icon {
+  position: absolute;
+  left: 0%;
+  top: 0%;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+}
+.ptadmin-attachment-upload .section .layui-input:focus {
+  border-color: var(--ptadmin-active-color) !important;
+  box-shadow: none !important;
+}
+.ptadmin-attachment-upload .section .layui-input {
+  height: 30px;
+  line-height: 30px;
+  margin-top: var(--ptadmin-spacing);
+  padding: 0 30px 0 10px;
+}
+.ptadmin-attachment-upload .section .layui-input-affix {
+  line-height: 30px;
+}
+.ptadmin-attachment-upload .upload-success {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.ptadmin-attachment-transverse {
+  display: flex;
+  flex-wrap: wrap;
+}
+.ptadmin-attachment-transverse .ptadmin-attachment-upload-btn {
+  margin-top: var(--ptadmin-spacing);
+}
+
+/** 默认上传样式 end */
+/** 远程提取 */
+.ptadmin-attachment-direction .ptadmin-remote {
+  display: flex;
+  align-items: center;
+}
+.ptadmin-attachment-direction .ptadmin-remote .layui-input:focus {
+  border-color: var(--ptadmin-active-color) !important;
+  box-shadow: none !important;
+}
+.ptadmin-attachment-direction .ptadmin-remote .layui-input {
+  max-width: var(--ptadmin-input-size);
+  margin-right: var(--ptadmin-spacing);
+}
+
+/** 远程提取 end*//*# sourceMappingURL=index.css.map */

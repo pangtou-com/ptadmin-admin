@@ -11,6 +11,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{_asset('/ptadmin/bin/css/layui.css')}}" media="all">
     <link rel="stylesheet" href="{{_asset('/ptadmin/style/app.css')}}" media="all">
+    <link rel="stylesheet" href="{{_asset('/ptadmin/iconfont/iconfont.css')}}" />
     <link rel="stylesheet" href="{{_asset('/ptadmin/bin/fontawesome/css/all.min.css')}}" media="all">
     <link rel="stylesheet" href="{{_asset('/ptadmin/style/multipleSelect.css')}}" media="all">
     @yield('head')
