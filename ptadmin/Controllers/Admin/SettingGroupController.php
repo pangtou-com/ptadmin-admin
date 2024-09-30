@@ -49,7 +49,7 @@ class SettingGroupController extends AbstractBackgroundController
     public function index(): \Illuminate\Http\JsonResponse
     {
         $results = SettingGroup::query()
-            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'remark', 'status'])
+            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'intro', 'status'])
             ->orderBy('weight', 'desc')
             ->with('setting')
             ->get()->toArray();

@@ -4,9 +4,9 @@
  * Email: 873934580@qq.com
  * Date: 2021/12/7.
  */
-layui.define(['common'],function(exports){
+layui.define(['common'], function (exports) {
     "use strict";
-    const { common, $ } = layui;
+    const {common, $} = layui;
     const MOD_NAME = "PTAttachment";
     const ATTACHMENT_ELEM = ".ptadmin-image-list";  // 附件列表元素
     const ATTACHMENT_URL = "attachment"; // 附件列表请求接口
@@ -25,14 +25,14 @@ layui.define(['common'],function(exports){
                     `                <div class="layui-img-bg"></div>\n` +
                     `                <div class="layui-img-btn">\n` +
                     `                    <a href="javascript:void(0);" class="layui-btn layui-btn-xs btn-theme layui-img-open">\n` +
-                    `                        <i class="layui-icon layui-icon-eye"></i></a>\n` +
+                    `                        <i class="layui-icon layui-icon-addition"></i> 大图</a>\n` +
                     `                </div>\n` +
                     `            </div>`;
             }
 
             let content = "";
             for (let i = 0; i < images.length; i++) {
-                let data = { url: images[i].url, id: images[i].id, name: name }
+                let data = {url: images[i].url, id: images[i].id, name: name}
                 // 可以设置使用回调函数的方式自己渲染页面， 但是需要包裹到class image-html中
                 if (options.template !== undefined && typeof options.template === "function") {
                     content += options.template(data);
@@ -70,8 +70,8 @@ layui.define(['common'],function(exports){
                     // 页面上不存在上传按钮
                     if ($(this.options.id).find(this.options.openBtn).length === 0) {
                         let html = '<div class="ptadmin-image upload" >' +
-                                        '<i class="layui-icon layui-icon-add-1 layui-img-icon"></i>' +
-                                    '</div>';
+                            '<i class="layui-icon layui-icon-add-1 layui-img-icon"></i>' +
+                            '</div>';
                         $(this.options.id).append(html);
 
                         // 监听上传事件
@@ -85,17 +85,21 @@ layui.define(['common'],function(exports){
                     }
                 },
                 open: function () {
-                    let url = common.url(ATTACHMENT_URL) + "?limit=" + this.options.limit + "&currentLen="+ this.getLength() ;
+                    let url = common.url(ATTACHMENT_URL) + "?limit=" + this.options.limit + "&currentLen=" + this.getLength();
                     let obj = this;
                     common.open(url, "请选择", {
                         yes: function (i, layerObj) {
-                            let { getActiveData } = window[layerObj.find('iframe')[0]['name']];
+                            let {getActiveData} = window[layerObj.find('iframe')[0]['name']];
                             let img = getActiveData();
                             if (img.length === 0) {
                                 return false;
                             }
                             layer.closeAll();
-                            render(img, obj.options.name, {
+                            let name = obj.options.name
+                            if (obj.options.limit > 1) {
+                                name = obj.options.name + "[]";
+                            }
+                            render(img, name, {
                                 id: obj.options.id,
                                 template: obj.options.template,
                             });
@@ -104,7 +108,7 @@ layui.define(['common'],function(exports){
                             obj.del();
                             obj.bigPhoto();
                         },
-                        cancel: function (){
+                        cancel: function () {
                             layer.closeAll();
                         },
                         btn: ['确认']
@@ -116,7 +120,7 @@ layui.define(['common'],function(exports){
                 isLimit: function () {
                     return this.getLength() < this.options.limit;
                 },
-                del:function () {
+                del: function () {
                     let thiz = this;
                     $(this.options.delBtn).click(function () {
                         $(this).parent().remove();
@@ -158,8 +162,3 @@ layui.define(['common'],function(exports){
 
     exports(MOD_NAME, PTAttachment);
 });
-
-
-/**
- * 1、资源上传功能封装
- */

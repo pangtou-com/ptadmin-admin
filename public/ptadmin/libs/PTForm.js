@@ -152,7 +152,6 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                 });
             },
             number: function () {
-                // 数字选择框
                 $(".ptadmin-number").on('click', 'span', function () {
                     const number = $(this).siblings("input");
                     const symbol = $(this).attr('ptadmin-symbol');
@@ -174,7 +173,7 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                         selector: `#${elem}`,
                         mobile: {menubar: true},
                         language:'zh-cn',
-                        plugins: 'print preview  autolink directionality visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount textpattern help emoticons autosave autoresize',
+                        plugins: 'print preview autolink directionality visualblocks visualchars fullscreen image link media template codesample table charmap hr pagebreak nonbreaking anchor insertdatetime advlist lists wordcount textpattern help emoticons autosave autoresize',
                         height: 650, //编辑器高度
                         min_height: 400,
                         fontsize_formats: '12px 14px 16px 18px 24px 36px 48px 56px 72px',
@@ -184,7 +183,7 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                         automatic_uploads : true,
                         relative_urls : false,
                         remove_script_host : true,
-                        // document_base_url: '',
+                        document_base_url: common.url('storage'),
                         images_upload_url: common.url('upload/tiny'),
                         setup: function(editor){
                             editor.on('change',function(){ editor.save(); });

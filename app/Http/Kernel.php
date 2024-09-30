@@ -23,9 +23,10 @@ declare(strict_types=1);
 
 namespace App\Http;
 
-use App\Http\Middleware\OperationRecordMiddleware;
 use App\Http\Middleware\CSPMiddleware;
+use App\Http\Middleware\OperationRecordMiddleware;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use PTAdmin\Addon\Middleware\AddonMiddleware;
 
 class Kernel extends HttpKernel
 {
@@ -79,5 +80,6 @@ class Kernel extends HttpKernel
         'permission' => \App\Http\Middleware\Permission::class,
         'operation.record' => OperationRecordMiddleware::class,
         'csp' => CSPMiddleware::class,
+        'addon' => AddonMiddleware::class,
     ];
 }

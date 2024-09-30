@@ -97,6 +97,7 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
 
     // 环境字段配置
     Route::get('settings', [Admin\SettingController::class, 'index']);
+    Route::get('setting-page', [Admin\SettingController::class, 'page']);
     Route::match(['get', 'post'], 'setting', [Admin\SettingController::class, 'store']);
     Route::match(['get', 'put'], 'setting/{id}', [Admin\SettingController::class, 'edit']);
     Route::post('setting-val', [Admin\SettingController::class, 'saveValue']);

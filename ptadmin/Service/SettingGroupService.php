@@ -23,7 +23,6 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Service;
 
-use PTAdmin\Admin\Enum\StatusEnum;
 use PTAdmin\Admin\Exceptions\BackgroundException;
 use PTAdmin\Admin\Models\Setting;
 use PTAdmin\Admin\Models\SettingGroup;
@@ -78,21 +77,6 @@ class SettingGroupService
             'group' => $group,
             'data' => $data,
         ];
-    }
-
-    /**
-     * 获取根分类节点数据.
-     *
-     * @return array
-     */
-    public function getRoot(): array
-    {
-        return SettingGroup::query()
-            ->select(['id', 'title', 'name'])
-            ->where('parent_id', 0)
-            ->where('status', StatusEnum::ENABLE)
-            ->orderBy('weight', 'desc')
-            ->get()->toArray();
     }
 
     /**
@@ -187,5 +171,30 @@ class SettingGroupService
         }
 
         return implode('', $html);
+    }
+
+    /**
+     * 安装时数据初始化.
+     *
+     * @param array $data
+     * @param mixed $parentId
+     */
+    public static function installInitialize(array $data, $parentId = 0): void
+    {
+        foreach ($data as $item) {
+            $item['parent_id'] = $parentId;
+            $model = SettingGroup::query()->updateOrCreate(['name' => $item['name']], $item);
+            if (isset($item['children']) && \count($item['children']) > 0) {
+                self::installInitialize($item['children'], $model->id);
+
+                continue;
+            }
+            if (isset($item['fields']) && \count($item['fields']) > 0) {
+                foreach ($item['fields'] as $field) {
+                    $field['setting_group_id'] = $model->id;
+                    (new Setting())->fill($field)->save();
+                }
+            }
+        }
     }
 }

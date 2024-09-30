@@ -25,6 +25,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use PTAdmin\Admin\Service\SettingGroupService;
 
 /**
  * 初始化项目数据表.
@@ -53,35 +54,31 @@ class Initialization extends Migration
     ];
 
     private $setting = [
-        ['id' => '1', 'title' => '基础设置', 'name' => 'base', 'weight' => '99', 'parent_id' => '0', 'intro' => null],
-        ['id' => '2', 'title' => '第三方登录设置', 'name' => 'title', 'weight' => '99', 'parent_id' => '0', 'intro' => null],
-        ['id' => '3', 'title' => 'QQ登录', 'name' => 'qq_login', 'weight' => '99', 'parent_id' => '2', 'intro' => null, 'fields' => [
-            ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
-            ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
-            ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+        ['title' => '基础设置', 'name' => 'base', 'weight' => '99', 'intro' => null, 'children' => [
+            ['title' => '站点设置', 'name' => 'website', 'weight' => '99', 'intro' => null, 'fields' => [
+                ['title' => '站点状态', 'name' => 'website_status', 'value' => '1', 'type' => 'radio', 'extra' => ['options' => ['关闭', '启用']]],
+                ['title' => '站点名称', 'name' => 'website_title', 'value' => 'PTAdmin', 'type' => 'text'],
+                ['title' => 'LOGO', 'name' => 'website_logo', 'value' => '', 'type' => 'img'],
+                ['title' => '关键词', 'name' => 'website_keyword', 'value' => '', 'type' => 'text'],
+                ['title' => '描述', 'name' => 'website_description', 'value' => '', 'type' => 'textarea'],
+            ]],
         ]],
-        ['id' => '4', 'title' => '微信登录', 'name' => 'wechat_login', 'weight' => '99', 'parent_id' => '2', 'intro' => null, 'fields' => [
-            ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
-            ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
-            ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
-        ]],
-        ['id' => '5', 'title' => '站点设置', 'name' => 'website', 'weight' => '99', 'parent_id' => '1', 'intro' => null, 'fields' => [
-            ['title' => '站点状态', 'name' => 'website_status', 'value' => 'PTAdmin 建站工具', 'type' => 'text'],
-            ['title' => '站点名称', 'name' => 'website_title', 'value' => 'PTAdmin 建站工具', 'type' => 'text'],
-            ['title' => 'LOGO', 'name' => 'website_logo', 'value' => '', 'type' => 'radio', 'extra' => ['options' => ['关闭', '启用']]],
-            ['title' => '关键词', 'name' => 'website_keyword', 'value' => '', 'type' => 'text'],
-            ['title' => '描述', 'name' => 'website_description', 'value' => '', 'type' => 'text'],
-        ]],
-        ['id' => '6', 'title' => '第三方登录', 'name' => 'oauth', 'weight' => '0', 'parent_id' => '0', 'intro' => ''],
-        ['id' => '7', 'title' => 'QQ登录', 'name' => 'qq_login', 'weight' => '0', 'parent_id' => '6', 'intro' => 'qq登录第三方授权', 'fields' => [
-            ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
-            ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
-            ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
-        ]],
-        ['id' => '8', 'title' => '微博登录', 'name' => 'weibo_login', 'weight' => '0', 'parent_id' => '6', 'intro' => null, 'fields' => [
-            ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
-            ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
-            ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+        ['title' => '第三方授权', 'name' => 'title', 'weight' => '99', 'intro' => null, 'children' => [
+            ['title' => 'QQ登录', 'name' => 'qq_login', 'weight' => '99', 'intro' => null, 'fields' => [
+                ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+                ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+                ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+            ]],
+            ['title' => '微信登录', 'name' => 'wechat_login', 'weight' => '99', 'intro' => null, 'fields' => [
+                ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+                ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+                ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+            ]],
+            ['title' => '微博登录', 'name' => 'weibo_login', 'weight' => '0', 'intro' => null, 'fields' => [
+                ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+                ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+                ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+            ]],
         ]],
     ];
 
@@ -93,6 +90,7 @@ class Initialization extends Migration
         $this->create_system_table();
         $this->create_user_table();
         $this->create_menu();
+        SettingGroupService::installInitialize($this->setting);
     }
 
     public function down(): void
@@ -143,6 +141,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('quote')->default(0)->comment('引用次数');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('attachments').'` COMMENT = "附件表"');
         }
@@ -166,6 +165,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('deleted_at')->nullable()->comment('是否删除');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('setting_groups').'` COMMENT = "配置分组"');
         }
@@ -184,6 +184,7 @@ class Initialization extends Migration
                 $table->string('default_val', 100)->nullable()->comment('配置默认值');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('settings').'` COMMENT = "配置表"');
         }
@@ -199,6 +200,7 @@ class Initialization extends Migration
                 $table->unsignedBigInteger('permission_id')->default(0);
                 $table->unsignedBigInteger('model_id')->default(0);
                 $table->string('model_type', 255);
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('model_has_permissions').'` COMMENT = "用户所关联权限"');
         }
@@ -208,6 +210,7 @@ class Initialization extends Migration
                 $table->unsignedBigInteger('role_id')->default(0);
                 $table->unsignedBigInteger('model_id')->default(0);
                 $table->string('model_type', 255);
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('model_has_roles').'` COMMENT = "用户所关联角色"');
         }
@@ -218,6 +221,7 @@ class Initialization extends Migration
                 $table->unsignedBigInteger('role_id')->default(0);
                 $table->unique(['permission_id', 'role_id'], 'uk_index');
                 $table->index('role_id', 'idx_role_id');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('role_has_permissions').'` COMMENT = "角色关联权限表"');
         }
@@ -243,7 +247,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('deleted_at')->nullable()->comment('是否删除');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
-                // $table->unique('name', 'uk_name');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('permissions').'` COMMENT = "权限表"');
         }
@@ -260,6 +264,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('deleted_at')->nullable()->comment('是否删除');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('roles').'` COMMENT = "角色表"');
         }
@@ -282,6 +287,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('deleted_at')->nullable()->comment('是否删除');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('systems').'` COMMENT = "管理后台人员表"');
         }
@@ -295,6 +301,7 @@ class Initialization extends Migration
                 $table->unsignedTinyInteger('status')->default(1)->comment('状态');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('system_logs').'` COMMENT = "用户登录日志表"');
         }
@@ -316,6 +323,7 @@ class Initialization extends Migration
                 $table->unsignedDecimal('response_time')->comment('响应状态码');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('operation_records').'` COMMENT = "操作记录表"');
         }
@@ -342,6 +350,7 @@ class Initialization extends Migration
                 $table->json('extra')->nullable()->comment('插件配置信息');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('addons').'` COMMENT = "插件表"');
         }
@@ -355,8 +364,8 @@ class Initialization extends Migration
         if (!Schema::hasTable('users')) {
             Schema::create('users', function (Blueprint $table): void {
                 $table->id();
-                $table->string('username', 20)->nullable()->comment('管理员账户名称');
-                $table->string('nickname', 20)->comment('昵称（用于文章发布）');
+                $table->string('username', 20)->comment('管理员账户名称');
+                $table->string('nickname', 20)->nullable()->default('')->comment('昵称（用于文章发布）');
                 $table->string('password', 255)->comment('登录密码');
                 $table->char('salt', 4)->comment('密码加盐');
                 $table->string('mobile', 30)->nullable()->comment('手机号码');
@@ -379,6 +388,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('deleted_at')->nullable()->comment('是否删除');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('users').'` COMMENT = "用户表"');
         }
@@ -395,6 +405,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
                 $table->unique(['source', 'open_id', 'union_id'], 'uk_index');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('user_bind_platforms').'` COMMENT = "用户第三方绑定表,如微信，小程序，PC"');
         }
@@ -413,6 +424,7 @@ class Initialization extends Migration
                 $table->string('target_module', 100)->comment('关联模块');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('user_money').'` COMMENT = "用户金额变化表"');
         }
@@ -430,6 +442,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('expires_at')->default(0)->comment('自定义过期时间，可每个token单独设置过期时间，单位为秒');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('user_tokens').'` COMMENT = "用户授权信息表"');
         }
@@ -449,6 +462,7 @@ class Initialization extends Migration
                 $table->unsignedInteger('send_at')->default(0)->comment('发送时间');
                 $table->unsignedInteger('created_at')->default(0)->comment('创建时间');
                 $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
+                $table->engine = 'InnoDB';
             });
             DB::statement('ALTER TABLE `'.get_table_name('user_verifies').'` COMMENT = "验证消息发送"');
         }

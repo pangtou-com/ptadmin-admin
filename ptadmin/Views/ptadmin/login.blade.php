@@ -32,7 +32,7 @@
             </form>
         </div>
         <div class="layui-trans ptadmin-footer">
-            <p>©2022 - {!! date('Y') !!} <a href="https://www.pangtou.com" target="_blank">PTAdmin管理系统</a> 渝ICP备19003576号-2</p>
+            <p>©2022 - {!! date('Y') !!} <a href="https://www.pangtou.com" target="_blank">PTAdmin管理系统</a></p>
         </div>
     </div>
 @endsection
@@ -48,8 +48,8 @@
         }
         form.on('submit(login-submit)', function (obj) {
             common.loading({
-                left: 0,
-                top: 0,
+                '--theme-expand-left': "0px",
+                '--theme-header-top': "0px",
             })
             $.ajax({
                 url: "{{admin_route('/login')}}",

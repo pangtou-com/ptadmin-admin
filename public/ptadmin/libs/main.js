@@ -31,24 +31,21 @@ layui.extend({
         }
 
         if (!isExists) {
-            const div = common.create('div', { className: 'ptadmin-iframe-item ptadmin-show' })
-            const iframe = common.create('iframe', {
+            let div = common.create('div', { className: 'ptadmin-iframe-item ptadmin-show' })
+            let iframe = common.create('iframe', {
                 src: url,
                 frameborder: 0,
                 className: 'ptadmin_iframe',
                 onload: function () {
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                    iframeDoc.body.addEventListener('click', function (event) {
-                        layout.closeTabAction()
-                    });
                     common.loadingClose()
                     layout.closeShrinkNav()
                 }
             })
+
             common.loading(layout.shadeConfig)
             div.appendChild(iframe)
             $(`#iframe_body`)[0].appendChild(div)
-
+            iframe = div = null
             element.tabAdd(LAYOUT_TABS, {
                 id: url,
                 url: url,

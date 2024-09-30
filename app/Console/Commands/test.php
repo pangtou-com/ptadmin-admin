@@ -24,11 +24,41 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use PTAdmin\Admin\Service\SettingGroupService;
 
 class test extends Command
 {
     protected $signature = 'test';
     protected $description = 'Command description';
+
+    private $setting = [
+        ['title' => '基础设置', 'name' => 'base', 'weight' => '99', 'intro' => null, 'children' => [
+            ['title' => '站点设置', 'name' => 'website', 'weight' => '99', 'intro' => null, 'fields' => [
+                ['title' => '站点状态', 'name' => 'website_status', 'value' => 'PTAdmin 建站工具', 'type' => 'radio', 'extra' => ['options' => ['关闭', '启用']]],
+                ['title' => 'LOGO', 'name' => 'website_logo', 'value' => '', 'type' => 'img'],
+                ['title' => '站点名称', 'name' => 'website_title', 'value' => 'PTAdmin 建站工具', 'type' => 'text'],
+                ['title' => '关键词', 'name' => 'website_keyword', 'value' => '', 'type' => 'text'],
+                ['title' => '描述', 'name' => 'website_description', 'value' => '', 'type' => 'textarea'],
+            ]],
+        ]],
+        ['title' => '第三方授权', 'name' => 'title', 'weight' => '99', 'intro' => null, 'children' => [
+            ['title' => 'QQ登录', 'name' => 'qq_login', 'weight' => '99', 'intro' => null, 'fields' => [
+                ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+                ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+                ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+            ]],
+            ['title' => '微信登录', 'name' => 'wechat_login', 'weight' => '99', 'intro' => null, 'fields' => [
+                ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+                ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+                ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+            ]],
+            ['title' => '微博登录', 'name' => 'weibo_login', 'weight' => '0', 'intro' => null, 'fields' => [
+                ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
+                ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],
+                ['title' => 'ICON', 'name' => 'icon', 'value' => '', 'type' => 'img'],
+            ]],
+        ]],
+    ];
 
     public function __construct()
     {
@@ -37,20 +67,7 @@ class test extends Command
 
     public function handle(): int
     {
-        $a = 1 << 0;
-        $b = 1 << 1;
-        $c = 1 << 2;
-        $d = 1 << 3;
-
-        $qa = $b | $a;
-        echo sprintf("查看权限值： %b === %b , %b , %b \n ", $b, $a, $c, $d);
-        echo sprintf("查看权限值： %b \n", $qa);
-        $this->info($qa);
-        if ($qa & $a) {
-            $this->info('有权限');
-        } else {
-            $this->error('无权限');
-        }
+        SettingGroupService::installInitialize($this->setting);
 
         return 0;
     }

@@ -19,6 +19,7 @@
                 $form->textarea('intro');
             @endphp
             {!! $form !!}
+
         </div>
     </div>
 @endsection

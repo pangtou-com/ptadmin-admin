@@ -337,28 +337,7 @@ layui.define(['element'], function (exports) {
         return window.location.href
     }
 
-    /**
-     * 提示信息
-     */
-    let tips_lock = false
-    $('body').on('mouseover', '*[ptadmin-tips]', function () {
-        if (tips_lock) {
-            return
-        }
-        tips_lock = true
-        const that = $(this)
-        const tips = that.attr('ptadmin-tips')
-        let direction = that.attr('ptadmin-tips-direction') || 2 // 定义提示框样式，1-4
-        let color = that.attr('ptadmin-tips-color') || "#000"
-        direction > 4 && (direction = 4)
-        layer.tips(tips, that, {
-            tips: [direction, color],
-            time: 2000
-        })
-    }).on("mouseleave", "*[ptadmin-tips]", function () {
-        layer.closeAll('tips')
-        tips_lock = false
-    }).on('click', '*[ptadmin-href]', function () {
+    $('body').off('click', '*[ptadmin-href]').on('click', '*[ptadmin-href]', function () {
         const $this = $(this)
         const href = $this.attr('ptadmin-href')
         const text = $this.attr('ptadmin-text') || $this.text()

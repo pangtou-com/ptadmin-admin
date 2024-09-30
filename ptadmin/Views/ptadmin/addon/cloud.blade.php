@@ -6,20 +6,24 @@
             <div class="layui-card-header ptadmin-card-header">
                 <div class="addon-header-left">
                     <div class="layui-btn-group">
-                        <a href="javascript:void(0)" ptadmin-event="addon_cloud" class="layui-btn  layui-bg-purple"><i
-                                    class="layui-icon layui-icon-component"></i>云市场</a>
-                        <a href="javascript:void(0)" ptadmin-event="addon_local" class="layui-btn layui-btn-normal"><i
-                                    class="layui-icon layui-icon-templeate-1"></i>本地插件</a>
-                        <a href="javascript:void(0)" ptadmin-event="addon_my" class="layui-btn layui-btn-normal"><i
-                                    class="layui-icon layui-icon-flag"></i>我的插件</a>
+                        <a href="javascript:void(0)" ptadmin-event="addon_cloud" class="layui-btn  layui-bg-purple">
+                            <i class="layui-icon layui-icon-component"></i>云市场
+                        </a>
+                        <a href="javascript:void(0)" ptadmin-event="addon_local" class="layui-btn layui-btn-normal">
+                            <i class="layui-icon layui-icon-templeate-1"></i>本地插件
+                        </a>
+                        <a href="javascript:void(0)" ptadmin-event="addon_my" class="layui-btn layui-btn-normal">
+                            <i class="layui-icon layui-icon-flag"></i>我的插件
+                        </a>
                     </div>
-                    <a href="javascript:void(0)" ptadmin-event="local_install"
-                       class="layui-btn layui-btn-normal layui-bg-purple">
+                    <a href="javascript:void(0)" ptadmin-event="local_install" class="layui-btn layui-btn-normal layui-bg-purple">
                         <i class="layui-icon layui-icon-transfer"></i>本地安装
                     </a>
                 </div>
-                <button type="button" data-addon-user="{{ $ptadmin_addon_user['nickname'] ?? '' }}"
-                        class="layui-btn layui-bg-purple ptadmin_login">
+                <button
+                    type="button"
+                    data-addon-user="{{ $ptadmin_addon_user['nickname'] ?? '' }}"
+                    class="layui-btn layui-bg-purple ptadmin_login">
                     <i class="layui-icon layui-icon-user"></i> {{ $ptadmin_addon_user['nickname'] ?? '登录PTAdmin' }}
                 </button>
             </div>
@@ -47,116 +51,6 @@
                         </aside>
                         <main class="ptadmin-categorize-main">
                             <div class="addon-header ptadmin-page-container">
-                                <div class="ptadmin-page-box">
-                                        <form class="layui-form layui-row layui-col-space16 layui-form-pane ptadmin-search-form">
-                                            <!-- 默认 -->
-                                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3 ptadmin-input-group">
-                                                <label class="layui-form-label ptadmin-label">默认</label>
-                                                <div class="ptadmin-prefix">
-                                                    <select>
-                                                        <option value="1">不等于</option>
-                                                        <option value="2">包含</option>
-                                                        <option value="3">等于</option>
-                                                    </select>
-                                                </div>
-                                                <input type="text" placeholder="带任意后置内容" class="layui-input" />
-                                            </div>
-                                            <!-- 无label -->
-                                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3 ptadmin-input-group">
-                                                <div class="ptadmin-prefix">
-                                                    <select>
-                                                        <option value="1">不等于</option>
-                                                        <option value="2">包含</option>
-                                                        <option value="3">等于</option>
-                                                    </select>
-                                                </div>
-                                                <input type="text" placeholder="带任意后置内容" class="layui-input" />
-                                            </div>
-                                            <!-- 无select -->
-                                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3 ptadmin-input-group">
-                                                <label class="layui-form-label ptadmin-label">无select</label>
-                                                <input type="text" placeholder="带任意后置内容" class="layui-input" />
-                                            </div>
-                                            <!-- 数字区间 -->
-                                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3 ptadmin-input-group">
-                                                <label class="layui-form-label ptadmin-label">数字区间</label>
-                                                <div class="ptadmin-interval">
-                                                    <input
-                                                        type="number"
-                                                        name="price_min"
-                                                        placeholder=""
-                                                        autocomplete="off"
-                                                        class="layui-input"
-                                                        min="0"
-                                                        step="1"
-                                                        lay-affix="number" />
-                                                    <span class="icondivide">-</span>
-                                                    <input
-                                                        type="number"
-                                                        name="price_max"
-                                                        placeholder=""
-                                                        autocomplete="off"
-                                                        class="layui-input"
-                                                        min="0"
-                                                        step="1"
-                                                        lay-affix="number" />
-                                                </div>
-                                            </div>
-                                            <!-- 金额区间 -->
-                                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3 ptadmin-input-group">
-                                                <label class="layui-form-label ptadmin-label">金额区间</label>
-                                                <div class="ptadmin-interval">
-                                                    <input
-                                                        type="number"
-                                                        name="price_min"
-                                                        placeholder=""
-                                                        autocomplete="off"
-                                                        class="layui-input"
-                                                        min="0"
-                                                        step="1"
-                                                        lay-affix="number" />
-                                                    <span class="icondivide">-</span>
-                                                    <input
-                                                        type="number"
-                                                        name="price_max"
-                                                        placeholder=""
-                                                        autocomplete="off"
-                                                        class="layui-input"
-                                                        min="0"
-                                                        step="1"
-                                                        lay-affix="number" />
-                                                </div>
-                                            </div>
-                                            <!-- 时间选择 -->
-                                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3 ptadmin-input-group">
-                                                <label class="layui-form-label ptadmin-label">时间选择</label>
-                                                <input type="text" class="layui-input" id="ID-laydate-demo" placeholder="yyyy-MM-dd" />
-                                            </div>
-                                            <!-- 时间区间 -->
-                                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3 ptadmin-input-group">
-                                                <label class="layui-form-label ptadmin-label">时间区间</label>
-                                                <div class="ptadmin-interval" id="ID-laydate-range">
-                                                    <input
-                                                        type="text"
-                                                        autocomplete="off"
-                                                        id="ID-laydate-start-date"
-                                                        class="layui-input"
-                                                        placeholder="开始日期" />
-                                                    <span class="icondivide">-</span>
-                                                    <input
-                                                        type="text"
-                                                        autocomplete="off"
-                                                        id="ID-laydate-end-date"
-                                                        class="layui-input"
-                                                        placeholder="结束日期" />
-                                                </div>
-                                            </div>
-                                            <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3">
-                                                <button class="layui-btn" lay-submit lay-filter="demo-search">Search</button>
-                                                <button type="reset" class="layui-btn layui-btn-primary">Reset</button>
-                                            </div>
-                                        </form>
-			                    </div>
                             </div>
                             <div class="addon-body">
                                 <ul class="addon-lists">
@@ -206,52 +100,7 @@
                                             </button>
                                         </div>
                                     </li>
-                                    <li class="item">
-                                        <div class="image">
-                                            <a href="">
-                                                <img src="http://www.pangtouweb.com/storage/default/20240906/4B7sKpu62D7nMSVx5Inl8v29XnRx2PrhrXPZiJMJ.jpg" alt="">
-                                            </a>
-                                        </div>
-                                        <div class="addon-details">
-                                            <div class="title">西陆二手交易系统</div>
-                                            <div class="rate-box">
-                                                <div class="addon-rate"></div>
-                                                <div class="price">￥399.00</div>
-                                            </div>
-                                        </div>
-                                        <div class="operate">
-                                            <div class="badges">
-                                                <span class="layui-badge layui-bg-green">官方</span>
-                                            </div>
-                                            <button type="button" class="layui-btn layui-btn-sm layui-btn-normal">
-                                                <i class="layui-icon layui-icon-download-circle"></i>
-                                                安装
-                                            </button>
-                                        </div>
-                                    </li>
-                                    <li class="item">
-                                        <div class="image">
-                                            <a href="">
-                                                <img src="http://www.pangtouweb.com/storage/default/20240906/LTFMq4mCjDMYMsw8b9UYANBbj6sWQ9kZpYGZ1DBa.png" alt="">
-                                            </a>
-                                        </div>
-                                        <div class="addon-details">
-                                            <div class="title">XYkeep健身小程序</div>
-                                            <div class="rate-box">
-                                                <div class="addon-rate"></div>
-                                                <div class="price">￥1480.00</div>
-                                            </div>
-                                        </div>
-                                        <div class="operate">
-                                            <div class="badges">
-                                                <span class="layui-badge layui-bg-green">官方</span>
-                                            </div>
-                                            <button type="button" class="layui-btn layui-btn-sm layui-btn-normal">
-                                                <i class="layui-icon layui-icon-download-circle"></i>
-                                                安装
-                                            </button>
-                                        </div>
-                                    </li>
+
 
                                 </ul>
                                 <!-- 预留分页 -->

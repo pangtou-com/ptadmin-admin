@@ -62,6 +62,13 @@ class SettingController extends AbstractBackgroundController
         return $this->view();
     }
 
+    public function page(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $results = $this->settingService->page($request->all());
+
+        return ResultsVo::pages($results);
+    }
+
     /**
      * 保存配置值
      *

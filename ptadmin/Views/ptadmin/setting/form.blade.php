@@ -12,11 +12,11 @@
                 if ($dao->configure_category_id == 0 && $parentId) {
                     $dao->configure_category_id = $parentId;
                 }
-                $form = \Zane\Build\Layui::make($dao);
+                $form = \PTAdmin\Build\Layui::make($dao);
                 $form->hidden('configure_category_id')->default($parentId);
                 $form->text('title')->required();
                 $form->text('name')->required();
-                $form->select('type')->required()->setOptions(\App\Enum\FormTypeEnum::getMaps());
+                $form->select('type')->required()->setOptions(PTAdmin\Easy\Easy::getComponentsOptions());
                 $form->text('default_val');
                 $form->textarea('extra')->placeholder('选项值，一行一条数据，如需要指定值可 key=value');
                 $form->number('weight')->default(99);

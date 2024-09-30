@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 return [
     // 应用名称
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'PTAdmin'),
     // 应用环境
     'env' => env('APP_ENV', 'production'),
     // 应用后台路由前缀，可自定义路由信息

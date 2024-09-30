@@ -160,7 +160,7 @@ html {
   background-color: rgba(0, 0, 0, 0.3);
   z-index: 1000;
   width: 100vw;
-  height: 100vh; }
+  height: calc(100vh - var(--theme-header-top)); }
 
 /** 移除隐藏 */
 #ptadmin_app {
@@ -675,7 +675,7 @@ html {
     display: flex; }
     .ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside {
       flex-shrink: 0;
-      width: 180px;
+      width: 120px;
       background: #FFF;
       height: calc( 100vh - var(--header-height));
       overflow-y: auto;
@@ -688,7 +688,7 @@ html {
         background: #ccc;
         border-radius: 5px; }
       .ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside .lists {
-        padding: 5px 0; }
+        padding: 10px 0; }
         .ptadmin-categorize-box .ptadmin-categorize-container .ptadmin-categorize-aside .lists > li {
           padding: 10px 15px;
           transition: all .3s;

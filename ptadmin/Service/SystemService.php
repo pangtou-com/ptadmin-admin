@@ -53,7 +53,7 @@ class SystemService
         if (!app()->runningInConsole() && (!isset($data['force']) || true !== $data['force'])) {
             throw new BackgroundException('请在命令行模式下运行');
         }
-        $model = System::query()->where('is_founder', 1)->first();
+        $model = System::query()->where('is_founder', 1)->orderBy('id')->first();
         if ($model && (!isset($data['force']) || false === $data['force'])) {
             throw new BackgroundException('已有创始人账户，如需重新初始化请使用 --force|-f 参数');
         }

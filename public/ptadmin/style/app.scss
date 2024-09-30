@@ -688,7 +688,7 @@
         display: flex;
         .ptadmin-categorize-aside{
             flex-shrink: 0;
-            width: 180px;
+            width: 120px;
             background: #FFF;
             height:calc( 100vh - var(--header-height));
             overflow-y: auto;
@@ -697,7 +697,7 @@
             border-radius: 0 0 2px 2px;
             @include scrollbar();
             .lists{
-                padding: 5px 0;
+                padding: 10px 0;
                 >li{
                     padding: 10px 15px;
                     transition: all .3s;

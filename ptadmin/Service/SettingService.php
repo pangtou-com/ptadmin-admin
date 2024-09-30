@@ -54,6 +54,17 @@ class SettingService
         $this->updateCache();
     }
 
+    public function page($search = []): array
+    {
+        $filterMap = Setting::query();
+
+        $filterMap->orderBy('setting_group_id');
+        $filterMap->orderBy('weight', 'desc');
+        $filterMap->with('category');
+
+        return $filterMap->paginate()->toArray();
+    }
+
     /**
      * 根据名称获取配置信息.
      *
@@ -83,6 +94,20 @@ class SettingService
         }
 
         return $configure->value;
+    }
+
+    /**
+     * 获取系统配置信息.
+     *
+     * @param string $key     获取信息的key
+     * @param null   $default 当不存在数据时，返回默认值
+     * @param bool   $isCache 是否通过缓存获取
+     *
+     * @return mixed
+     */
+    public static function getSettingValue(string $key, $default = null, bool $isCache = true)
+    {
+        return Cache::get($key, $default);
     }
 
     /**

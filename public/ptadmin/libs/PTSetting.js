@@ -1,17 +1,23 @@
-layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
-    const {$, laytpl, layer, PTForm} = layui
+layui.define(['layer', 'laytpl', 'PTForm', 'form'],function (exports) {
+    const {$, laytpl, layer, PTForm, form} = layui
     const MOD_NAME = 'PTSetting'
     /** 分组ELE */
     const GROUP_ELE = $("#ptadmin-categorize-aside")
+    const MAIN_ELE = $(".ptadmin-categorize-main")
     /** 容器ELE */
     const SETTING_ELE = $(".ptadmin-categorize-box")
     const SETTING_TAG_ELE = $(".ptadmin-categorize-tabs")
+
     // 配置容器
     const CONTAINER_ELE = $("#setting-container")
+    const GROUP_TYPE_SETTING = 'setting'
+    const GROUP_TYPE_MANAGE = 'manage'
     // 事件集合
     const events = {}
     /** 当前操作数据对象 */
     let current = undefined
+    /** 当前操作类型，系统配置（setting）or 配置管理（manage）*/
+    let current_group_type = GROUP_TYPE_SETTING
     // 系统设置配置信息
     const group_data = {}
     // 系统配置下分组数据
@@ -27,7 +33,15 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
         obj.addClass('active').siblings().removeClass("active")
         const id = obj.data("id")
         const name = obj.data("name")
-        renderTags(id, name)
+        if (current_group_type === GROUP_TYPE_SETTING) {
+            MAIN_ELE.find(".ptadmin-setting-form").show()
+            MAIN_ELE.find(".ptadmin-setting-table").hide()
+            renderTags(id, name)
+            return
+        }
+        MAIN_ELE.find(".ptadmin-setting-form").hide()
+        MAIN_ELE.find(".ptadmin-setting-table").show()
+        action(id)
     }
 
     /**
@@ -35,13 +49,8 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
      */
     events.tag = function () {
         $(this).addClass('active').siblings().removeClass("active")
-        const type = $("[ptadmin-event=changeBox]").attr("data-type")
         const data = SETTING_TAG_ELE.find(".active").data()
-        if (type === 'form') {
-            renderForm(data)
-        } else {
-            renderTable(data)
-        }
+        renderForm(data)
     }
 
     events.changeBox = function () {
@@ -60,8 +69,8 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
 
     /**
      * 解析数据
-     * @param group
-     * @param data
+     * @param group     分组数据
+     * @param data      配置信息
      */
     const parserData = function ({group, data}) {
         for (const key in group) {
@@ -88,8 +97,8 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
         if (!data['view']) {
             return;
         }
-        CONTAINER_ELE.stop()
-        CONTAINER_ELE.hide().html(data['view']).fadeIn(1200)
+        CONTAINER_ELE.finish().hide().html(`<form action="" class="layui-form">${data['view']}</form>`).fadeIn(1000)
+        form.render()
         PTForm.init()
     }
 
@@ -108,11 +117,18 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
         if (!data['setting']) {
             return;
         }
-
-        CONTAINER_ELE.stop()
         laytpl(temp).render({data: data['setting']}, function (str) {
-            CONTAINER_ELE.hide().html(str).fadeIn(1200)
+            CONTAINER_ELE.finish().hide().html(str).fadeIn(1200)
         })
+    }
+
+    /**
+     * 渲染表格
+     * @param type
+     */
+    const renderAjaxTable = function (type) {
+        console.log(type)
+
     }
 
     /**
@@ -137,14 +153,14 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
     /**
      * 渲染系统设置页面
      */
-    const renderGroup = function () {
+    const renderGroup = function (data) {
         const html = []
         const temp = $("#group_html").html()
-        for (const key in group_data) {
+        for (const key in data) {
             laytpl(temp).render({
-                name: group_data[key].name,
-                title: group_data[key].title,
-                id: group_data[key].id,
+                name: data[key].name,
+                title: data[key].title,
+                id: data[key].id,
             }, function (str) {
                 html.push(str)
             })
@@ -157,7 +173,7 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
      * 事件绑定
      */
     const eventBind = function () {
-        SETTING_ELE.on("click", "*[ptadmin-event]", function (e) {
+        SETTING_ELE.off('click', "*[ptadmin-event]").on("click", "*[ptadmin-event]", function (e) {
             const event = $(this).attr("ptadmin-event")
             const stop = $(this).attr("ptadmin-event-stop")
             if (stop !== undefined) {
@@ -176,9 +192,6 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
             event: event,
             ele: this,
         }
-        if (events["*"] !== undefined) {
-            events["*"].call(param.ele, param)
-        }
         if (events[event] !== undefined) {
             events[event].call(param.ele, param)
         }
@@ -190,11 +203,15 @@ layui.define(['layer', 'laytpl', 'PTForm'],function (exports) {
                 return
             }
             parserData(data)
-            renderGroup()
+            renderGroup(group_data)
             eventBind()
         },
         on: function (event, callback) {
             events[event] = callback
+        },
+        change: function (type, menu) {
+            current_group_type = type
+            renderGroup(type === GROUP_TYPE_MANAGE ? menu : group_data )
         }
     }
 

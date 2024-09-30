@@ -29,7 +29,6 @@ use PTAdmin\Admin\Exceptions\BackgroundException;
 
 abstract class AbstractEnum
 {
-    protected static $labelMaps = [];
     private static $constCacheArray;
 
     public static function getKeys(): Collection
@@ -70,10 +69,15 @@ abstract class AbstractEnum
     {
         $key = static::getLowerKey($value);
         $className = explode('\\', static::class);
-        $className = strtolower(Str::snake(array_pop($className)));
-        $className = Str::replace('_enum', '', $className);
+        $name = strtolower(Str::snake(array_pop($className)));
+        $name = Str::replace('_enum', '', $name);
+        $prefix = '';
+        // 判断是否属于应用枚举
+        if ('addon' === strtolower($className[0])) {
+            $prefix = strtolower(Str::snake($className[1])).'::';
+        }
 
-        return __("common.{$className}.{$key}");
+        return __("{$prefix}common.{$name}.{$key}");
     }
 
     public static function getLowerKey($value): string
@@ -89,6 +93,21 @@ abstract class AbstractEnum
         }
 
         return $maps;
+    }
+
+    /**
+     * 获取选项类型.
+     * 将枚举类转换为选项类型的数组共供前端调用
+     * [
+     *      ['label' => '', 'value' => ''],
+     *      ['label' => '', 'value' => '']
+     * ].
+     *
+     * @return array
+     */
+    public static function getMapToOptions(): array
+    {
+        return array_options(self::getMaps());
     }
 
     private static function getConstants(): Collection

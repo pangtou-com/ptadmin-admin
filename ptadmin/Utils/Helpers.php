@@ -164,6 +164,57 @@ if (!function_exists('array_to_map')) {
     }
 }
 
+if (!function_exists('array_to_options')) {
+    /**
+     * 将数组转换为选项类型.
+     *
+     * @param mixed      $data
+     * @param string     $keyName
+     * @param string     $valueName
+     * @param null|array $map
+     *
+     * @return array
+     */
+    function array_to_options($data, ?array $map = ['value' => 'id', 'label' => 'title'], string $keyName = 'value', string $valueName = 'label'): array
+    {
+        if (!is_array($data)) {
+            if (!method_exists($data, 'toArray')) {
+                return [];
+            }
+            $data = $data->toArray();
+        }
+        $results = [];
+        foreach ($data as $key => $value) {
+            if (null !== $map && is_array($value)) {
+                $results[] = [
+                    $keyName => data_get($value, $map['value']),
+                    $valueName => data_get($value, $map['label']),
+                ];
+            } else {
+                $results[] = [$keyName => $key, $valueName => $value];
+            }
+        }
+
+        return $results;
+    }
+}
+
+if (!function_exists('array_options')) {
+    /**
+     * 将一个一维数组转换为选项类型.
+     *
+     * @param $data
+     * @param string $keyName
+     * @param string $valueName
+     *
+     * @return array
+     */
+    function array_options($data, string $keyName = 'value', string $valueName = 'label'): array
+    {
+        return array_to_options($data, null, $keyName, $valueName);
+    }
+}
+
 if (!function_exists('array_filter_field')) {
     /**
      * 提取或排除数组中字段.
@@ -451,7 +502,7 @@ if (!function_exists('admin_route')) {
     {
         $param = '';
         if (count($params) > 0) {
-            $param = '?'.http_build_query($param);
+            $param = '?'.http_build_query($params);
         }
 
         return Str::start(admin_route_prefix(), '/').Str::start($url, '/').$param;
@@ -520,12 +571,7 @@ if (!function_exists('setting')) {
      */
     function setting($key, $default = null, bool $cache = true)
     {
-        $val = \Illuminate\Support\Facades\Cache::get($key);
-        if (null !== $val && $cache) {
-            return $val;
-        }
-
-        return \PTAdmin\Admin\Service\SettingService::byNameValue($key, $default);
+        return \PTAdmin\Admin\Service\SettingService::getSettingValue($key, $default, $cache);
     }
 }
 
