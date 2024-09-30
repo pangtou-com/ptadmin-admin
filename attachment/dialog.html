@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<link rel="stylesheet" href="static/layui/css/layui.css" />
+		<link rel="stylesheet" href="static/font/iconfont.css" />
+		<link rel="stylesheet" href="static/style/index.css" />
+	</head>
+	<body>
+		<button type="button" class="layui-btn layui-btn-primary" lay-on="attachment">点击</button>
+
+		----------------默认上传不经过附件选择-------------------
+		<!-- default -->
+		<div class="ptadmin-attachment-upload ptadmin-attachment-transverse" default>
+			<!-- success -->
+			<ul class="upload-success">
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+			</ul>
+			<div class="ptadmin-attachment-upload-btn">
+				<i class="layui-icon layui-icon-upload-drag"></i>
+			</div>
+		</div>
+		<!-- default end-->
+		<!-- 头像主题  -->
+		<div class="ptadmin-attachment-upload ptadmin-attachment-transverse" default>
+			<!-- success -->
+			<ul class="upload-success">
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+			</ul>
+			<div class="ptadmin-attachment-upload-btn">
+				<i class="layui-icon layui-icon-upload-drag"></i>
+				<div class="attachment-operate layui-btn-group">
+					<button type="button" class="layui-btn layui-btn-xs">上传</button>
+					<button type="button" class="layui-btn layui-btn-xs layui-bg-blue">选择</button>
+				</div>
+			</div>
+		</div>
+		<!-- 主题 end-->
+		----------------远程--------------------------------------
+		<!-- remote -->
+		<div class="ptadmin-attachment-upload ptadmin-attachment-direction">
+			<div class="ptadmin-remote layui-form">
+				<input type="text" name="" placeholder="请输入URL地址" class="layui-input" />
+				<div class="input-suffix layui-btn-group">
+					<button type="button" class="layui-btn layui-bg-blue">选择</button>
+					<button type="button" class="layui-btn layui-bg-orange">上传</button>
+					<button type="button" class="layui-btn save-remote" lay-options="{trigger: 'hover'}">
+						保存附件
+					</button>
+				</div>
+			</div>
+			<!-- success -->
+			<ul class="upload-success">
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+			</ul>
+		</div>
+		<!-- remote end-->
+		------------------直接通过附件选择-------------------------
+		<div class="ptadmin-attachment-upload" local>
+			<div class="layui-btn-group">
+				<button type="button" lay-on="attachment" class="layui-btn">文件选择</button>
+			</div>
+			<!-- success -->
+			<ul class="upload-success">
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+			</ul>
+		</div>
+
+		----------------------两种皆可------------------------
+		<div class="ptadmin-attachment-upload" mix>
+			<div class="layui-btn-group">
+				<button type="button" class="layui-btn">文件选择</button>
+				<button type="button" class="layui-btn layui-bg-blue">文件上传</button>
+			</div>
+			<!-- success -->
+			<ul class="upload-success">
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/wdzwzs.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+				<li class="section layui-form">
+					<div class="file">
+						<img src="static/images/mp4.png" alt="" />
+						<div class="delete-btn">
+							<i class="layui-icon layui-icon-delete"></i>
+						</div>
+					</div>
+					<input type="text" class="layui-input" lay-affix="clear" value="" />
+				</li>
+			</ul>
+		</div>
+
+		<div class="ptadmin-attachment-box ptadmin-attachment-dialog-box">
+			<div class="ptadmin-attachment-container">
+				<aside class="ptadmin-attachment-aside">
+					<ul class="layui-menu ptadmin-attachment-nav">
+						<li class="layui-menu-item-checked">
+							<div class="layui-menu-body-title">全部文件</div>
+						</li>
+						<li class="layui-menu-item-group layui-menu-item-up">
+							<div class="layui-menu-body-title">
+								图片文件
+								<i class="layui-icon layui-icon-up"></i>
+							</div>
+							<ul class="ptadmin-children">
+								<li>
+									<div class="layui-menu-body-title">图片文件一</div>
+								</li>
+								<li>
+									<div class="layui-menu-body-title">图片文件二</div>
+								</li>
+							</ul>
+						</li>
+						<li>
+							<div class="layui-menu-body-title">全部文件</div>
+						</li>
+					</ul>
+				</aside>
+				<main class="ptadmin-attachment-main">
+					<div class="attachment-top">
+						<div class="attachment-top-l layui-form">
+							<div class="layui-btn-group">
+								<button type="button" class="layui-btn layui-btn-sm">
+									<i class="layui-icon layui-icon-ok"></i> 确认
+								</button>
+								<button type="button" class="layui-btn layui-btn-sm layui-bg-blue">
+									<i class="layui-icon layui-icon-upload"></i> 上传
+								</button>
+								<button class="layui-btn layui-bg-red layui-btn-sm">
+									<i class="layui-icon layui-icon-delete"></i>删除
+								</button>
+							</div>
+							<input type="checkbox" name="selectAll" value="1" lay-skin="tag" />
+							<div lay-checkbox>
+								<i
+									class="layui-icon layui-icon-success"
+									style="position: relative; top: 1px; line-height: normal"></i>
+								全选
+							</div>
+						</div>
+						<form class="layui-form attachment-top-r layui-form" action="">
+							<div class="select search-item">
+								<select>
+									<option value="">请选择文件类型</option>
+									<option value="JPG">JPG</option>
+									<option value="PNG">PNG</option>
+									<option value="MP4">MP4</option>
+								</select>
+							</div>
+							<div class="layui-input-group search-item">
+								<input type="text" placeholder="请输入关键字进行搜索" class="layui-input" />
+								<div class="layui-input-split layui-input-suffix" style="cursor: pointer">
+									<i class="layui-icon layui-icon-search"></i>
+								</div>
+							</div>
+						</form>
+					</div>
+					<div class="content">
+						<!-- empty-active -->
+
+						<div class="empty-box">
+							<div class="layui-icon layui-icon-face-cry"></div>
+							<div class="text">暂无更多数据</div>
+						</div>
+
+						<!-- ICON 图special-image -->
+						<ul class="lists">
+							<li class="item active">
+								<div class="image">
+									<img src="static/images/xilumarket.jpg" alt="" />
+									<div class="mask-operate">
+										<div class="layui-btn-group">
+											<button type="button" class="layui-btn layui-btn-xs">
+												<i class="layui-icon layui-icon-eye"></i>
+											</button>
+											<button type="button" class="layui-btn layui-btn-xs layui-bg-blue">
+												<i class="layui-icon layui-icon-edit"></i>
+											</button>
+											<button type="button" class="layui-btn layui-btn-xs layui-bg-red">
+												<i class="layui-icon layui-icon-delete"></i>
+											</button>
+										</div>
+									</div>
+								</div>
+								<div class="section">
+									<span class="count"><i class="iconfont icon-tap"></i>99</span>
+									<span class="layui-badge layui-bg-blue">JPG</span>
+								</div>
+								<div class="title">测试测试测试测试</div>
+								<i class="layui-icon layui-icon-ok"></i>
+							</li>
+							<li class="item active">
+								<div class="image">
+									<img src="static/images/test1.jpg" alt="" />
+									<div class="mask-operate">
+										<div class="layui-btn-group">
+											<button type="button" class="layui-btn layui-btn-xs">
+												<i class="layui-icon layui-icon-eye"></i>
+											</button>
+											<button type="button" class="layui-btn layui-btn-xs layui-bg-blue">
+												<i class="layui-icon layui-icon-edit"></i>
+											</button>
+											<button type="button" class="layui-btn layui-btn-xs layui-bg-red">
+												<i class="layui-icon layui-icon-delete"></i>
+											</button>
+										</div>
+									</div>
+								</div>
+								<div class="section">
+									<span class="count"><i class="iconfont icon-tap"></i>99</span>
+									<span class="layui-badge layui-bg-blue">JPG</span>
+								</div>
+								<div class="title">测试测试测试测试</div>
+								<i class="layui-icon layui-icon-ok"></i>
+							</li>
+						</ul>
+					</div>
+					<div class="attachment-footer">
+						<div id="demo-laypage-normal-2"></div>
+					</div>
+				</main>
+			</div>
+		</div>
+	</body>
+	<script src="static/layui/layui.js"></script>
+	<script>
+		layui.use(['layer', 'util', 'form', 'laypage'], function () {
+			const { $, layer, util, form, laypage } = layui
+			laypage.render({
+				elem: 'demo-laypage-normal-2',
+				count: 100, // 数据总数
+				theme: '#1E9FFF',
+			})
+			//  初始化宽度
+			let area = []
+			$(document).ready(function () {
+				const windowWidth = $(window).width()
+				if (windowWidth > 1300) {
+					area = ['1200px', '800px']
+				}
+
+				if (windowWidth < 1299.99) {
+					area = ['700px', '800px']
+				}
+			})
+			util.on('lay-on', {
+				attachment: function () {
+					layer.open({
+						type: 1,
+						area,
+						title: '文件管理器',
+						resize: false,
+						shadeClose: true,
+						content: $('.ptadmin-attachment-dialog-box'),
+					})
+				},
+			})
+		})
+	</script>
+</html>

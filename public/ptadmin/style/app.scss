@@ -1,6 +1,7 @@
 @import "variable";
 @import "login";
 @import "loading";
+@import "attachment";
 @import "./font/iconfont.css";
 /** 移除隐藏 */
 #ptadmin_app{
@@ -1447,7 +1448,7 @@
 
                         @media (max-width: 767.98px) {
                             width: 100%;
-                            margin-right: 0;
+                            margin-right: 0 ;
                         }
                     }
                 }
