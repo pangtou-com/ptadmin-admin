@@ -254,7 +254,7 @@ layui.define(['upload', 'layer', 'form', 'laypage', 'common'], function (exports
         return `${root['field']}${extend}${random}${val}`
     }
 
-    const resourcesItem = function (data, root, _index = '') {
+    const resourcesItem = function (data, root, _index = '', remote = false) {
         // _index 为layui上传文件的下标
         const time = Math.random().toString(16).substring(2, 8);
         const value = {}
@@ -275,7 +275,7 @@ layui.define(['upload', 'layer', 'form', 'laypage', 'common'], function (exports
             }
         }
         const items = $(`
-                        <div class="${ITEMCLASS} layui-form"  remote-id="${data.remote_id ?? ''}">
+                        <div class="${ITEMCLASS} layui-form"  ${remote ? 'remote' : ''}>
                             ${fieldInput} ${input.join('')}
                             <div class="file"  ptadmin-event="file">
                                 <div class="delete-btn" ptadmin-event="delete" ${_index ? `data-index=${_index}` : ''} >
@@ -320,6 +320,7 @@ layui.define(['upload', 'layer', 'form', 'laypage', 'common'], function (exports
         elem = undefined
         waitFiles = []  // 等待上传的文件
         filesIndex = [] // 文件index集合
+        remoteInput = []  // 远程输入数据
         constructor(config) {
             this._setConfig(config)
             this._gainElem()
@@ -355,7 +356,7 @@ layui.define(['upload', 'layer', 'form', 'laypage', 'common'], function (exports
             this._event()
             this.events = {
                 delete: this._delete,
-                file: this._clickfile,
+                file: this._clickFile,
                 selector: this._selector,
                 'input-remote': this._inputRemote
             }
@@ -399,14 +400,13 @@ layui.define(['upload', 'layer', 'form', 'laypage', 'common'], function (exports
             }
         }
         // 点击文件
-        _clickfile(data) {
+        _clickFile(data) {
             const curIdx = $(data.elem).closest('.section').index()
             const curUploadData = this.upload[curIdx]
             const isImage = imageType.includes(curUploadData['suffix'])
             const url = curUploadData.url
             this.previewFile(url, isImage)
         }
-
         // 弹出附件管理
         _selector(data) {
             const elem = attachmentView.currentBtn ? attachmentView.currentBtn.elem : ''
@@ -481,72 +481,95 @@ layui.define(['upload', 'layer', 'form', 'laypage', 'common'], function (exports
             const val = $(data.elem).val();
             const arr = val ? val.split(',') : [];
             const filterArr = arr.filter(item => item.trim());  // 过滤为空字符串的数据
+            const unique = arr.filter((item, index, self) => {
+                return self.indexOf(item) === index
+            })
+
             const isMultiple = this.config['attribute']['multiple']
             const maxNum = this.config.attribute['number']  // 最大可存在的数据个数
             const parent = $(data.elem).closest(`.${DEFAULT}`)
-            // 所有子元素
-            const children = parent.find(`.${SUCCESSCLASS}`).children()
             // 单
             if (!isMultiple && filterArr.length > 1) {
                 layer.msg('最多只能存在一个资源')
                 return
             }
             // 多
-            if (isMultiple && maxNum && this.upload.length >= maxNum) {
+            if (isMultiple && maxNum && this.upload.length + filterArr.length > maxNum) {
                 layer.msg('最多只能存在' + maxNum + '个资源')
                 return
             }
-
             // 重设数据
             let rebuild = []
             filterArr.forEach((item, idx) => {
                 const data = {
                     url: item,
                     title: item,
-                    remote_id: 'remote_' + idx
+                }
+                if (!this.config['edit']) {
+                    delete data.title
                 }
                 rebuild.push(data)
             });
 
-            // 当数据存在的时候
-            if (!isMultiple) {
-                this.upload = rebuild
-            } else {
-                const arr = rebuild;
-                let filterArr = arr.filter((item, index, self) => {
-                    return index === self.findIndex(it => it.id !== item.id);
-                });
-                console.log(filterArr);
-                // this.upload = filterArr
-            }
-
             // 获取最后一个输入的文件地址
-            if (this.upload.length > 0) {
-                const last = this.upload[this.upload.length - 1]
-                if (!this.config['edit']) {
-                    delete last.title
-                }
-                const html = resourcesItem(last, this.config)
+            if (rebuild.length > 0) {
+                // 多选
                 if (isMultiple) {
-                    // 多选
-                    $.each(children, function (i, item) {
-                        console.log(item);
-                    })
-                    console.log('已经上传存在的数据：：：', this.upload);
+                    const successElement = parent.find(`.${SUCCESSCLASS}`);
+                    // 新增
+                    if (rebuild.length > this.remoteInput.length || this.remoteInput.length === 0) {
+                        const newItems = rebuild.filter(item => {
+                            return !this.remoteInput.some(oldItem => oldItem.url === item.url)
+                        });
+                        newItems.forEach(item => {
+                            const html = resourcesItem(item, this.config, '', true);
+                            successElement.append(html);
+                        });
+                    }
+                    // 修改
+                    if (rebuild.length === this.remoteInput.length) {
+                        for (let i = 0; i < rebuild.length; i++) {
+                            if (rebuild[i].url !== this.remoteInput[i].url) {
+                                const html = resourcesItem(rebuild[i], this.config, '', true)
+                                successElement.children('[remote]').eq(i).replaceWith(html)
+                            }
+                        }
+                    }
+                    // 过滤出被删除的元素
+                    if (rebuild.length < this.remoteInput.length) {
+                        const del = []
+                        this.remoteInput.filter((item, i) => {
+                            if (rebuild.findIndex(val => val.url === item.url) === -1) { del.push(i) }
+                        })
+                        del.reverse().forEach(item => {
+                            successElement.children('[remote]').eq(item).remove()
+                        });
+                    }
+                    this.remoteInput = rebuild
+
                 }
                 // 单选
                 if (!isMultiple) {
+                    const html = resourcesItem(rebuild[0], this.config, '', true)
                     parent.find(`.${SUCCESSCLASS}`).html(html)
                 }
             }
 
-            // 当单选时，且没有上传文件，则移除
-            if (!isMultiple && this.upload.length === 0) {
-                children.remove()
+            // 当单选时，数据为空则移除
+            if (!isMultiple && rebuild.length === 0) {
+                parent.find(`.${SUCCESSCLASS}`).empty()
+                this.remoteInput = []
             }
 
+            // 多选时,数据为空
+            if (isMultiple && rebuild.length === 0) {
+                parent.find(`.${SUCCESSCLASS}`).children('[remote]').remove()
+                this.remoteInput = []
+            }
+
+            form.render()
             if (this.config['remoteInput'] && typeof this.config['remoteInput'] === "function") {
-                this.config['remoteInput'](this.upload, data)
+                this.config['remoteInput'](this.remoteInput, data)
             }
         }
         action(event, params, target) {
@@ -599,7 +622,6 @@ layui.define(['upload', 'layer', 'form', 'laypage', 'common'], function (exports
             };
         }
     }
-
 
     // 创建弹层
     const buildLayer = function () {
@@ -715,15 +737,15 @@ layui.define(['upload', 'layer', 'form', 'laypage', 'common'], function (exports
                                 <div class="text">暂无更多数据</div>
                             </div>
                         `
-        const content = `<div div class="content">
+        const content = `<div class="content">
                                 ${empty}
                                 <ul class="lists" ${attachmentView.contentAttr}></ul>
-                            </div > `
+                         </div> `
         attachmentView.container.find('.ptadmin-attachment-main').append(content)
     }
     // 创建分页
     const buildPage = function () {
-        const html = `<div div class="attachment-footer" > <div id="laypage-dialog"></div> </div > `
+        const html = `<div class="attachment-footer" > <div id="laypage-dialog"></div> </div> `
         attachmentView.container.find('.ptadmin-attachment-main').append(html)
     }
     // 循环数据渲染
