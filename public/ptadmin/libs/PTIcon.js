@@ -292,6 +292,9 @@ layui.define(function (exports) {
 
     const PTIcon = {
         render: function (title) {
+            if ($(ELEM_CLASS).length === 0 ) {
+                return
+            }
             const area = common.getArea();
             const options = {
                 title,

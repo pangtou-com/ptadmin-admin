@@ -29,6 +29,7 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
         },
         submit: function () {
             const thiz = this
+
             const handle = {
                 submit: () => {
                     const config = thiz.config
@@ -42,6 +43,7 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                             }
                             if (res.code === 0) {
                                 handle.close();
+                                // 使用pushMessage发送消息通知
                             } else {
                                 layer.msg(res.message, { icon: 2 });
                             }
@@ -62,6 +64,7 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                         if (thiz.config.reload === true) {
                             window.parent.location.reload();
                         }
+
                     }
                 },
             };

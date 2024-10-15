@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="{{_asset('/ptadmin/bin/css/layui.css')}}" media="all">
     <link rel="stylesheet" href="{{_asset('/ptadmin/style/app.css')}}" media="all">
     <link rel="stylesheet" href="{{_asset('/ptadmin/iconfont/iconfont.css')}}" />
-    <link rel="stylesheet" href="{{_asset('/ptadmin/bin/fontawesome/css/all.min.css')}}" media="all">
     <link rel="stylesheet" href="{{_asset('/ptadmin/style/multipleSelect.css')}}" media="all">
     @yield('head')
 </head>
@@ -21,11 +20,8 @@
     @yield('content')
     <script src="{{_asset('/ptadmin/js/jquery-1.12.4.min.js')}}"></script>
     <script src="{{_asset('/ptadmin/bin/layui.js')}}"></script>
-    @if(setting('editor', 'tiny') === 'tiny')
-    <script src="{{_asset('ptadmin/bin/editor/tinymce/tinymce.min.js')}}"></script>
-    @else
-    <script src="{{_asset('ptadmin/bin/editor/kindeditor/kindeditor-all-min.js')}}"></script>
-    @endif
+    <script src="{{_asset('/ptadmin/bin/editor/tinymce/tinymce.min.js')}}"></script>
+
     <script type="text/javascript">
         $.ajaxSetup({
             headers: {

@@ -52,18 +52,31 @@
         </main>
     </div>
 </div>
-<script id="group_table_html" type="text/html"></script>
-<script id="field_table_html" type="text/html"></script>
-<dialog id="dialog">
-    <div class="dialog-header">
-        <span>Iframe Content</span>
-        <button class="close-btn" id="closeDialogBtn">&times;</button>
+<script id="group_table_html" type="text/html">
+    <div class="layui-btn-group">
+        @{{# if(d.parent_id === 0 ){ }}
+            <a class="layui-btn layui-btn-xs layui-bg-blue" lay-event="create"><i class="layui-icon layui-icon-addition"></i></a>
+        @{{# } }}
+        <a class="layui-btn layui-btn-xs" lay-event="edit">
+            <i class="layui-icon layui-icon-edit"></i>
+        </a>
+        @{{# if(!(d.parent_id === 0 && d.children.length !== 0) ){ }}
+            <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="delete">
+                <i class="layui-icon layui-icon-delete"></i>
+            </a>
+        @{{# } }}
     </div>
-    <div class="dialog-body">
-        <iframe src="{{admin_route("setting-group")}}" frameborder="0"></iframe>
+</script>
+<script id="field_table_html" type="text/html">
+    <div class="layui-btn-group">
+        <a class="layui-btn layui-btn-xs" lay-event="edit">
+            <i class="layui-icon layui-icon-edit"></i>
+        </a>
+        <a class="layui-btn layui-btn-xs layui-btn-danger" lay-event="delete">
+            <i class="layui-icon layui-icon-delete"></i>
+        </a>
     </div>
-
-</dialog>
+</script>
 
 <script id="group_html" type="text/html">
     <li class="" ptadmin-event="group" data-id="@{{d.id}}" data-name="@{{d.name}}">
@@ -81,60 +94,29 @@
                 {title: '分组字段', id: 'field_table', name: 'FIELD'},
             ]
 
-            const events = {
-                edit: function (id) {
-                    common.formOpen(`{{admin_route("setting-group")}}/${id}`, '编辑分组')
-                },
-                delete: function (id) {
-                    layer.confirm('确认要删除此项目吗?', {icon: 3, title: 'Warning'}, function (index) {
-                        common.del(`{{admin_route("setting-group")}}/${id}`, {}, function (res) {
-                            if (res.code === 0) {
-                                layer.msg(res.message, {icon: 1});
-                                setTimeout(function () {
-                                    location.href = "{{admin_route('settings')}}"
-                                }, 1000)
-                            } else {
-                                layer.msg(res.message, {icon: 3});
-                            }
-                        });
-                        layer.close(index);
-                    });
-                },
-                'field-create': function (id) {
-                    common.formOpen(`{{admin_route("settings")}}?category_id=${id}`, '新增配置字段')
-                },
-                'field-del': function (id) {
-                    layer.confirm('确认要删除此项目吗?', {icon: 3, title: 'Warning'}, function (index) {
-                        common.del(`{{admin_route("setting")}}/${id}`, {}, function (res) {
-                            if (res.code === 0) {
-                                layer.msg(res.message, {icon: 1});
-                                setTimeout(function () {
-                                    location.reload()
-                                }, 1000)
-                            } else {
-                                layer.msg(res.message, {icon: 3});
-                            }
-                        });
-                        layer.close(index);
-                    });
-                },
-                'field-edit': function (id) {
-                    common.formOpen(`{{admin_route("setting")}}/${id}`, '编辑配置字段')
-                },
-            }
-
             const API_EXTEND = {
                 group_table: {
-                    create: {url: "{{admin_route("setting-group")}}", title: '新增配置分组'}
+                    create: {url: "{{admin_route("setting-group")}}", title: '新增配置分组'},
+                    edit: {url: "{{admin_route("setting-group")}}", title: '编辑分组'},
+                    delete: {url: "{{admin_route("setting-group")}}", title: '删除分组'},
                 },
                 field_table: {
-                    create: {url: "{{admin_route("setting")}}", title: '新增字段'}
+                    create: {url: "{{admin_route("setting")}}", title: '新增字段'},
+                    edit: {url: "{{admin_route("setting")}}", title: '编辑字段'},
+                    delete: {url: "{{admin_route("setting")}}", title: '删除字段'},
                 }
             }
             const tableHandle = {
                 current_table_type: undefined,
                 instance: {},
                 loadTreeTable: function (elem) {
+                    treeTable.on(`tool(${elem})`, function (obj) {
+                        const data = obj.data;
+                        const event = obj.event;
+                        if (tableHandle.events[event]) {
+                            tableHandle.events[event].call(tableHandle, data)
+                        }
+                    })
                     return treeTable.render({
                         elem: $(`#${elem}`),
                         url: '{{admin_route("setting-groups")}}',
@@ -156,11 +138,18 @@
                             {field: 'title', title: '标题'},
                             {field: 'intro', title: '备注'},
                             {field: 'weight', title: '排序'},
-                            {field: 'options', title:'操作'},
+                            {fixed: "right", title: "操作", width: 120, align: "center", toolbar: "#group_table_html"}
                         ]]
                     })
                 },
                 loadTable: function (elem) {
+                    table.on(`tool(${elem})`, function (obj) {
+                        const data = obj.data;
+                        const event = obj.event;
+                        if (tableHandle.events[event]) {
+                            tableHandle.events[event].call(tableHandle, data)
+                        }
+                    })
                     return table.render({
                         url: "{{admin_route("setting-page")}}",
                         elem: `#${elem}`,
@@ -168,10 +157,10 @@
                             {field: 'id', title: 'ID', width: 60},
                             {field: 'name', title: '标识'},
                             {field: 'title', title: '标题'},
-                            {field: 'category.title', title: '所属分组'},
+                            {field: 'category', title: '所属分组', templet: function ({category}) { return category.title || '---'}},
                             {field: 'intro', title: '备注'},
                             {field: 'weight', title: '排序'},
-                            {field: 'options', title:'操作'},
+                            {fixed: "right", title: "操作", width: 120, align: "center", toolbar: "#field_table_html"}
                         ]],
                         page: true,
                         limit: 50
@@ -202,21 +191,39 @@
                         console.error('table instance is undefined')
                         return;
                     }
-                    this.instance[this.current_table_type].reloadData()
-                },
-                create: function () {
-                    common.formOpen(this.getApi().create.url, this.getApi().create.title, {
-                        yes: function () {
-                            console.log("操作成功")
-
-                        }
-                    })
-                    window.addEventListener("message", function () {
-
-                    })
+                    this.instance[this.current_table_type].reload()
                 },
                 getApi: function () {
                     return API_EXTEND[this.current_table_type]
+                },
+                events: {
+                    edit: function ({id}) {
+                        common.formOpen(`${tableHandle.getApi().edit.url}/${id}`, tableHandle.getApi().edit.title)
+                    },
+                    delete: function ({id}) {
+                        layer.confirm('确认要删除此项目吗?', {icon: 3, title: 'Warning'}, function (index) {
+                            common.del(`${tableHandle.getApi().delete.url}/${id}`, {}, function (res) {
+                                if (res.code === 0) {
+                                    layer.msg(res.message, {icon: 1});
+                                    tableHandle.refresh()
+                                } else {
+                                    layer.msg(res.message, {icon: 3});
+                                }
+                            })
+                            layer.close(index);
+                        })
+                    },
+                    create: function (data = undefined) {
+                        let url = tableHandle.getApi().create.url
+                        if (data !== undefined) {
+                            url = url + `?parent_id=${data.id}`
+                        }
+                        common.formOpen(url, tableHandle.getApi().create.title, {
+                            yes: function () {
+                                console.log("操作成功")
+                            }
+                        })
+                    },
                 }
             }
 
@@ -243,7 +250,7 @@
             PTSetting.on("refresh", () => tableHandle.refresh())
 
             // 创建
-            PTSetting.on("create", () => tableHandle.create())
+            PTSetting.on("create", () => tableHandle.events.create())
 
             // 编辑
             PTSetting.on("edit", function () {

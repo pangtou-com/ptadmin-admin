@@ -465,15 +465,34 @@ if (!function_exists('addon_asset')) {
     /**
      * 插件的静态资源访问路径.
      *
-     * @param mixed $addon_code 所属插件code
-     * @param mixed $path       资源路径
-     * @param mixed $secure     设置是否生成安全访问地址
+     * @param string $addon_code 所属插件code
+     * @param string $path       资源路径
+     * @param bool   $force      是否强制刷新
+     * @param mixed  $secure     设置是否生成安全访问地址
      *
      * @return string
      */
-    function addon_asset($addon_code, $path, $secure = null): string
+    function addon_asset(string $addon_code, string $path, bool $force = false, $secure = null): string
     {
-        return _asset("addons/{$addon_code}/{$path}", $secure);
+        $path = ltrim($path, \DIRECTORY_SEPARATOR);
+        // 当不启用debug模式时，直接返回资源地址
+        if (true !== config('app.debug') && false === $force) {
+            return asset('addons'.\DIRECTORY_SEPARATOR."{$addon_code}".\DIRECTORY_SEPARATOR."{$path}", $secure);
+        }
+        // 判断应用目录下是否存在资源信息
+        $addon_path = addon_path($addon_code, 'Assets'.\DIRECTORY_SEPARATOR.$path);
+        if (!file_exists($addon_path)) {
+            throw new \PTAdmin\Admin\Exceptions\BackgroundException("【{$path}】不存在");
+        }
+        // 拷贝资源至访问目录
+        $addon_storage_path = storage_path('app'.\DIRECTORY_SEPARATOR.'addons'.\DIRECTORY_SEPARATOR."{$addon_code}".\DIRECTORY_SEPARATOR."{$path}");
+        if (!file_exists($addon_storage_path) || (file_exists($addon_storage_path) && (filemtime($addon_path) > filemtime($addon_storage_path)))) {
+            $filesystem = new \Illuminate\Filesystem\Filesystem();
+            $filesystem->ensureDirectoryExists($filesystem->dirname($addon_storage_path));
+            $filesystem->copy($addon_path, $addon_storage_path);
+        }
+
+        return asset('addons'.\DIRECTORY_SEPARATOR."{$addon_code}".\DIRECTORY_SEPARATOR."{$path}?a=".time(), $secure);
     }
 }
 
