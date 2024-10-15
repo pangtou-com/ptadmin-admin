@@ -514,6 +514,9 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
             }
 
             let search = this.__getSearchHtml();
+            if (letHtml === "" && rightHtml === "" && search === "") {
+                return ""
+            }
 
             return `<div class="layui-card-header ptadmin-header">
                         <div class="left">${letHtml}</div>
