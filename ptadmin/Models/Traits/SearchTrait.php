@@ -269,16 +269,10 @@ trait SearchTrait
     protected function getFilterValue($value, $field): ?array
     {
         $val = $this->getValue($value);
-
         if (blank($val)) {
             return null;
         }
-
-        $op = '=';
-        if (\is_array($value)) {
-            $op = $value['op'] ?? $field['op'] ?? '=';
-            $op = $this->getSearchOperator($val, $op);
-        }
+        $op = $this->getSearchOperator($val, $value['op'] ?? $field['op'] ?? '=');
         $op = strtolower($op);
         // 当值不为数组但符号需要数值类型时需要重置为数组类型，默认情况下按照 `,` 分隔
         if (\in_array($op, $this->operator_array, true) && !\is_array($val)) {
@@ -367,6 +361,14 @@ trait SearchTrait
         return Carbon::make($val)->getTimestamp();
     }
 
+    /**
+     * 获取搜索操作条件.
+     *
+     * @param $val
+     * @param $op
+     *
+     * @return string
+     */
     protected function getSearchOperator($val, $op): string
     {
         // 在根据数据类型重新对符号进行处理
@@ -474,7 +476,7 @@ trait SearchTrait
     protected function buildOrWhere($query, $value)
     {
         $query->where(function ($q) use ($value): void {
-            foreach ($value['fields'] as $item) {
+            foreach ($value['field'] as $item) {
                 $this->buildWhere($q, $item, $value, 'or');
             }
         });
