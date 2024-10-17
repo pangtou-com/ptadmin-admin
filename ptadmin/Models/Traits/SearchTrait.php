@@ -163,15 +163,27 @@ trait SearchTrait
             $data = request()->all();
         }
         $results = [];
+
         foreach ($fields as $key => $field) {
             $table_field = $this->getSearchTableField($key, $field);
             if (null === $table_field) {
                 continue;
             }
-            $val = $this->buildSearchParams($table_field, $field, $data);
+
+            /**
+             * 设置获取请求参数可支持类型为：
+             * $data = [
+             *      "请求参数名称" => ["field" => "数据表字段名称"]， 方式1
+             *      ["field" => "数据表字段名称", "query_field" => "请求参数名称"]，方式2
+             *      "field" => "=" // 方式3
+             * ];.
+             */
+            $val = $this->buildSearchParams(is_numeric($key) ? $table_field : $key, $field, $data);
             if (null === $val) {
                 continue;
             }
+            // 在配置时可能会出现一个字段可查询多个字段数据的情况，可通过配置 fields 的方式实现
+            $val['field'] = isset($field['fields']) && \is_array($field['fields']) ? $field['fields'] : $table_field;
             $results[$table_field] = $val;
         }
 
@@ -221,25 +233,25 @@ trait SearchTrait
     /**
      * 构建搜索所需的参数数组信息.
      *
-     * @param string $tableField
-     * @param array  $data
-     * @param mixed  $field
+     * @param array $data
+     * @param mixed $field
+     * @param mixed $key
      *
      * @return null|array
      */
-    protected function buildSearchParams(string $tableField, $field, array $data): ?array
+    protected function buildSearchParams($key, $field, array $data): ?array
     {
-        $query_field = $this->getQueryField($tableField, $field);
+        $query_field = $this->getQueryField($key, $field);
         $value = $data[$query_field] ?? null;
         if (blank($value)) {
             return null;
         }
+
         list($val, $op) = $this->getFilterValue($value, $field);
         if (null === $val) {
             return null;
         }
-        // 在配置时可能会出现一个字段可查询多个字段数据的情况，可通过配置 fields 的方式实现
-        $results['field'] = isset($field['fields']) && \is_array($field['fields']) ? $field['fields'] : $tableField;
+
         $results['value'] = $val;
         $results['op'] = $op;
 
@@ -257,9 +269,11 @@ trait SearchTrait
     protected function getFilterValue($value, $field): ?array
     {
         $val = $this->getValue($value);
+
         if (blank($val)) {
             return null;
         }
+
         $op = '=';
         if (\is_array($value)) {
             $op = $value['op'] ?? $field['op'] ?? '=';
@@ -386,6 +400,11 @@ trait SearchTrait
     protected function getValue($value)
     {
         if (!\is_array($value)) {
+            return $value;
+        }
+        if (!\array_key_exists('value', $value)
+            && !\array_key_exists('min', $value)
+            && !\array_key_exists('max', $value)) {
             return $value;
         }
         if (isset($value['value'])) {

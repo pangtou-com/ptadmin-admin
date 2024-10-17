@@ -32,6 +32,7 @@ Route::group(['prefix' => admin_route_prefix()], function (): void {
 });
 
 Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmin\Admin\Utils\SystemAuth::getGuard()]], function (): void {
+    Route::get('/', [Admin\HomeController::class, 'layout']);
     Route::get('layout', [Admin\HomeController::class, 'layout']);
     Route::get('console', [Admin\HomeController::class, 'console']);
     Route::match(['get', 'post'], 'quick-nav', [Admin\HomeController::class, 'quickNav']);
