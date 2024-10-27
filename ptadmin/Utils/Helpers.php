@@ -486,7 +486,7 @@ if (!function_exists('addon_asset')) {
         }
         // 拷贝资源至访问目录
         $addon_storage_path = storage_path('app'.\DIRECTORY_SEPARATOR.'addons'.\DIRECTORY_SEPARATOR."{$addon_code}".\DIRECTORY_SEPARATOR."{$path}");
-        if (!file_exists($addon_storage_path) || (file_exists($addon_storage_path) && (filemtime($addon_path) > filemtime($addon_storage_path)))) {
+        if (!file_exists($addon_storage_path) || (filemtime($addon_path) > filemtime($addon_storage_path))) {
             $filesystem = new \Illuminate\Filesystem\Filesystem();
             $filesystem->ensureDirectoryExists($filesystem->dirname($addon_storage_path));
             $filesystem->copy($addon_path, $addon_storage_path);
