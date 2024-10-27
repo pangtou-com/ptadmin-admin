@@ -229,7 +229,7 @@
 			attribute:{
 				multiple:true,
 				url:'{{admin_route('upload')}}',
-				number:4,
+				number:9,
 				accept: 'file',// 所有文件格式
 			},
 			data:[
