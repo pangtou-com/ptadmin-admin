@@ -110,7 +110,7 @@ abstract class AbstractBackgroundController extends BaseController
      */
     protected function getIds(): array
     {
-        $id = request()->route('id');
+        $id = (int) request()->route('id');
         $ids = norm_ids(request()->get('ids'));
         if ($id) {
             $ids[] = $id;
@@ -128,10 +128,10 @@ abstract class AbstractBackgroundController extends BaseController
      */
     protected function getViewPath($path = null): string
     {
-        if ($this->templatePath) {
+        if (null !== $this->templatePath) {
             return $this->templatePath;
         }
-        $action = request()->route()->getActionName();
+        $action = app('request')->route()->getActionName();
         $action = explode('\\', $action);
         $action = array_pop($action);
         if (null === $path) {

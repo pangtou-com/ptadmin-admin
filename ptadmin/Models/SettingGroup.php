@@ -45,4 +45,9 @@ class SettingGroup extends AbstractModel
     {
         return $this->hasMany(self::class, 'parent_id', 'id');
     }
+
+    public static function getParentLists($id): array
+    {
+        return array_to_options(self::query()->where('parent_id', 0)->where('id', '<>', $id)->get()->toArray());
+    }
 }

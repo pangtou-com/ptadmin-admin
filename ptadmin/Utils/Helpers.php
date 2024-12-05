@@ -118,7 +118,7 @@ if (!function_exists('infinite_tree')) {
      */
     function infinite_tree(array $data, $parentId = 0, string $parentIdName = 'parent_id', string $keyName = 'id', string $childrenName = 'children'): array
     {
-        if (!$data) {
+        if (0 === count($data)) {
             return [];
         }
         $result = [];
@@ -164,54 +164,36 @@ if (!function_exists('array_to_map')) {
     }
 }
 
-if (!function_exists('array_to_options')) {
+if (!function_exists('get_dir_file')) {
     /**
-     * 将数组转换为选项类型.
+     * 获取目录下文件列表.
      *
-     * @param mixed      $data
-     * @param string     $keyName
-     * @param string     $valueName
-     * @param null|array $map
+     * @param string            $dir      文件目录
+     * @param null|array|string $allowExt 支持批量后缀名，如：['.php','.html']
+     * @param int               $maxDepth 最大递归深度，默认为3
      *
      * @return array
      */
-    function array_to_options($data, ?array $map = ['value' => 'id', 'label' => 'title'], string $keyName = 'value', string $valueName = 'label'): array
+    function get_dir_file(string $dir, $allowExt = 'php', int $maxDepth = 3): array
     {
-        if (!is_array($data)) {
-            if (!method_exists($data, 'toArray')) {
-                return [];
-            }
-            $data = $data->toArray();
+        $dir = rtrim($dir, DIRECTORY_SEPARATOR);
+        $files = [];
+        if (!is_dir($dir) || !is_readable($dir)) {
+            return [];
         }
-        $results = [];
-        foreach ($data as $key => $value) {
-            if (null !== $map && is_array($value)) {
-                $results[] = [
-                    $keyName => data_get($value, $map['value']),
-                    $valueName => data_get($value, $map['label']),
-                ];
-            } else {
-                $results[] = [$keyName => $key, $valueName => $value];
+        $iterator = new RecursiveDirectoryIterator($dir);
+        $iterator->setFlags(FilesystemIterator::SKIP_DOTS);
+        $iterator = new RecursiveIteratorIterator($iterator, RecursiveIteratorIterator::SELF_FIRST);
+        $iterator->setMaxDepth($maxDepth);
+
+        foreach ($iterator as $file) {
+            if ($file->isFile() && in_array($file->getExtension(), (array) $allowExt, true)) {
+                $relativePath = substr($file->getPathname(), strlen($dir) + 1);
+                $files[] = $relativePath;
             }
         }
 
-        return $results;
-    }
-}
-
-if (!function_exists('array_options')) {
-    /**
-     * 将一个一维数组转换为选项类型.
-     *
-     * @param $data
-     * @param string $keyName
-     * @param string $valueName
-     *
-     * @return array
-     */
-    function array_options($data, string $keyName = 'value', string $valueName = 'label'): array
-    {
-        return array_to_options($data, null, $keyName, $valueName);
+        return $files;
     }
 }
 
@@ -434,7 +416,7 @@ if (!function_exists('is_active')) {
         if (\Illuminate\Support\Facades\Route::current()->uri() === $route) {
             return $className;
         }
-        if ($route && strpos(\Illuminate\Support\Facades\URL::current(), $route) && $is_prefix && '/' !== $route) {
+        if (!blank($route) && strpos(\Illuminate\Support\Facades\URL::current(), $route) && $is_prefix && '/' !== $route) {
             return $className;
         }
 
@@ -465,19 +447,19 @@ if (!function_exists('addon_asset')) {
     /**
      * 插件的静态资源访问路径.
      *
-     * @param string $addon_code 所属插件code
-     * @param string $path       资源路径
-     * @param bool   $force      是否强制刷新
-     * @param mixed  $secure     设置是否生成安全访问地址
+     * @param mixed $addon_code 所属插件code
+     * @param mixed $path       资源路径
+     * @param bool  $force      是否强制更新
+     * @param mixed $secure     设置是否生成安全访问地址
      *
      * @return string
      */
-    function addon_asset(string $addon_code, string $path, bool $force = false, $secure = null): string
+    function addon_asset($addon_code, $path, bool $force = false, $secure = null): string
     {
-        $path = ltrim($path, \DIRECTORY_SEPARATOR);
+        $path = ltrim($path, '/');
         // 当不启用debug模式时，直接返回资源地址
         if (true !== config('app.debug') && false === $force) {
-            return asset('addons'.\DIRECTORY_SEPARATOR."{$addon_code}".\DIRECTORY_SEPARATOR."{$path}", $secure);
+            return asset("addons/{$addon_code}/{$path}", $secure);
         }
         // 判断应用目录下是否存在资源信息
         $addon_path = addon_path($addon_code, 'Assets'.\DIRECTORY_SEPARATOR.$path);
@@ -486,13 +468,14 @@ if (!function_exists('addon_asset')) {
         }
         // 拷贝资源至访问目录
         $addon_storage_path = storage_path('app'.\DIRECTORY_SEPARATOR.'addons'.\DIRECTORY_SEPARATOR."{$addon_code}".\DIRECTORY_SEPARATOR."{$path}");
-        if (!file_exists($addon_storage_path) || (filemtime($addon_path) > filemtime($addon_storage_path))) {
+        $storageExists = file_exists($addon_storage_path);
+        if (!$storageExists || (filemtime($addon_path) > filemtime($addon_storage_path))) {
             $filesystem = new \Illuminate\Filesystem\Filesystem();
             $filesystem->ensureDirectoryExists($filesystem->dirname($addon_storage_path));
             $filesystem->copy($addon_path, $addon_storage_path);
         }
 
-        return asset('addons'.\DIRECTORY_SEPARATOR."{$addon_code}".\DIRECTORY_SEPARATOR."{$path}?a=".time(), $secure);
+        return asset("addons/{$addon_code}/{$path}?a=".time(), $secure);
     }
 }
 
@@ -533,13 +516,13 @@ if (!function_exists('addon_path')) {
      * 插件目录.
      *
      * @param $code
-     * @param null $path
+     * @param string $path
      *
      * @return string
      */
-    function addon_path($code, $path = null): string
+    function addon_path($code, string $path = ''): string
     {
-        return base_path('addons'.\DIRECTORY_SEPARATOR.ucfirst($code).($path ? \DIRECTORY_SEPARATOR.$path : ''));
+        return base_path('addons'.\DIRECTORY_SEPARATOR.ucfirst($code).('' !== $path ? \DIRECTORY_SEPARATOR.$path : ''));
     }
 }
 
@@ -584,13 +567,12 @@ if (!function_exists('setting')) {
      *
      * @param $key
      * @param $default
-     * @param bool $cache
      *
      * @return mixed
      */
-    function setting($key, $default = null, bool $cache = true)
+    function setting($key, $default = null)
     {
-        return \PTAdmin\Admin\Service\SettingService::getSettingValue($key, $default, $cache);
+        return \PTAdmin\Admin\Service\SettingService::getSetting($key, $default);
     }
 }
 
@@ -604,10 +586,6 @@ if (!function_exists('is_email')) {
      */
     function is_email($value): bool
     {
-        if (null === FILTER_FLAG_EMAIL_UNICODE) {
-            return false !== filter_var($value, FILTER_VALIDATE_EMAIL);
-        }
-
         return false !== filter_var($value, FILTER_VALIDATE_EMAIL, FILTER_FLAG_EMAIL_UNICODE);
     }
 }
@@ -750,6 +728,57 @@ if (!function_exists('get_mix_user_id')) {
     }
 }
 
+if (!function_exists('array_to_options')) {
+    /**
+     * 将数组转换为选项类型.
+     *
+     * @param mixed      $data
+     * @param string     $keyName
+     * @param string     $valueName
+     * @param null|array $map
+     *
+     * @return array
+     */
+    function array_to_options($data, ?array $map = ['value' => 'id', 'label' => 'title'], string $keyName = 'value', string $valueName = 'label'): array
+    {
+        if (!is_array($data)) {
+            if (!method_exists($data, 'toArray')) {
+                return [];
+            }
+            $data = $data->toArray();
+        }
+        $results = [];
+        foreach ($data as $key => $value) {
+            if (null !== $map && is_array($value)) {
+                $results[] = [
+                    $keyName => data_get($value, $map['value']),
+                    $valueName => data_get($value, $map['label']),
+                ];
+            } else {
+                $results[] = [$keyName => $key, $valueName => $value];
+            }
+        }
+
+        return $results;
+    }
+}
+
+if (!function_exists('array_options')) {
+    /**
+     * 将一个一维数组转换为选项类型.
+     *
+     * @param $data
+     * @param string $keyName
+     * @param string $valueName
+     *
+     * @return array
+     */
+    function array_options($data, string $keyName = 'value', string $valueName = 'label'): array
+    {
+        return array_to_options($data, null, $keyName, $valueName);
+    }
+}
+
 if (!function_exists('whenBlank')) {
     /**
      * 当值为空时执行回调.
@@ -785,6 +814,81 @@ if (!function_exists('whenNotBlank')) {
         }
 
         return blank($value) ? $value : $callback($value);
+    }
+}
+
+/**
+ * seo标题信息.
+ * 自动基于模版提取站点标题 - 分类标题 - 文章标题.
+ *
+ * @return string
+ */
+function seo_title(): string
+{
+    $str = app('view')->getSection('title');
+    if (null !== $str) {
+        return (string) $str;
+    }
+
+    $str = app('view')->shared('seo_title');
+    if (null !== $str) {
+        return (string) $str;
+    }
+    // 需要通过站点信息获取内容
+    return '';
+}
+
+/**
+ * seo关键词.
+ *
+ * @return string
+ */
+function seo_keywords(): string
+{
+    $str = app('view')->getSection('keywords');
+    if (null !== $str) {
+        return (string) $str;
+    }
+
+    $str = app('view')->shared('seo_keywords');
+    if (null !== $str) {
+        return (string) $str;
+    }
+    // 需要通过站点信息获取内容
+    return '';
+}
+
+/**
+ * seo描述信息.
+ *
+ * @return string
+ */
+function seo_description(): string
+{
+    $str = app('view')->getSection('description');
+    if (null !== $str) {
+        return (string) $str;
+    }
+
+    $str = app('view')->shared('seo_description');
+    if (null !== $str) {
+        return (string) $str;
+    }
+    // 需要通过站点信息获取内容
+    return '';
+}
+
+if (!function_exists('getSiteSeo')) {
+    /**
+     * 获取站点标题.
+     *
+     * @return null|HigherOrderBuilderProxy|mixed
+     */
+    function getSiteSeo()
+    {
+        $value = \PTAdmin\Admin\Models\Setting::query()->where('name', 'site')->first();
+
+        return $value ? $value->extra : null;
     }
 }
 
@@ -835,10 +939,6 @@ if (!function_exists('hook_filter')) {
      */
     function hook_filter(string $hook, $value, ...$parameters)
     {
-        if (true === config('app.debug') && class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
-            \Barryvdh\Debugbar\Facades\Debugbar::log('【HOOK】hook_filter: '.$hook);
-        }
-
         return \PTAdmin\Admin\Utils\Events::filter($hook, $value, ...$parameters);
     }
 }
@@ -852,9 +952,6 @@ if (!function_exists('hook_action')) {
      */
     function hook_action(string $hook, ...$parameters): void
     {
-        if (true === config('app.debug') && class_exists(\Barryvdh\Debugbar\Facades\Debugbar::class)) {
-            \Barryvdh\Debugbar\Facades\Debugbar::log('【HOOK】hook_action: '.$hook);
-        }
         \PTAdmin\Admin\Utils\Events::action($hook, ...$parameters);
     }
 }

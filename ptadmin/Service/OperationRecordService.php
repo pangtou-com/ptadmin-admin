@@ -39,6 +39,7 @@ class OperationRecordService
         $dao = OperationRecord::query()->findOrFail($id);
         $dao->request = @json_decode($dao->request);
         $dao->response = @json_decode($dao->response);
+        $dao->sql_param = $dao->sql_param ? @json_decode($dao->sql_param, true) : [];
 
         return $dao->toArray();
     }
@@ -81,8 +82,8 @@ class OperationRecordService
         $data['url'] = $request->getPathInfo();
         $data['title'] = $log->getTitle($data['url']);
         $data['method'] = $request->getMethod();
-        $data['request'] = Str::limit($log->getRequestContent($request), 1020);
-        $data['response'] = Str::limit($log->getResponseContent($response), 1020);
+        $data['request'] = $log->getRequestContent($request->all());
+        $data['response'] = $log->getResponseContent($response);
         $data['response_code'] = $response->getStatusCode();
         $data['response_time'] = $log->getTime();
 

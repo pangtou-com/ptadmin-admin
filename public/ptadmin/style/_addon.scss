@@ -1,0 +1,206 @@
+/** 新增插件 */
+.ptadmin-form-addon-box{
+    .red_point{
+        color: red;
+    }
+    padding: 0 ;
+    .layui-elem-quote{
+        margin-bottom: 0;
+    }
+    .addon-fixed-btns{
+        @include fixed-btns;
+    }
+    .ptadmin-addon-rate{
+        #ptadmin-addon-rate{
+            margin-bottom: 0;
+            .layui-rate{
+                padding: 6px 0 0 0;
+            }
+        }
+    }
+    .layui-tab-content{
+        padding-bottom: 60px;
+    }
+
+    .ptadmin-add-demo-table{
+        .ptadmin-image{
+            width: 50px;
+            height: 50px;
+            .layui-img-content{
+                width: auto;
+                height: auto;
+                max-width: 100%;
+                max-height: 100%;
+            }
+            padding: 5px;
+        }
+        .ptadmin-goods-image-upload{
+            width: 50px;
+            height: 50px;
+        }
+    }
+    .update-describe-input{
+        margin-bottom: 15px;
+    }
+    .ptadmin-add-demo-table-box{
+        .ptadmin-add-demo-table{
+            display: none;
+        }
+        .ptadmin-add-demo-table-show{
+            display: block;
+        }
+    }
+    .version-description{
+        .layui-textarea{
+            min-height: 300px;
+        }
+    }
+
+    // 授权方式
+    .ptadmin-addon-empower-way-box{
+        .ptadmin-addon-empower-way{
+            .layui-form-label{
+                width: auto;
+            }
+            .layui-input-block{
+                margin-left: 0;
+            }
+        }
+        .ptadmin-empower-box{
+            border: 1px solid #eee;
+            border-radius: 2px;
+            .header-box{
+                display: flex;
+                height: 38px;
+                line-height: 38px;
+                padding: 0 15px;
+                border-bottom: 1px solid #eee;
+                justify-content: space-between;
+                align-items: center;
+                .title[senior]{
+                    color: #16b777;
+                }
+            }
+            .content{
+                padding: 8px 15px;
+                min-height: 200px;
+
+            }
+
+
+        }
+
+    }
+
+}
+.ptadmin-addon-dropdown{
+    border-radius: 2px;
+    border: 1px solid $input-border-color;
+    min-height: 38px;
+    box-sizing: border-box;
+    padding: 5px 0 0 5px;
+    cursor: pointer;
+    .placeholder{
+        padding:0 0 5px 5px;
+    }
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    &:hover{
+        border-color: #d2d2d2;
+    }
+    .item{
+        background: #f8f8f8;
+        line-height: normal;
+        padding: 5px 20px 5px 5px;
+        margin:0 5px  5px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        cursor: default;
+        .layui-icon-clear{
+            position: absolute;
+            right: 2px;
+            top: 2px;
+            opacity: .2;
+            cursor: pointer;
+            transition: all .3s;
+            &:hover{
+                opacity: 1;
+            }
+        }
+    }
+}
+
+
+/** 插件详情*/
+.ptadmin-addon-version-box{
+    padding: 0 ;
+    .middle{
+        align-items: center;
+    }
+    .layui-elem-quote{
+        margin-bottom: 0;
+    }
+    .layui-card-body{
+        padding-top: 0;
+    }
+    .layui-tab-content{
+        background: transparent;
+        padding: 15px 0 0 0;
+    }
+
+    .addon-info-box{
+        padding: 8px 15px;
+        box-sizing: border-box;
+        .item{
+            display: flex;
+        }
+    }
+
+    .addon-info-tables-box{
+        box-sizing: border-box;
+        margin-top: 15px;
+        padding: 8px 15px;
+    }
+}
+
+.addon-demo-link{
+    color:#31bdec;
+    &:hover{
+        color: #1e9fff;
+    }
+}
+// 空状态展示
+.ptadmin-addon-empower-empty{
+    text-align: center;
+    padding: 10px 0;
+    .layui-icon{
+        font-size: 40px;
+        margin-bottom: 15px;
+    }
+}
+
+// 版本下拉展示
+.ptadmin-addon-versions-dropdown{
+    max-height: 300px;
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 5px;
+    }
+}
+.addon-approve-box{
+    .ptadmin-goods-search{
+        .layui-btn{
+            height: 35px;
+            line-height: 35px;
+            margin-bottom: 0;
+        }
+    }
+}
+

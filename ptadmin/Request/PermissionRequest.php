@@ -44,8 +44,8 @@ class PermissionRequest extends FormRequest
                 'string',
                 Rule::exists(Permission::class, 'name'),
             ] : [],
-            'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:255', Rule::unique(Permission::class)->ignore($id)],
-            'title' => ['required', 'max:255', Rule::unique(Permission::class)->ignore($id)],
+            'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:255', Rule::unique(Permission::class)->whereNull('deleted_at')->ignore($id)],
+            'title' => ['required', 'max:255', Rule::unique(Permission::class)->whereNull('deleted_at')->ignore($id)],
             'route' => [Rule::requiredIf(function (): bool {
                 return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::LINK], true);
             }), 'max:255', function ($attribute, $value, $fail): void {

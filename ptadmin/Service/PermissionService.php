@@ -34,24 +34,37 @@ use PTAdmin\Html\Html;
 
 class PermissionService
 {
-    public function store($data)
+    /**
+     * 保存数据.
+     *
+     * @param $data
+     */
+    public function store($data): void
     {
         $data['group_name'] = $data['group_name'] ?? config('auth.app_guard_name');
         if (isset($data['parent_name']) && Permission::TOP_PERMISSION_NAME !== (string) $data['parent_name']) {
+            /** @var Permission $parent */
             $parent = Permission::query()->where('name', $data['parent_name'])->firstOrFail();
             $data['paths'] = array_merge($parent->paths ?? [], [$parent->name]);
         }
-
-        return Permission::create($data);
+        Permission::create($data);
     }
 
+    /**
+     * 更新数据.
+     *
+     * @param $data
+     * @param $id
+     */
     public function edit($data, $id): void
     {
+        /** @var Permission $perm */
         $perm = Permission::query()->findOrFail($id);
         if ($data['parent_name'] === $perm->name) {
             throw new BackgroundException('父级菜单不能为自身');
         }
         if (isset($data['parent_name']) && Permission::TOP_PERMISSION_NAME !== (string) $data['parent_name'] && $perm->parent_name !== $data['parent_name']) {
+            /** @var Permission $parent */
             $parent = Permission::query()->where('name', $data['parent_name'])->firstOrFail();
             $data['paths'] = array_merge($parent->paths ?? [], [$parent->name]);
         }
@@ -86,7 +99,7 @@ class PermissionService
         /** @var System $system */
         $system = System::query()->findOrFail($systemId);
         // 创始人获取全部数据
-        if ($system->is_founder) {
+        if (1 === $system->is_founder) {
             return Permission::getAllData(['status' => StatusEnum::ENABLE]);
         }
         $results = [];
@@ -151,7 +164,7 @@ class PermissionService
             $str .= '</a>';
             if ($datum['children'] && \count($datum['children']) > 0) {
                 $children = $this->adminPermNav($datum['children'], $datum['id']);
-                if ($children) {
+                if ('' !== $children) {
                     $str .= '<dl class="layui-nav-child">';
                     $str .= $children;
                     $str .= '</dl>';
@@ -189,7 +202,7 @@ class PermissionService
                 'data-id' => $result['id'],
                 'data-parent-id' => $parentId,
             ]);
-            if (!$parentId) {
+            if (0 !== $parentId) {
                 $str = Html::tag('div', $str, ['class' => 'box']);
             }
             if (isset($result['children']) && $result['children']) {
@@ -347,7 +360,7 @@ class PermissionService
     }
 
     /**
-     * 创建下级菜单信息.
+     * 创建下级菜单.
      *
      * @param $addonInfo
      * @param $menu
@@ -370,7 +383,7 @@ class PermissionService
             $permission->save();
 
             if (isset($item['children']) && $item['children']) {
-                $this->installChildMenu($addonInfo, $item['children'], $permission->name);
+                $this->installChildMenu($addonInfo, $item['children'], $permission->id);
             }
         }
     }

@@ -80,4 +80,15 @@ class PermissionController extends AbstractBackgroundController
 
         return ResultsVo::success($data);
     }
+
+    public function delete(): \Illuminate\Http\JsonResponse
+    {
+        $model = Permission::query();
+        $filterMap = $model->whereIn('id', $this->getIds())->get();
+        $filterMap->map(function ($item): void {
+            $item->delete();
+        });
+
+        return ResultsVo::success();
+    }
 }

@@ -32,7 +32,7 @@ trait ValidateTrait
      */
     protected function validated(): void
     {
-        $data = ['rules' => [], 'message' => [], 'attributes' => []];
+        $data = ['rules' => [], 'messages' => [], 'attributes' => []];
         $obj = $this;
         if (property_exists($this, 'validate')) {
             $obj = new $this->validate();
@@ -53,6 +53,6 @@ trait ValidateTrait
             }
         }
 
-        request()->validate($data['rules'], $data['message'], $data['attributes']);
+        request()->validate($data['rules'], $data['messages'], $data['attributes']);
     }
 }

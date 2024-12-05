@@ -25,19 +25,20 @@ namespace PTAdmin\Admin\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use PTAdmin\Admin\Models\Traits\ModelField;
 use PTAdmin\Admin\Models\Traits\SearchTrait;
 use PTAdmin\Admin\Utils\SystemAuth;
 
+/**
+ * @property int $id
+ */
 abstract class AbstractModel extends Model
 {
-    use ModelField;
     use SearchTrait;
 
     /** @var string 日期列表的存储格式 */
     protected $dateFormat = 'U';
 
-    /** @var array 属性黑名单，名单内容无法填充 */
+    /** @var bool|string[] 属性黑名单，名单内容无法填充 */
     protected $guarded = ['id'];
 
     /**
@@ -105,7 +106,7 @@ abstract class AbstractModel extends Model
     public function getPerPage(): int
     {
         $limit = (int) (request()->get('limit', 20));
-        if ($limit) {
+        if (0 !== $limit) {
             return $limit;
         }
 

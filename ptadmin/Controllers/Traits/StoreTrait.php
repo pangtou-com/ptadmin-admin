@@ -40,9 +40,6 @@ trait StoreTrait
 
             $model = $this->getModel();
             $dao = model_build($model);
-            if (method_exists($dao, 'fillDefaultValue')) {
-                $dao->fillDefaultValue();
-            }
             $dao->fill($data)->save();
 
             if (method_exists($this, 'after')) {
@@ -53,9 +50,6 @@ trait StoreTrait
         }
         $model = $this->getModel();
         $dao = model_build($model);
-        if (method_exists($dao, 'fillDefaultValue')) {
-            $dao->fillDefaultValue();
-        }
 
         return $this->view(compact('dao'));
     }

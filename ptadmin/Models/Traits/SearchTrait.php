@@ -33,9 +33,10 @@ trait SearchTrait
      *    'field', 直接使用表字段
      *    'field1' => 'field',  // field1 为获取数据的字段，field为数据表字段.
      *    'field1' => [
-     *          'field' => 'field',
+     *          'field' => 'field', // 数据表字段
      *          'op' => '=', // 搜索条件
      *          'filter' => '' // 参数过滤器，可以对数据进行处理
+     *          'query_field' => '' // 表单字段
      *    ]
      * ].
      *
@@ -79,13 +80,13 @@ trait SearchTrait
         }
         $data = $this->buildSearchData($fields, $data);
 
-        foreach ($data as $field => $value) {
-            if (isset($value['field']) && \is_array($value['field'])) {
+        foreach ($data as $value) {
+            if (isset($value['fields']) && \is_array($value['fields'])) {
                 $this->buildOrWhere($query, $value);
 
                 continue;
             }
-            $this->buildWhere($query, $field, $value);
+            $this->buildWhere($query, $value['field'], $value);
         }
 
         return $query;
@@ -183,8 +184,9 @@ trait SearchTrait
                 continue;
             }
             // 在配置时可能会出现一个字段可查询多个字段数据的情况，可通过配置 fields 的方式实现
-            $val['field'] = isset($field['fields']) && \is_array($field['fields']) ? $field['fields'] : $table_field;
-            $results[$table_field] = $val;
+            $val['fields'] = isset($field['fields']) && \is_array($field['fields']) ? $field['fields'] : $table_field;
+            $val['field'] = $table_field;
+            $results[] = $val;
         }
 
         return $results;

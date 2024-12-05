@@ -29,19 +29,7 @@
                         <div class="layui-row layui-col-space15 dashboard-card-four  dashboard-card-icon-bg"></div>
                     </div>
                 </div>
-                <form class="layui-form" action="">
-                        <div class="demo-upload"></div>
-                        <div class="demo-upload2"></div>
-                        <div class="demo-upload6"></div>
-                        <div class="demo-upload3"></div>
-                        <div class="demo-upload4"></div>
-                        <div class="demo-upload5"></div>
-                        <div class="layui-form-item">
-                            <div class="layui-input-block">
-                                <button type="submit" class="layui-btn" lay-submit lay-filter="demo1">立即提交</button>
-                            </div>
-                        </div>
-                </form>
+
             </div>
             <div class="layui-col-md4">
                 <div class="layui-card">
@@ -104,228 +92,21 @@
                         </div>
                     </div>
                 </div>
-
+            </div>
         </div>
     </div>
 @endsection
 
 @section('script')
     <script>
-
-        layui.use(['common', 'PTForm', 'PTIcon','PTAttachment','form'], function () {
+        layui.use(['common', 'PTForm', 'PTIcon'], function () {
             const {
                 common,
                 PTForm,
-                PTIcon,
-                PTAttachment,
-                form
+                PTIcon
             } = layui;
-            form.on('submit(demo1)', function(data){
-				var field = data.field; // 获取表单字段值
-				console.log(field);
-				return false;
-			});
-            const options = {
-			elem:`.demo-upload`,
-			theme:'avatar',
-			direct:true,
-			selector:true,
-			edit:true,
-			area:200,
-			field:'first',
-			required:true,
-			attribute:{
-				url:'{{admin_route('upload')}}',
-				multiple:false, // 单图
-				size:60,
-				accept: 'images',
-			},
-			done:function(data){
-				console.log('返回的参数',data);
-			},
-			// 单图回显
-			// data:{
-			// 		id:0,
-			// 		title:'测试测试123645',
-			// 		thumb:'https://pic3.zhimg.com/v2-5fb13110e1de13d4c11e6e7f5b8026da_r.jpg',
-			// 		url:'https://pic3.zhimg.com/v2-5fb13110e1de13d4c11e6e7f5b8026da_r.jpg',
-			// 		is_annex:false,
-			// 		suffix:'png'
-			// 	},
-		}
-		const options2 = {
-			elem:`.demo-upload2`,
-			theme:'avatar',
-			direct:true,
-			selector:false,
-			saveRemote:false,
-			edit:false,
-			attribute:{
-				url:'{{admin_route('upload')}}',
-				multiple:true,
-				number:5,
-				accept: 'video'
-			},
-			field:'second',
-			done:function(data){
-				console.log('返回的参数',data);
-			},
-			data:[
-				{
-					id:0,
-					title:'测试视频 点击查看',
-					thumb:'https://pic3.zhimg.com/v2-5fb13110e1de13d4c11e6e7f5b8026da_r.jpg',
-					url:'https://prod-streaming-video-msn-com.akamaized.net/a8c412fa-f696-4ff2-9c76-e8ed9cdffe0f/604a87fc-e7bc-463e-8d56-cde7e661d690.mp4',
-					is_annex:false,
-					suffix:'mp4'
-				},
-				{
-					id:0,
-					title:'测试视频 点击查看',
-					thumb:'https://pic1.zhimg.com/v2-fda5ab4414155c0c171ac5f87bc82ded_r.jpg?source=1940ef5c',
-					url:'https://prod-streaming-video-msn-com.akamaized.net/35960fe4-724f-44fc-ad77-0b91c55195e4/bfd49cd7-a0c6-467e-ae34-8674779e689b.mp4',
-					is_annex:false,
-					suffix:'mp4'
-				},
-			]
-		}
-        const options6 = {
-			elem:`.demo-upload6`,
-			direct:true,
-			selector:true,
-			edit:true,
-			saveRemote:false,
-			remote:true,
-			field:'ahsfajshfkajs',
-			attribute:{
-				multiple:false,
-				url:'{{admin_route('upload')}}',
-				accept: 'file',// 所有文件格式
-			},
-			data:[
-				{
-					id:3,
-					title:'测试测试3',
-					url:'https://pic2.zhimg.com/v2-0dda71bc9ced142bf7bb2d6adbebe4f0_r.jpg',
-					is_annex:false,
-					suffix:'jpg'
-				},
-			],
-            confirm:function(data){
-				console.log('确认选择资源',data);
-			},
-            remoteInput:function(data){
-				console.log('远程获取输入成功',data);
-			}
-		}
-		const options3 = {
-			elem:`.demo-upload3`,
-			direct:true,
-			selector:true,
-			edit:true,
-			saveRemote:false,
-			remote:true,
-			field:'third',
-			attribute:{
-				multiple:true,
-				url:'{{admin_route('upload')}}',
-				number:9,
-				accept: 'file',// 所有文件格式
-			},
-			data:[
-				{
-					id:3,
-					title:'测试测试3',
-					url:'https://pic2.zhimg.com/v2-0dda71bc9ced142bf7bb2d6adbebe4f0_r.jpg',
-					is_annex:false,
-					suffix:'jpg'
-				},
-				{
-					id:4,
-					title:'测试测试4',
-					url:'https://img.zcool.cn/community/017f51563447666ac7259e0f1522ea.jpg@1280w_1l_2o_100sh.jpg',
-					is_annex:true,
-					suffix:'jpg'
-				},
-				{
-					id:5,
-					title:'测试测试5',
-					url:'https://img.tukuppt.com/ad_preview/00/15/09/5e715a320b68e.jpg!/fw/980',
-					is_annex:true,
-					suffix:'jpg'
-				}
-			],
-            confirm:function(data){
-				console.log('确认选择资源',data);
-			},
-		}
-		const options4 = {
-			elem:`.demo-upload4`,
-			theme:'avatar',
-			direct:false,
-			selector:true,
-			edit:true,
-			area:100,
-			field:'four',
-			required:true,
-			attribute:{
-				multiple:true,
-				size:60,
-				number:5,
-				accept: 'file', //  支持的文件格式
-                allowFiles:'image',
-			},
-			done:function(data){
-				console.log('返回的参数',data);
-			},
-			confirm:function(data){
-				console.log('确认选择资源',data);
-			},
-			data:[
-                    {
-                        id:99999,
-                        title:'测试测试123645',
-                        thumb:'https://pic3.zhimg.com/v2-5fb13110e1de13d4c11e6e7f5b8026da_r.jpg',
-                        url:'https://pic3.zhimg.com/v2-5fb13110e1de13d4c11e6e7f5b8026da_r.jpg',
-                        is_annex:false,
-                        suffix:'png'
-                    }
-                ],
-		}
-        const options5 = {
-			elem:`.demo-upload5`,
-			theme:'avatar',
-			direct:true,
-			selector:true,
-			edit:true,
-			area:120,
-			field:'five',
-			required:true,
-			attribute:{
-				url:'{{admin_route('upload')}}',
-				multiple:false,
-				accept: 'file',
-			},
-			done:function(data){
-				console.log('返回的参数',data);
-			},
-			// 单图回显
-			data:{
-					id:0,
-					title:'测试测试123645',
-					thumb:'https://pic3.zhimg.com/v2-5fb13110e1de13d4c11e6e7f5b8026da_r.jpg',
-					url:'https://pic3.zhimg.com/v2-5fb13110e1de13d4c11e6e7f5b8026da_r.jpg',
-					is_annex:false,
-					suffix:'png'
-				},
-		}
-		PTAttachment.make(options)
-		PTAttachment.make(options2)
-		PTAttachment.make(options3)
-		PTAttachment.make(options4)
-		PTAttachment.make(options5)
-		PTAttachment.make(options6)
-        PTForm.init()
+
+            PTForm.init()
 
             /** 新增快捷导航 */
             const quickAdd = function () {

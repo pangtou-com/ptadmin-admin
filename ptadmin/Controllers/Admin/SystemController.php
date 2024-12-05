@@ -74,9 +74,8 @@ class SystemController extends AbstractBackgroundController
                 $dao = (new System());
                 $dao->password = Hash::make(trim($data['password']));
                 $dao->fill($data)->save();
-                // 默认情况下一个账户只有一个角色
-                $roleId = (int) $request->get('role_id');
-                $roleId && $dao->syncRoles($roleId);
+
+                $dao->syncRoles((int) $request->get('role_id'));
                 DB::commit();
             } catch (\Exception $exception) {
                 DB::rollBack();
@@ -101,7 +100,7 @@ class SystemController extends AbstractBackgroundController
                 $dao->password = Hash::make($data['password']);
             }
             $roleId = (int) $request->get('role_id');
-            $roleId && $dao->syncRoles($roleId);
+            $dao->syncRoles($roleId);
             $dao->update($data);
 
             return ResultsVo::success();
@@ -112,8 +111,8 @@ class SystemController extends AbstractBackgroundController
 
     public function details($id): \Illuminate\Http\JsonResponse
     {
+        /** @var System $dao */
         $dao = System::query()->select(['id', 'nickname', 'username'])->firstOrFail($id);
-
         $results = [
             'id' => $dao->id,
             'nickname' => $dao->nickname,

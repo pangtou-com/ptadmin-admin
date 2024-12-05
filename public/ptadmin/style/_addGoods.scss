@@ -1,0 +1,56 @@
+$layui-color: #16b777;
+.pt-add-goods {
+	.layui-upload-list {
+		display: flex;
+		.image {
+			border: 1px solid #f8f8f8;
+			padding: 5px;
+		}
+	}
+}
+
+.el-cascader {
+	line-height: 38px;
+	.el-input {
+		.el-input__suffix {
+			padding-right: 10px;
+		}
+		.el-input__inner {
+			height: 38px;
+			line-height: 38px;
+			border-radius: 0 2px 2px 0;
+			border-color: #eee;
+			&:focus {
+				border-color: $layui-color !important;
+				box-shadow: 0 0 0 3px rgba(22, 183, 119, 0.08) !important;
+			}
+		}
+	}
+	.el-input.is-focus .el-input__inner {
+		border-color: $layui-color !important;
+		box-shadow: 0 0 0 3px rgba(22, 183, 119, 0.08) !important;
+	}
+	.el-cascader__tags {
+		padding-left: 10px;
+		.el-tag {
+			&:first-child {
+				margin-left: 0;
+			}
+		}
+	}
+}
+.el-checkbox__input.is-checked .el-checkbox__inner {
+	border-color: $layui-color !important;
+	background: $layui-color !important;
+}
+.el-checkbox__inner {
+	&:hover {
+		border-color: $layui-color !important;
+	}
+}
+
+.el-cascader-node.in-active-path,
+.el-cascader-node.is-active,
+.el-cascader-node.is-selectable.in-checked-path {
+	color: $layui-color !important;
+}

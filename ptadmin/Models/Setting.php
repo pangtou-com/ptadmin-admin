@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Models;
 
+use PTAdmin\Admin\Exceptions\ServiceException;
+
 /**
  * @property string $title
  * @property string $name
@@ -37,6 +39,7 @@ namespace PTAdmin\Admin\Models;
 class Setting extends AbstractModel
 {
     protected $fillable = ['title', 'name', 'setting_group_id', 'weight', 'type', 'intro', 'extra', 'value', 'default_val'];
+    protected $appends = ['extra_value'];
     protected $casts = ['extra' => 'array'];
 
     /**
@@ -45,5 +48,34 @@ class Setting extends AbstractModel
     public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(SettingGroup::class, 'setting_group_id', 'id');
+    }
+
+    public function setExtraAttribute($val): void
+    {
+        $extraOptions = [];
+        $allOptions = explode("\n", $val);
+        foreach ($allOptions as $key => $option) {
+            $option = explode('=', $option);
+            $key = 1 === \count($option) ? $key : $option[0];
+            $value = 1 === \count($option) ? $option[0] : $option[1];
+            if (isset($extraOptions[$key])) {
+                throw new ServiceException('配置项键名重复，请规范填写');
+            }
+            $extraOptions[$key] = $value;
+        }
+        $this->attributes['extra'] = json_encode(['options' => $extraOptions]);
+    }
+
+    public function getExtraValueAttribute(): string
+    {
+        $extra = $this->extra;
+        $extra_value = [];
+        if (isset($extra['options']) && '' !== $extra['options']) {
+            foreach ($extra['options'] as $key => $value) {
+                $extra_value[] = $key.'='.$value;
+            }
+        }
+
+        return implode("\n", $extra_value);
     }
 }

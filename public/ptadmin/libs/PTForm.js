@@ -4,7 +4,7 @@
  * Email: 873934580@qq.com
  * Date: 2021/12/7.
  */
-layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], function (exports) {
+layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate',], function (exports) {
     "use strict";
     const { PTAttachment, PTIcon, common, form, $, laydate, layer } = layui;
 
@@ -29,7 +29,6 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
         },
         submit: function () {
             const thiz = this
-
             const handle = {
                 submit: () => {
                     const config = thiz.config
@@ -43,7 +42,6 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                             }
                             if (res.code === 0) {
                                 handle.close();
-                                // 使用pushMessage发送消息通知
                             } else {
                                 layer.msg(res.message, { icon: 2 });
                             }
@@ -64,7 +62,6 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                         if (thiz.config.reload === true) {
                             window.parent.location.reload();
                         }
-
                     }
                 },
             };
@@ -102,7 +99,7 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                 PTIcon.render('ICON')
             },
             attachment: function () {
-                // PTAttachment();
+                PTAttachment();
             },
             color: function (options = {}) {
                 const config = {
@@ -167,7 +164,7 @@ layui.define(['common', 'PTAttachment', 'PTIcon', 'util', 'form', 'laydate'], fu
                 });
             },
             editor: function () {
-                const editorObj = $("textarea.editor");
+                const editorObj = $("textarea.ptadmin-editor");
                 if (editorObj.length === 0) {
                     return;
                 }

@@ -9,6 +9,7 @@
                     $dao->parent_name = $parentId;
                 }
                 $form = \PTAdmin\Build\Layui::make($dao);
+                $form->hidden("guard_name", config("auth.app_guard_name", 'admin'));
                 $form->text('name')->required();
                 $form->text('title')->required();
                 $form->radio('type')->setOptions(\PTAdmin\Admin\Enum\MenuTypeEnum::getMaps())->default(\PTAdmin\Admin\Enum\MenuTypeEnum::NAV)->required();

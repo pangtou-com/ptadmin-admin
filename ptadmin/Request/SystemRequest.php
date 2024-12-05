@@ -25,6 +25,7 @@ namespace PTAdmin\Admin\Request;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use PTAdmin\Admin\Models\Role;
 use PTAdmin\Admin\Models\System;
 
 class SystemRequest extends FormRequest
@@ -39,6 +40,7 @@ class SystemRequest extends FormRequest
         return [
             'username' => ['required', 'max:255', Rule::unique(System::class)->ignore($id)],
             'nickname' => ['required', 'max:255'],
+            'role_id' => ['required', Rule::exists(Role::class, 'id')->whereNotNull('deleted_at')],
             'password' => [
                 Rule::requiredIf(function () use ($id) {
                     return 0 === $id;

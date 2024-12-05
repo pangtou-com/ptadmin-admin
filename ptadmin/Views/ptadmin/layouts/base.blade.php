@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <title>PTAdmin</title>
@@ -11,7 +10,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{_asset('/ptadmin/bin/css/layui.css')}}" media="all">
     <link rel="stylesheet" href="{{_asset('/ptadmin/style/app.css')}}" media="all">
-    <link rel="stylesheet" href="{{_asset('/ptadmin/iconfont/iconfont.css')}}" />
+    <link rel="stylesheet" href="{{_asset('/ptadmin/bin/fontawesome/css/all.min.css')}}" media="all">
     <link rel="stylesheet" href="{{_asset('/ptadmin/style/multipleSelect.css')}}" media="all">
     @yield('head')
 </head>
@@ -20,7 +19,7 @@
     @yield('content')
     <script src="{{_asset('/ptadmin/js/jquery-1.12.4.min.js')}}"></script>
     <script src="{{_asset('/ptadmin/bin/layui.js')}}"></script>
-    <script src="{{_asset('/ptadmin/bin/editor/tinymce/tinymce.min.js')}}"></script>
+    <script src="{{_asset('ptadmin/bin/editor/tinymce/tinymce.min.js')}}"></script>
 
     <script type="text/javascript">
         $.ajaxSetup({

@@ -29,6 +29,7 @@ use PTAdmin\Admin\Exceptions\BackgroundException;
 
 abstract class AbstractEnum
 {
+    protected static $labelMaps = [];
     private static $constCacheArray;
 
     public static function getKeys(): Collection
@@ -89,22 +90,12 @@ abstract class AbstractEnum
     {
         $maps = [];
         foreach (self::getValues() as $value) {
-            $maps[$value] = self::getDescription($value);
+            $maps[$value] = static::getDescription($value);
         }
 
         return $maps;
     }
 
-    /**
-     * 获取选项类型.
-     * 将枚举类转换为选项类型的数组共供前端调用
-     * [
-     *      ['label' => '', 'value' => ''],
-     *      ['label' => '', 'value' => '']
-     * ].
-     *
-     * @return array
-     */
     public static function getMapToOptions(): array
     {
         return array_options(self::getMaps());

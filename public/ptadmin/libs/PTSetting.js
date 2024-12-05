@@ -94,13 +94,17 @@ layui.define(['layer', 'laytpl', 'PTForm', 'form'],function (exports) {
             return
         }
         const data = dataMap.get(name)
-        if (!data['view']) {
-            return;
+
+        if (!data['view'] || '' === data['view']) {
+            CONTAINER_ELE.finish().hide().html(`<div>暂无配置数据</div>`).fadeIn(1000)
+            return ;
         }
-        CONTAINER_ELE.finish().hide().html(`<form action="" class="layui-form">${data['view']}</form>`).fadeIn(1000)
+        renderFieldIntro(data);
+        CONTAINER_ELE.finish().hide().html(`<form action="" class="layui-form" data-id="${id}" lay-filter="save-config-data">${data['view']}</form>`).fadeIn(1000)
         form.render()
         PTForm.init()
     }
+
 
     /**
      * 渲染表格
@@ -170,6 +174,37 @@ layui.define(['layer', 'laytpl', 'PTForm', 'form'],function (exports) {
     }
 
     /**
+     * 渲染字段介绍.
+     *
+     * @param data
+     * @param fieldName
+     */
+    const renderFieldIntro = function (data,fieldName) {
+        let groupTitle = data.title;
+        let groupName = data.name;
+        let fieldShowMap = new Map();
+        for (let item of data.setting) {
+            if (fieldName === undefined) {
+                fieldShowMap.set('title', item.title).set('command', "{$pt."+groupName+"."+item.name+"}").set('intro', item.intro);
+                break;
+            }
+            if (item.name === fieldName) {
+                fieldShowMap.set('title', item.title).set('command', "{$pt."+groupName+"."+fieldName+"}").set('intro', item.intro);
+                break;
+            }
+        }
+        if (fieldShowMap.size === 0) {
+            layer.msg('字段不存在', { icon: 2 });
+            return;
+        }
+        let command = $("#setting-command");
+        command.find("[name='field-group']").html(groupTitle);
+        command.find("[name='field-title']").html(fieldShowMap.get('title'));
+        command.find("[name='field-command']").html(fieldShowMap.get('command'));
+        command.find("[name='field-intro']").html(fieldShowMap.get('intro') ?? "无");
+    }
+
+    /**
      * 事件绑定
      */
     const eventBind = function () {
@@ -179,18 +214,19 @@ layui.define(['layer', 'laytpl', 'PTForm', 'form'],function (exports) {
             if (stop !== undefined) {
                 e.stopPropagation()
             }
-            action.call(this, event)
+            action.call(this, event, e)
         })
     }
 
     /**
      * 执行事件
      */
-    const action = function (event) {
+    const action = function (event, e) {
         const param = {
             events: events,
             event: event,
             ele: this,
+            e
         }
         if (events[event] !== undefined) {
             events[event].call(param.ele, param)
@@ -212,6 +248,16 @@ layui.define(['layer', 'laytpl', 'PTForm', 'form'],function (exports) {
         change: function (type, menu) {
             current_group_type = type
             renderGroup(type === GROUP_TYPE_MANAGE ? menu : group_data )
+        },
+        getData: function (fieldGroupKey, fieldKey) {
+            let thisGroup = dataMap.get(fieldGroupKey);
+            if (thisGroup === undefined) {
+                return ;
+            }
+            if (thisGroup.setting === undefined || !Array.isArray(thisGroup.setting)) {
+                return ;
+            }
+            renderFieldIntro(thisGroup, fieldKey)
         }
     }
 

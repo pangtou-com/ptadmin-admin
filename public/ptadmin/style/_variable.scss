@@ -1,5 +1,5 @@
 html{
-    width: 100vw;
+    // width: 100vw;
     height: 100vh;
 }
 .ptadmin-layout-body{
@@ -35,6 +35,7 @@ $ptadmin-theme-info: #909399;
 $ptadmin-theme-black: #303133;
 $ptadmin-theme-white: #ffffff;
 
+
 :root{
     --theme-expand-left: #{$theme-expand-left};
     --theme-shrink-left: #{$theme-shrink-left};
@@ -43,7 +44,7 @@ $ptadmin-theme-white: #ffffff;
     --theme-tabs-top: #{$theme-tabs-top};
     --theme-main-bg: #{$theme-main-bg};
     --lay-color-bg-2: #2f363c; /*一级容器背景,卡片,面板*/
-
+    --border-color:#{$border-color};
     --ptadmin-theme-primary: #{$ptadmin-theme-primary};
     --ptadmin-theme-success: #{$ptadmin-theme-success};
     --ptadmin-theme-warn: #{$ptadmin-theme-warn};

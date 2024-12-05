@@ -23,9 +23,29 @@
                     <ul class="ptadmin-categorize-tabs"></ul>
                 </div>
                 <div class="layui-card-body">
-                    <div id="setting-container"></div>
-                    <div class="container-footer layui-btn-group" >
-                        <button class="layui-btn layui-bg-blue" lay-submit lay-filter="config">保存</button>
+                    <div id="setting-container" ptadmin-event="form-click" class="layui-col-xs6">
+                    </div>
+                    <div id="setting-command" class="layui-col-xs6">
+                        <x-hint>字段配置信息</x-hint>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">字段分组：</label>
+                            <p class="layui-input-block" name="field-group"></p>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">字段名称：</label>
+                            <p class="layui-input-block" name="field-title"></p>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">字段指令：</label>
+                            <p class="layui-input-block" name="field-command"></p>
+                        </div>
+                        <div class="layui-form-item">
+                            <label class="layui-form-label">字段描述：</label>
+                            <p class="layui-input-block" name="field-intro"></p>
+                        </div>
+                    </div>
+                    <div class="container-footer layui-btn-group" style="display: block">
+                        <button class="layui-btn layui-bg-blue" id="saveConfig" ptadmin-event="saveConfig">保存</button>
                     </div>
                 </div>
             </div>
@@ -57,6 +77,9 @@
         @{{# if(d.parent_id === 0 ){ }}
             <a class="layui-btn layui-btn-xs layui-bg-blue" lay-event="create"><i class="layui-icon layui-icon-addition"></i></a>
         @{{# } }}
+        @{{# if(d.parent_id !== 0 ){ }}
+        <a class="layui-btn layui-btn-xs layui-bg-orange" lay-event="createField"><i class="layui-icon layui-icon-addition"></i></a>
+        @{{# } }}
         <a class="layui-btn layui-btn-xs" lay-event="edit">
             <i class="layui-icon layui-icon-edit"></i>
         </a>
@@ -87,8 +110,8 @@
 
 @section('script')
     <script>
-        layui.use(['PTForm', 'PTSetting', 'treeTable', 'table'], function () {
-            const {  common, layer, PTSetting, treeTable, table } = layui;
+        layui.use(['PTForm', 'PTSetting', 'treeTable', 'table', "layer","form"], function () {
+            const {  common, layer, PTSetting, treeTable, table, form } = layui;
             const manage = [
                 {title: '配置分组', id: 'group_table', name: 'GROUP'},
                 {title: '分组字段', id: 'field_table', name: 'FIELD'},
@@ -157,7 +180,9 @@
                             {field: 'id', title: 'ID', width: 60},
                             {field: 'name', title: '标识'},
                             {field: 'title', title: '标题'},
-                            {field: 'category', title: '所属分组', templet: function ({category}) { return category.title || '---'}},
+                            {field: 'category', title: '所属分组', templet: function ({category}) {
+                                return category !== null ? category.title || '---' : '---'
+                            }},
                             {field: 'intro', title: '备注'},
                             {field: 'weight', title: '排序'},
                             {fixed: "right", title: "操作", width: 120, align: "center", toolbar: "#field_table_html"}
@@ -197,8 +222,23 @@
                     return API_EXTEND[this.current_table_type]
                 },
                 events: {
+                    submit: function (index, box) {
+                        let obj = window[box.find('iframe')[0]['name']];
+                        obj.form_submit().then((res) => {
+                            if (res.code === 0) {
+                                layer.close(index)
+                                tableHandle.refresh()
+                                obj = null
+                                return
+                            }
+                            let zIndex = parseInt(box.css("z-index"))
+                            layer.msg(res.message, {icon: 2, zIndex: (zIndex + 2)})
+                        })
+                    },
                     edit: function ({id}) {
-                        common.formOpen(`${tableHandle.getApi().edit.url}/${id}`, tableHandle.getApi().edit.title)
+                        common.formOpen(`${tableHandle.getApi().edit.url}/${id}`, tableHandle.getApi().edit.title, {
+                            yes: tableHandle.events.submit
+                        })
                     },
                     delete: function ({id}) {
                         layer.confirm('确认要删除此项目吗?', {icon: 3, title: 'Warning'}, function (index) {
@@ -219,10 +259,44 @@
                             url = url + `?parent_id=${data.id}`
                         }
                         common.formOpen(url, tableHandle.getApi().create.title, {
-                            yes: function () {
-                                console.log("操作成功")
-                            }
+                            yes: tableHandle.events.submit
                         })
+                    },
+                    createField: function (data = undefined) {
+                        let apiExtend = API_EXTEND['field_table'];
+                        let url = apiExtend.create.url
+                        if (data !== undefined) {
+                            url = url + `?parent_id=${data.id}`
+                        }
+                        common.formOpen(url, apiExtend.create.title, {
+                            yes: tableHandle.events.submit
+                        })
+                    },
+                    saveConfig: function () {
+                        form.submit('save-config-data', function(data){
+                            let id = $('.layui-form').data('id');
+                            let field = data.field;
+                            let fieldLength = Object.keys(field).length;
+                            if(fieldLength === 0 || fieldLength === undefined) {
+                                layer.msg("当前配置未设置字段，请先设置字段！", { icon: 2 });
+                                return
+                            }
+                            field.ids = [id];
+                            // 执行提交
+                            $.ajax({
+                                url: "{{admin_route("setting-val")}}",
+                                type: 'post',
+                                data: field,
+                                dataType: "json",
+                                success: function (data) {
+                                    if (data.code !== 0) {
+                                        layer.msg(data.message, { icon: 2 });
+                                        return
+                                    }
+                                    layer.msg(data.message);
+                                },
+                            });
+                        });
                     },
                 }
             }
@@ -249,13 +323,19 @@
             // 刷新
             PTSetting.on("refresh", () => tableHandle.refresh())
 
+            // 保存配置
+            PTSetting.on("saveConfig", () => tableHandle.events.saveConfig())
+
             // 创建
             PTSetting.on("create", () => tableHandle.events.create())
+
+            // 创建字段
+            PTSetting.on("createField", () => tableHandle.events.createField())
 
             // 编辑
             PTSetting.on("edit", function () {
                 const id = $(this).parent().data('id')
-                common.formOpen(`{{admin_route("setting-group")}}/${id}`, '编辑分组')
+                tableHandle.events.edit({id})
             })
 
             // 删除
@@ -276,6 +356,23 @@
                 });
             })
 
+            PTSetting.on("form-click", function ({e}) {
+                let { target } = e;
+                if (!target) return;
+                let formItem = target.closest('.layui-form-item');
+                if (!formItem) return;
+
+                let label = formItem.querySelector('label');
+                let labelField = $(label).data('field');
+                let fieldKeyArr = labelField.split('_');
+
+                if (fieldKeyArr.length !== 2) {
+                    layer.msg('字段格式错误', { icon: 2 });
+                    return;
+                }
+                PTSetting.getData(fieldKeyArr[0], fieldKeyArr[1]);
+            })
+
             // 管理和配置界面
             PTSetting.on("setting", function () {
                 const obj = $(this)
@@ -287,6 +384,7 @@
             })
 
             init()
+
         });
     </script>
 @endsection

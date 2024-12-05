@@ -66,6 +66,7 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
     // 系统角色管理
     Route::get('roles', [Admin\RoleController::class, 'index']);
     Route::match(['get', 'put'], 'role/{id}', [Admin\RoleController::class, 'edit']);
+    Route::match(['put'], 'roles-status/{id}', [Admin\RoleController::class, 'status']);
     Route::match(['get', 'post'], 'role', [Admin\RoleController::class, 'store']);
     Route::delete('role/{id?}', [Admin\RoleController::class, 'delete']);
 
@@ -103,14 +104,4 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
     Route::match(['get', 'put'], 'setting/{id}', [Admin\SettingController::class, 'edit']);
     Route::post('setting-val', [Admin\SettingController::class, 'saveValue']);
     Route::delete('setting/{id}', [Admin\SettingController::class, 'delete']);
-
-    // 插件管理
-    Route::get('addons', [Admin\AddonController::class, 'index']);
-    Route::post('addon-download', [Admin\AddonController::class, 'getAddonDownloadUrl']);
-    Route::post('my-addon', [Admin\AddonController::class, 'myAddon']);
-    Route::delete('addon-uninstall/{code}', [Admin\AddonController::class, 'uninstall']);
-    Route::post('addon-cloud', [Admin\AddonController::class, 'addonCloud']);
-
-    Route::match(['get', 'post'], 'cloud-login', [Admin\AddonCloudController::class, 'login']);
-    Route::get('cloud-logout', [Admin\AddonCloudController::class, 'logout']);
 });

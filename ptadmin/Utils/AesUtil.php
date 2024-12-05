@@ -86,9 +86,9 @@ class AesUtil
      *
      * @param string $data
      *
-     * @return string
+     * @return false|string
      */
-    public static function decrypt(string $data): string
+    public static function decrypt(string $data)
     {
         $obj = new static();
         $result = explode('::', $data);

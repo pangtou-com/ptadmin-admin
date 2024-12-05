@@ -1,8 +1,11 @@
 @import "variable";
+@import "utilities/mixins.scss";
 @import "login";
 @import "loading";
-@import "attachment";
 @import "./font/iconfont.css";
+@import "addGoods";
+@import "addon";
+@import "template";
 /** 移除隐藏 */
 #ptadmin_app{
     overflow: hidden;
@@ -689,7 +692,7 @@
         display: flex;
         .ptadmin-categorize-aside{
             flex-shrink: 0;
-            width: 120px;
+            width: 180px;
             background: #FFF;
             height:calc( 100vh - var(--header-height));
             overflow-y: auto;
@@ -698,7 +701,7 @@
             border-radius: 0 0 2px 2px;
             @include scrollbar();
             .lists{
-                padding: 10px 0;
+                padding: 5px 0;
                 >li{
                     padding: 10px 15px;
                     transition: all .3s;
@@ -1281,6 +1284,14 @@
             }
         }
     }
+
+    .ptadmin-page-expand-image-box{
+        display: flex;
+        .tags{
+            color: #ff5722;
+            white-space: nowrap;
+        }
+    }
 }
 
 
@@ -1310,6 +1321,8 @@
                 padding: 10px 0;
             }
         }
+
+
         .ptadmin-categorize-main{
             padding: 10px 10px 0 10px;
             background: var(--theme-body-bg);
@@ -1448,7 +1461,7 @@
 
                         @media (max-width: 767.98px) {
                             width: 100%;
-                            margin-right: 0 ;
+                            margin-right: 0;
                         }
                     }
                 }
@@ -1457,3 +1470,10 @@
     }
 }
 /** 插件列表end*/
+
+.layui-table-cell:has(.temp-list-image){
+    height: auto;
+}
+.layui-table-cell:has(.ptadmin-temps-category-image){
+    height: auto;
+}

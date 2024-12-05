@@ -1,0 +1,496 @@
+@import 'addGoods';
+// 通用色彩文字色彩
+$colors: (
+    default: (
+        color: #ffb800,
+    ),
+    success: (
+        color: #1e9fff,
+    ),
+    danger: (
+        color: #ff5722,
+    ),
+);
+// 通用文字色彩
+@each $name, $props in $colors {
+    .#{$name} {
+        @each $prop, $value in $props {
+            #{$prop}: $value;
+        }
+    }
+}
+// 列表图片
+.temp-list-image,.ptadmin-temps-category-image{
+    @include imagesStyle;
+}
+.ptadmin-temps-category-box,.ptadmin-related-rate-box {
+    // .layui-table-cell {
+    //     height: auto;
+    // }
+    // .layui-btn-group{
+    //     line-height: 60px;
+    //     height: 60px;
+    // }
+    // .layui-table-cell {
+    //     height: auto;
+    //     white-space: normal;
+    // }
+}
+/** 统计 */
+.ptadmin-temp-stat-box {
+    .layui-carousel > [carousel-item] > * {
+        background: #FFF !important;
+    }
+
+}
+
+/** 详细信息框 */
+.ptadmin-temp-detail-box {
+    margin-bottom: 10px;
+    .layui-elem-quote {
+        margin-bottom: 0;
+    }
+
+    .details {
+        .item {
+            .label {
+                font-weight: 700;
+                flex-shrink: 0;
+            }
+
+            display: flex;
+        }
+
+        .middle {
+            align-items: center;
+        }
+    }
+
+}
+
+/** 详情tabs */
+.ptadmin-detail-tabs {
+    .layui-tab-content {
+        padding: 15px;
+    }
+}
+
+/** 默认新增表单样式 */
+.ptadmin-add-temp-box {
+    .system-cover-radio {
+        display: flex;
+        flex-wrap: wrap;
+        .radio-item {
+            margin: 0 5px 5px 0;
+            .layui-icon {
+                display: none !important;
+            }
+            .layui-form-radio {
+                transition: all 0.3s;
+                padding: 5px;
+                border: 1px solid #eee;
+                > div {
+                    width: 100px;
+                    height: 100px;
+                }
+                img {
+                    width: 100%;
+                    height: 100%;
+                    max-height: 100%;
+                    max-width: 100%;
+                }
+            }
+            .layui-form-radioed {
+                border-color: #16b777;
+            }
+        }
+    }
+
+
+    background-color: #FFF;
+    padding: 0 0 60px 0;
+
+    .layui-panel {
+        box-shadow: none;
+        border: none;
+    }
+
+    .layui-elem-quote {
+        margin-bottom: 0;
+    }
+
+    .temp-attribute {
+        width: 50%;
+
+        label {
+            cursor: pointer;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .temp-attribute {
+            width: 100%;
+        }
+    }
+    .temp-fixed-btns {
+        @include fixed-btns;
+    }
+}
+
+/** 上传样式 */
+.ptadmin-goods-image-box {
+    display: flex;
+    flex-wrap: wrap;
+
+    .ptadmin-goods-image-upload {
+        margin: 0 5px 5px 0;
+        width: 100px;
+        height: 100px;
+        padding: 5px;
+        border: 1px solid #e8e8e8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-radius: 2px;
+        position: relative;
+        flex-shrink: 0;
+
+        > .layui-icon {
+            font-size: 40px;
+        }
+
+        &:hover {
+            background: #f8f8f8;
+        }
+
+        img {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        video {
+            @extend img;
+        }
+    }
+
+    .image-success {
+        &:hover {
+            background: none;
+
+            .big-cover {
+                display: block;
+            }
+        }
+
+        .del {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            z-index: 10;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            text-align: center;
+            line-height: 20px;
+
+            .layui-icon {
+                color: #fff;
+            }
+
+            &:hover {
+                transform: scale(1.05);
+            }
+        }
+
+        .big-cover {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            text-align: center;
+            line-height: 100px;
+            z-index: 9;
+            display: none;
+            border-radius: 2px;
+        }
+    }
+}
+
+.ptadmin-page-container {
+    .layui-table-cell{
+        .layui-rate{
+            padding: 0;
+        }
+    }
+    > .content {
+        padding: 15px;
+    }
+
+    .ptadmin-goods-search {
+        padding: 10px 15px;
+        background: $search-header-bg;
+        border-bottom: 1px solid #e8e8e8;
+
+        .layui-form-item {
+            margin-bottom: 0;
+        }
+
+        .layui-form-label {
+            height: 35px;
+            padding: 0px 8px;
+            line-height: 35px;
+        }
+
+        input {
+            height: 35px;
+        }
+
+    }
+
+    .ptadmin-goods-header {
+        height: auto;
+        border-bottom: none;
+
+        .ptadmin-goods-operates {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+    }
+}
+
+// 相关模板样式
+.ptadmin-related-select-box {
+    .temp-empty-box{
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        .layui-icon{
+            font-size: 45px;
+            margin-bottom: 15px;
+        }
+        user-select: none;
+    }
+    .layui-card {
+        margin-bottom: 0;
+        box-shadow: none;
+        border: 1px solid #eee;
+    }
+
+    .layui-card-header {
+        display: flex;
+        align-items: center;
+        line-height: 0;
+        justify-content: space-between;
+        height: 50px;
+        border-color: #eee;
+    }
+
+    .relatedTemplate{
+
+        &:has(.page){
+            .temp-categorize-content{
+                height: 305px;
+            }
+        }
+    }
+    .layui-card-body {
+        padding: 0;
+        height: 350px;
+        .temp-categorize-content {
+            &::-webkit-scrollbar {
+                width: 6px;
+            }
+            &::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 5px;
+            }
+            overflow-y: auto;
+            height: 350px;
+            padding: 7px 15px;
+            box-sizing: border-box;
+            border: none;
+            .item {
+                background: #f4f4f5;
+                margin-bottom: 5px;
+                padding: 7px 15px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                .text {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    padding-right: 15px;
+                }
+            }
+        }
+        .layui-colla-item {
+            .layui-colla-content{
+                line-height: normal;
+                padding: 0;
+                .item {
+                    &:last-child{
+                        margin-bottom: 0;
+                    }
+                }
+            }
+        }
+        .temp-categorize-content[data-item-right]{
+            height: 350px;
+            .item {
+                &:last-child {
+                    margin-bottom: 0;
+                }
+                .ptadmin-temp-del {
+                    flex-shrink: 0;
+                    transition: all 0.3s;
+                    &:hover {
+                        transform: scale(1.1);
+                    }
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    text-align: center;
+                    line-height: 20px;
+                    background: rgba(0, 0, 0, 0.078);
+                    cursor: pointer;
+                    .layui-icon-delete {
+                        color: #ff5722;
+                    }
+                }
+            }
+
+        }
+        .temp-categorize-content[data-item-left]{
+            .item {
+                cursor: pointer;
+                transition: all 0.3s;
+                &:hover {
+                    background: #e6e6e6;
+                    color: #16b777;
+                }
+                .layui-icon-success{
+                    display: none;
+                }
+            }
+            .active {
+                background: #f4f4f5;
+                color: #16b777;
+                .layui-icon-success{
+                    display: block;
+                }
+            }
+        }
+
+        .page {
+            display: flex;
+            align-items: center;
+            padding: 7px 15px;
+            border-top: 1px solid #eee;
+            height: 30px;
+            user-select: none;
+            > div {
+                line-height: 30px;
+                border: 1px solid #eee;
+                padding: 0 10px;
+                height: 30px;
+            }
+
+            .current {
+                border-left: 0;
+                border-right: 0;
+            }
+
+            .prev,
+            .next {
+                cursor: pointer;
+                transition: all 0.3s;
+
+                &:hover {
+                    color: #16b777;
+                    border-color: #16b777;
+                }
+            }
+            .prev[disabled],.next[disabled]{
+                pointer-events: none;
+                background: #f8f8f8;
+                color: #ccc;
+            }
+        }
+    }
+}
+
+
+#ptadmin-temp-review-box {
+    padding: 10px 15px;
+
+    .ptadmin-temp-info {
+        display: flex;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+
+        .image {
+            flex-shrink: 0;
+            margin-right: 10px;
+            width: 80px;
+            height: 80px;
+            padding: 5px;
+            border: 1px solid #eee;
+            line-height: 80px;
+            img {
+                width: auto;
+                height: auto;
+                max-width: 100%;
+                max-height: 100%;
+            }
+        }
+
+        .info {
+            flex-shrink: 0;
+            flex: 1;
+
+            .author {
+                margin: 5px 0;
+            }
+
+            .tags {
+                display: flex;
+
+                .item {
+                    margin-right: 5px;
+                    margin-bottom: 5px;
+                    background: #16baaa;
+                    color: #fff;
+                    font-size: 12px;
+                    border-radius: 2px;
+                    padding: 2px 5px;
+                }
+            }
+        }
+    }
+
+    .layui-form {
+        .layui-form-label {
+            width: auto;
+            padding-left: 0;
+        }
+
+        .review-btns {
+            text-align: right;
+            margin-bottom: 0;
+        }
+    }
+}
+

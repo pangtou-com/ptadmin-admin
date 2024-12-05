@@ -65,7 +65,6 @@ class AddonController extends AbstractBackgroundController
             return ResultsVo::success();
         }
         $dao = new Addon();
-        $dao->fillDefaultValue();
 
         return $this->view(compact('dao'));
     }

@@ -23,8 +23,11 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Service\Common;
 
+use Illuminate\Database\Eloquent\HigherOrderBuilderProxy;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use PTAdmin\Admin\Exceptions\BackgroundException;
 use PTAdmin\Admin\Models\Attachment;
 
@@ -74,12 +77,128 @@ class UploadService
         return $dao->toArray();
     }
 
+    /**
+     * 远程资源下载.
+     *
+     * @param string $url
+     * @param mixed  $contentType
+     * @param mixed  $contentLength
+     *
+     * @return HigherOrderBuilderProxy|mixed|string
+     */
+    public static function download(string $url, $contentType, $contentLength)
+    {
+        // 获取文件后缀
+        $suffix = str_replace('image/', '', $contentType);
+        // 获取文件内容
+        $fileContent = file_get_contents($url);
+        // 判断是否获取成功
+        if (false === $fileContent) {
+            return $url;
+        }
+        // 临时文件名
+        $path = (new static())->getPath().\DIRECTORY_SEPARATOR.Str::random(12).time().'.'.$suffix;
+        $tempPath = Storage::path($path);
+
+        self::createTemplateDirectory($tempPath);
+
+        return self::getFileUrl($tempPath, $fileContent, $suffix, $contentType, $contentLength);
+    }
+
+    /**
+     * 创建临时目录.
+     *
+     * @param $tempPath
+     */
+    public static function createTemplateDirectory($tempPath): void
+    {
+        $dir = \dirname($tempPath);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+    }
+
+    /**
+     * 若文件已存在，直接返回文件链接
+     * 若文件不存在，保存文件并获取文件链接.
+     *
+     * @param string $tempPath
+     * @param string $fileContent
+     * @param string $suffix
+     * @param string $contentType
+     * @param mixed  $contentLength
+     *
+     * @return HigherOrderBuilderProxy|mixed
+     */
+    public static function getFileUrl(string $tempPath, string $fileContent, string $suffix, string $contentType, $contentLength)
+    {
+        // 获取文件hash
+        $hashFileName = self::getHashFileName($tempPath, $fileContent);
+        $cacheKey = "file_md5_{$hashFileName}";
+
+        if (Cache::has($cacheKey)) {
+            unlink($tempPath);
+
+            return Cache::get($cacheKey);
+        }
+        // 判断文件是否已存在
+        $dao = Attachment::byMd5($hashFileName);
+        $storagePath = Storage::path('');
+        $relativePath = str_replace($storagePath, '', $tempPath);
+
+        if ($dao) {
+            if (file_exists(Storage::path($dao->path))) {
+                unlink($tempPath);
+
+                return $dao->url;
+            }
+            $dao->delete();
+        } else {
+            $dao = new Attachment();
+        }
+
+        $data = [
+            'md5' => $hashFileName,
+            'title' => $hashFileName,
+            'mime' => $contentType,
+            'suffix' => $suffix,
+            'driver' => (new self())->getDriver(),
+            'groups' => (new self())->getGroup(),
+            'path' => $relativePath,
+            'size' => $contentLength,
+            'url' => Storage::url($relativePath),
+        ];
+
+        $dao->fill($data)->save();
+        Cache::put($cacheKey, $data['url'], 3600);
+
+        return $data['url'];
+    }
+
     protected function getPath(): string
     {
         $path = $this->getGroup();
         $public = Config::get('filesystems.disks.public.visibility');
 
         return $public.'/'.$path.'/'.date('Ymd', time());
+    }
+
+    /**
+     * 写入临时文件并获取文件hash.
+     *
+     * @param $tempPath
+     * @param $fileContent
+     *
+     * @return false|string
+     */
+    private static function getHashFileName($tempPath, $fileContent)
+    {
+        // 写入文件
+        $stream = fopen($tempPath, 'w');
+        fwrite($stream, $fileContent);
+        fclose($stream);
+        // 生成文件的 MD5
+        return hash_file('md5', $tempPath);
     }
 
     /**

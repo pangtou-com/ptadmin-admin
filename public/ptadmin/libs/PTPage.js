@@ -43,7 +43,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
 
     /** 默认页面配置信息 */
     const DEFAULT_CONFIG = {
-        urls: {index_url: "", create_url: "", edit_url: "", del_url: "", show_url: "", status_url: "", import_url:'', export_url: ''},
+        urls: { index_url: "", create_url: "", edit_url: "", del_url: "", show_url: "", status_url: "", import_url: '', export_url: '' },
         title: { create: 'New Add', edit: 'Edit', export: 'Export', del_confirm: '' }, // 各个事件对应名称
         btn_left: ['create', 'refresh', 'del'], // 左侧按钮组
         btn_right: [], // 右侧按钮组 'export', 'import'
@@ -61,14 +61,14 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
 
     /** 默认按钮配置信息 */
     const DEFAULT_BTN = {
-        create: {icon: 'layui-icon layui-icon-add-1', event: 'create', theme: 'primary'},
-        refresh: {icon: 'layui-icon layui-icon-refresh', event: 'refresh', theme: 'info'},
-        del: {icon: 'layui-icon layui-icon-delete', event: 'batch_del', theme: 'danger', selected: true},
-        export: {icon: 'layui-icon layui-icon-download-circle', event: 'export', theme: 'default'},
-        import: {icon: 'layui-icon layui-icon-upload-drag', event: 'import', theme: 'default'},
-        search: {icon: 'layui-icon layui-icon-search', event: 'search', theme: 'warn'},
-        show: {icon: 'layui-icon layui-icon-eye', event: 'show', theme: 'warn'},
-        edit: {icon: 'layui-icon layui-icon-edit', event: 'edit', theme: 'warn'},
+        create: { icon: 'layui-icon layui-icon-add-1', event: 'create', theme: 'primary' },
+        refresh: { icon: 'layui-icon layui-icon-refresh', event: 'refresh', theme: 'info' },
+        del: { icon: 'layui-icon layui-icon-delete', event: 'batch_del', theme: 'danger', selected: true },
+        export: { icon: 'layui-icon layui-icon-download-circle', event: 'export', theme: 'default' },
+        import: { icon: 'layui-icon layui-icon-upload-drag', event: 'import', theme: 'default' },
+        search: { icon: 'layui-icon layui-icon-search', event: 'search', theme: 'warn' },
+        show: { icon: 'layui-icon layui-icon-eye', event: 'show', theme: 'warn' },
+        edit: { icon: 'layui-icon layui-icon-edit', event: 'edit', theme: 'warn' },
     }
 
     /** 按钮主题对应的样式组 */
@@ -105,7 +105,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
      * @param url
      */
     const getTableOptions = function (option = {}, url) {
-        let tableCon = {elem: `#${DEFAULT_TABLE_ELE}`, url: '', cols: [], toolbar: false, page: true}
+        let tableCon = { elem: `#${DEFAULT_TABLE_ELE}`, url: '', cols: [], toolbar: false, page: true }
         $.extend(true, tableCon, option);
         if (tableCon.url === "" || tableCon.url === undefined) {
             tableCon.url = url
@@ -123,17 +123,17 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
                     let html = [];
                     for (let i in operates) {
                         let type = layui._typeof(operates[i])
-                        const option = type === 'string' ? getTableBtnOptions(operates[i]): operates[i];
+                        const option = type === 'string' ? getTableBtnOptions(operates[i]) : operates[i];
                         html.push(PTRender.render(option))
                     }
-                    return PTRender.render({class: "layui-btn-group", tagName: 'div', text: html.join("")});
+                    return PTRender.render({ class: "layui-btn-group", tagName: 'div', text: html.join("") });
                 },
                 'object': function () {
                     let html = [];
-                    for (let i in  operates) {
+                    for (let i in operates) {
                         html[i] = PTRender.render(operates[i]);
                     }
-                    return PTRender.render({class: "layui-btn-group", tagName: 'div', text: html.join("")});
+                    return PTRender.render({ class: "layui-btn-group", tagName: 'div', text: html.join("") });
                 },
                 'string': function () {
                     return PTRender.render(getTableBtnOptions(operates));
@@ -209,7 +209,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         switch: function (data) {
             let val = common.getTableColValue(data);
             let id = common.getTableColValue(data, 'id');
-            let checked = val ? ' checked ': '';
+            let checked = val ? ' checked ' : '';
             let field = data.LAY_COL.field;
             return `<input type="checkbox" data-name="${field}" value="${id}" lay-filter="ptadmin-switch" lay-skin="switch" lay-text="ON|OFF" ${checked} >`
         },
@@ -217,7 +217,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
             let url = common.getTableColValue(data);
             return `<a href="${url}" target="_blank">${url}</a>`
         },
-        datetime: function (data){
+        datetime: function (data) {
             let val = common.getTableColValue(data);
             if (val && moment !== undefined) {
                 let m = moment(val);
@@ -231,8 +231,22 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         label: function () {
 
         },
-        tags: function (data) {
-            return "123";
+        tags: function (options = {}) {
+            const theme = {
+                success: 'layui-badge layui-bg-cyan',
+                warning: 'layui-badge',
+                danger: 'layui-badge layui-bg-orange',
+                info: 'layui-badge layui-bg-black',
+                primary: 'layui-badge layui-bg-blue',
+                default: 'layui-badge layui-bg-gray'
+            }
+            const obj = {key: undefined, text: undefined, map: undefined, ...options}
+            return  (data) => {
+                const key = common.getTableColValue(data, obj.key);
+                const text = common.getTableColValue(data, obj.text);
+                const val = obj.map ? obj.map[key] : 'default';
+                return `<span class="${theme[val]}">${text}</span>`
+            }
         },
         whether: function (data) {
             let val = common.getTableColValue(data);
@@ -261,18 +275,18 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         del: function (obj) {
             let thiz = this
             let url = common.urlReplace(thiz.getSceneUrl(SCENE_URL.del), obj.data);
-            layer.confirm(thiz.config.title.del_confirm || '确认要删除此项目吗?', {icon: 3, title: 'Warning'}, function(index){
-                common.del(url, {id: obj.data.id}, function (res) {
+            layer.confirm(thiz.config.title.del_confirm || '确认要删除此项目吗?', { icon: 3, title: 'Warning' }, function (index) {
+                common.del(url, { id: obj.data.id }, function (res) {
                     if (res.code === 0) {
                         thiz.getCurrentTable.reloadData();
                     } else {
-                        layer.msg(res.message, {icon: 3});
+                        layer.msg(res.message, { icon: 3 });
                     }
                 });
                 layer.close(index);
             });
         },
-        show: function(obj) {
+        show: function (obj) {
             let thiz = this
             let url = common.urlReplace(thiz.getSceneUrl(SCENE_URL.show), obj.data);
             common.formOpen(url);
@@ -284,7 +298,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
                 value: data.elem.checked === true ? 1 : 0,
                 is_edit: 1
             }
-            let url = common.urlReplace(thiz.getSceneUrl(SCENE_URL.status), {id: data.value, value: param.value});
+            let url = common.urlReplace(thiz.getSceneUrl(SCENE_URL.status), { id: data.value, value: param.value });
             common.put(url, param, function (res) {
                 if (res.code !== 0) {
                     layer.msg(res.message, { icon: 2 });
@@ -477,7 +491,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
                 return
             }
             const thiz = this
-            const onSearchEvent = ()  => {
+            const onSearchEvent = () => {
                 const keyword = $("input[name=keywords]").val()
                 thiz.page.reload({
                     keywords: keyword
@@ -607,7 +621,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
                 }
             }
 
-            const { option, search }= getTableOptions(table_options, this.getSceneUrl());
+            const { option, search } = getTableOptions(table_options, this.getSceneUrl());
             this.options = option
 
             this.__initialize(config, search)
@@ -679,7 +693,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         /**
          * 挂载
          */
-        mount () {
+        mount() {
             if (this.current !== undefined) {
                 return
             }
@@ -687,15 +701,18 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
             const thiz = this
             setTimeout(() => {
                 thiz.current = table.render(thiz.options);
-                table.on(`tool(${thiz.current.config.id})`, function(obj) {
+                table.on(`tool(${thiz.current.config.id})`, function (obj) {
+                    obj['elem'] = this
                     thiz.action(obj['event'], obj)
                 })
-                table.on(`checkbox(${thiz.current.config.id})`, function(obj) {
+                table.on(`checkbox(${thiz.current.config.id})`, function (obj) {
                     obj['event'] = 'checkbox'
+                    obj['elem'] = this
                     thiz.action(obj['event'], obj)
                 })
-                table.on(`radio(${thiz.current.config.id})`, function(obj) {
+                table.on(`radio(${thiz.current.config.id})`, function (obj) {
                     obj['event'] = 'radio'
+                    obj['elem'] = this
                     thiz.action(obj['event'], obj)
                 })
                 thiz.bindFormEvent()
@@ -710,10 +727,10 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         /**
          * 绑定列表中的表单事件
          */
-        bindFormEvent(){
+        bindFormEvent() {
             const thiz = this
             // 切换按钮处理事件
-            form.on('switch(ptadmin-switch)', function(data){
+            form.on('switch(ptadmin-switch)', function (data) {
                 thiz.action("commonSwitch", data)
             });
         }
@@ -757,7 +774,7 @@ layui.define(['table', 'common', 'PTRender', 'form', 'PTSearchFormat'], function
         /**
          * 单元格格式化工具
          */
-        static get format () {
+        static get format() {
             return PTTableFormat
         }
 

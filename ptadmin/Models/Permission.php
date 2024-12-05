@@ -41,7 +41,7 @@ use PTAdmin\Admin\Utils\SystemAuth;
  * @property string $weight
  * @property string $note
  * @property array  $paths
- * @property int    $type
+ * @property string $type
  * @property int    $status
  * @property int    $is_nav
  * @property string $controller
@@ -74,7 +74,10 @@ class Permission extends \Spatie\Permission\Models\Permission
         parent::__construct($attributes);
     }
 
-    public function freshTimestamp(): int
+    /**
+     * @return \Illuminate\Support\Carbon|int
+     */
+    public function freshTimestamp()
     {
         return time();
     }
@@ -190,7 +193,7 @@ class Permission extends \Spatie\Permission\Models\Permission
 
     protected static function booted(): void
     {
-        foreach (['saved', 'deleted'] as $event) {
+        foreach (['saved', 'deleted', 'updated'] as $event) {
             static::registerModelEvent($event, function ($model): void {
                 $model->setAllCachedData('trees', null);
                 $model->setAllCachedData('levels', null);
@@ -209,7 +212,6 @@ class Permission extends \Spatie\Permission\Models\Permission
     {
         if (Cache::has(self::getCacheAllKey($type))) {
             $data = Cache::get(self::getCacheAllKey($type));
-            $data = @unserialize($data);
             if (false !== $data) {
                 return $data;
             }
@@ -231,6 +233,6 @@ class Permission extends \Spatie\Permission\Models\Permission
 
             return;
         }
-        Cache::put(self::getCacheAllKey($type), serialize($data), 3600);
+        Cache::put(self::getCacheAllKey($type), $data, 3600);
     }
 }

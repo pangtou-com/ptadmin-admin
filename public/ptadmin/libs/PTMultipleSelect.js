@@ -92,7 +92,7 @@ layui.define(function (exports) {
     })
     const init = function (obj) {
         const ele = $(obj.ele)
-        const inputStr = `<input class="input" type="hidden" name="${obj.name}" value=""/>`
+        const inputStr = `<input class="input" type="hidden" name="${obj.name}" value="" lay-verify="${obj.required ? 'required' : ''}"/>`
         const placeholder = `<div class="pt-placeholder" show="true">${obj.placeholder || 'Select'}</div>`
         /** 右侧箭头 */
         const rightArrowStr = `	<div class="pt-iconfont">
@@ -154,6 +154,7 @@ layui.define(function (exports) {
  *  @param {string} obj.placeholder 提示文字：默认‘Select’
  *  @param {string} obj.value   默认值 例：'1,2,3'
  *  @param {boolean} obj.disabled   禁用整个表单
+ *  @param {boolean} obj.required   是否必选
  */
     const render = function (obj) {
         const ele = $(obj.ele)

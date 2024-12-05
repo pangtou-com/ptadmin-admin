@@ -63,7 +63,7 @@ class Initialization extends Migration
                 ['title' => '描述', 'name' => 'website_description', 'value' => '', 'type' => 'textarea'],
             ]],
         ]],
-        ['title' => '第三方授权', 'name' => 'title', 'weight' => '99', 'intro' => null, 'children' => [
+        ['title' => '第三方授权', 'name' => 'auth', 'weight' => '99', 'intro' => null, 'children' => [
             ['title' => 'QQ登录', 'name' => 'qq_login', 'weight' => '99', 'intro' => null, 'fields' => [
                 ['title' => 'AppID', 'name' => 'app_id', 'value' => '', 'type' => 'text'],
                 ['title' => 'AppSecret', 'name' => 'app_secret', 'value' => '', 'type' => 'text'],

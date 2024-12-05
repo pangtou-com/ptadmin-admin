@@ -61,6 +61,7 @@ class RoleController extends AbstractBackgroundController
     public function setPermission($id, Request $request): \Illuminate\Http\JsonResponse
     {
         $ids = $request->get('ids');
+        /** @var mixed $role */
         $role = Role::query()->findOrFail($id);
         if (blank($ids)) {
             $role->permissions()->detach();
@@ -93,7 +94,9 @@ class RoleController extends AbstractBackgroundController
             }
             $results[] = $item;
         }
-        $results = infinite_tree($results, null, 'parent_name', 'name');
+
+        $results = infinite_tree($results, Permission::TOP_PERMISSION_NAME, 'parent_name', 'name');
+
         $result = [
             'checked' => $checked,
             'results' => $results,

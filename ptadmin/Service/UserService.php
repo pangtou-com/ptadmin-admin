@@ -76,7 +76,6 @@ class UserService
             'status' => ['op' => 'IN', 'field' => 'status'],
         ];
         $model = User::search($allow, $search);
-        User::searchScene('lists');
 
         return $model->orderBy('id', 'desc')->paginate()->toArray();
     }
@@ -327,6 +326,19 @@ class UserService
     public function logout($guard = 'web'): void
     {
         Auth::guard($guard)->logout();
+    }
+
+    /**
+     * 获取授权数.
+     *
+     * @param $user_id
+     * @param $source
+     *
+     * @return int
+     */
+    public function getAuthNum($user_id, $source): int
+    {
+        return UserBindPlatform::query()->where('user_id', $user_id)->where('source', $source)->count();
     }
 
     /**

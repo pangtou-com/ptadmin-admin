@@ -41,7 +41,7 @@ abstract class BaseStatusHandle
             $dao->status = (int) !$dao->status;
         } else {
             $dao = new $this->model();
-            $dao->defaultValue();
+            $dao->fillDefaultValue();
             $dao->fill($data);
             $dao->user_id = $user_id;
         }

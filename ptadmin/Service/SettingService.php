@@ -24,6 +24,9 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Service;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use PTAdmin\Admin\Enum\StatusEnum;
+use PTAdmin\Admin\Exceptions\ServiceException;
 use PTAdmin\Admin\Models\Setting;
 use PTAdmin\Admin\Models\SettingGroup;
 
@@ -38,7 +41,7 @@ class SettingService
     {
         $ids = $data['ids'] ?? [];
         $configure = Setting::query()->whereIn('setting_group_id', $ids)->get()->toArray();
-        if (!$configure) {
+        if (0 === \count($configure)) {
             return;
         }
         $parent = SettingGroup::query()->select(['id', 'name'])->whereIn('id', $ids)->get()->toArray();
@@ -51,7 +54,7 @@ class SettingService
                 ->where('name', $item['name'])->update(['value' => $data[$name] ?? '']);
         }
         // 更新缓存信息
-        $this->updateCache();
+        self::updateSettingCache();
     }
 
     public function page($search = []): array
@@ -63,51 +66,6 @@ class SettingService
         $filterMap->with('category');
 
         return $filterMap->paginate()->toArray();
-    }
-
-    /**
-     * 根据名称获取配置信息.
-     *
-     * @param $key
-     * @param $default
-     *
-     * @return null|\Illuminate\Database\Eloquent\HigherOrderBuilderProxy|mixed
-     */
-    public static function byNameValue($key, $default = null)
-    {
-        $keys = explode('.', $key);
-        if (\count($keys) > 1) {
-            /** @var SettingGroup $cate */
-            $cate = SettingGroup::query()->select(['id'])
-                ->where('name', reset($keys))->first();
-            if (!$cate) {
-                return $default;
-            }
-            $configure = Setting::query()
-                ->where('setting_group_id', $cate->id)
-                ->where('name', array_pop($keys))->first();
-        } else {
-            $configure = Setting::query()->where('name', $key)->first();
-        }
-        if (!$configure) {
-            return $default;
-        }
-
-        return $configure->value;
-    }
-
-    /**
-     * 获取系统配置信息.
-     *
-     * @param string $key     获取信息的key
-     * @param null   $default 当不存在数据时，返回默认值
-     * @param bool   $isCache 是否通过缓存获取
-     *
-     * @return mixed
-     */
-    public static function getSettingValue(string $key, $default = null, bool $isCache = true)
-    {
-        return Cache::get($key, $default);
     }
 
     /**
@@ -140,19 +98,145 @@ class SettingService
         return $data;
     }
 
-    /**
-     * 更新缓存内容.
-     */
-    public function updateCache(): void
+    public function store(array $data): void
     {
-        $cate = SettingGroup::query()
-            ->where('parent_id', '!=', 0)
-            ->with('setting')
-            ->get()->toArray();
-        foreach ($cate as $item) {
-            foreach ($item['setting'] as $value) {
-                Cache::put($item['name'].'.'.$value['name'], $value['value']);
+        $filter = new Setting();
+        DB::beginTransaction();
+
+        try {
+            $filter->fill($data)->save();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            throw new ServiceException($e->getMessage());
+        }
+        self::updateSettingCache();
+    }
+
+    /**
+     * 编辑配置信息.
+     *
+     * @param $id
+     * @param array $data
+     */
+    public function edit($id, array $data): void
+    {
+        $filter = Setting::query()->findOrFail($id);
+
+        DB::beginTransaction();
+
+        try {
+            $filter->fill($data)->save();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            throw new ServiceException($e->getMessage());
+        }
+        self::updateSettingCache();
+    }
+
+    /**
+     * 获取系统配置信息.
+     *
+     * @param $key
+     * @param $default
+     *
+     * @return null|array|mixed
+     */
+    public static function getSetting($key, $default = null)
+    {
+        if (\is_string($key)) {
+            return self::setting($key, $default);
+        }
+        if (\is_array($key)) {
+            $return = [];
+            foreach ($key as $k => $item) {
+                $return[$item] = self::setting(\is_int($k) ? $item : $k, $default);
+            }
+
+            return $return;
+        }
+
+        return $default;
+    }
+
+    /**
+     * 根据key值获取指定系统配置信息.
+     *
+     * @param string $key
+     * @param null   $default
+     *
+     * @return array|mixed
+     */
+    public static function setting(string $key, $default = null)
+    {
+        $data = self::getSettingCache();
+        if (null === $data) {
+            return $default;
+        }
+        $keyArr = explode('.', $key);
+        if (3 === \count($keyArr)) {
+            return data_get($data, $key, $default);
+        }
+        $first = reset($keyArr);
+        $group = $data['__group_names__'][$first] ?? null;
+        if (null === $group) {
+            return $default;
+        }
+        if ($group !== $first) {
+            return data_get($data, "{$group}.{$key}", $default);
+        }
+
+        return data_get($data, $key, $default);
+    }
+
+    /**
+     * 获取系统配置缓存.
+     *
+     * @return null|array|mixed
+     */
+    public static function getSettingCache()
+    {
+        if (Cache::has('systemSetting')) {
+            $data = Cache::get('systemSetting');
+            if (null !== $data) {
+                return $data;
             }
         }
+
+        return self::updateSettingCache();
+    }
+
+    /**
+     * 更新系统配置缓存.
+     *
+     * @return null|array
+     */
+    public static function updateSettingCache(): ?array
+    {
+        $settingGroups = SettingGroup::query()
+            ->where('status', StatusEnum::ENABLE)
+            ->with('setting')->orderBy('parent_id')->get()->toArray();
+        if (0 === \count($settingGroups)) {
+            return null;
+        }
+        $maps = array_to_map($settingGroups, 'id', 'name');
+        $keys = $data = [];
+        foreach ($settingGroups as $settingGroup) {
+            $keys[$settingGroup['name']] = $maps[$settingGroup['parent_id']] ?? $settingGroup['name'];
+            if (null !== $settingGroup['setting'] && 0 !== $settingGroup['parent_id']) {
+                $parent = $maps[$settingGroup['parent_id']];
+                $settings = array_to_map($settingGroup['setting'], 'name', 'value');
+                $data[$parent][$settingGroup['name']] = $settings;
+            }
+        }
+
+        $data['__group_names__'] = $keys;
+
+        Cache::forever('systemSetting', $data);
+
+        return $data;
     }
 }

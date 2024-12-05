@@ -330,10 +330,12 @@ layui.define(function (exports) {
             this._elem.html("")
             const template = this._getActionTemplate()
             const lists = []
-            for (let i = 0; i < data.length; i++) {
-                lists.push(template(this._getTemplateType(), data[i], this._isSelected(data[i])))
+            if (undefined !== data) {
+                for (let i = 0; i < data.length; i++) {
+                    lists.push(template(this._getTemplateType(), data[i], this._isSelected(data[i])))
+                }
+                this._elem.append(lists.join("") || this._empty())
             }
-            this._elem.append(lists.join("") || this._empty())
             element.render('collapse');
         }
 

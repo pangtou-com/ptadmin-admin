@@ -66,8 +66,11 @@ class SettingGroupService
             }
             $result['setting'] = $result['setting'] ?? [];
             $result['view'] = '';
+            if (isset($result['intro']) && '' !== $result['intro']) {
+                $result['view'] .= "<blockquote class='layui-elem-quote'>{$result['intro']}</blockquote>";
+            }
             if ($result['setting']) {
-                $result['view'] = $this->formView($result['setting'], $result);
+                $result['view'] .= $this->formView($result['setting'], $result);
             }
 
             $data[$group[$result['parent_id']]['name']][] = $result;
@@ -159,14 +162,13 @@ class SettingGroupService
                 $view->default($item['default_val']);
             }
             if ($item['intro']) {
-                $view->hint($item['intro']);
+                $view->setTips($item['intro']);
             }
             if ($item['extra']) {
                 if (isset($item['extra']['options'])) {
                     $view->options($item['extra']['options']);
                 }
             }
-
             $html[] = $view->render();
         }
 
@@ -183,6 +185,7 @@ class SettingGroupService
     {
         foreach ($data as $item) {
             $item['parent_id'] = $parentId;
+            /** @var SettingGroup $model */
             $model = SettingGroup::query()->updateOrCreate(['name' => $item['name']], $item);
             if (isset($item['children']) && \count($item['children']) > 0) {
                 self::installInitialize($item['children'], $model->id);

@@ -49,7 +49,7 @@ class SettingGroupController extends AbstractBackgroundController
     public function index(): \Illuminate\Http\JsonResponse
     {
         $results = SettingGroup::query()
-            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'intro', 'status'])
+            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'status'])
             ->orderBy('weight', 'desc')
             ->with('setting')
             ->get()->toArray();
@@ -95,11 +95,11 @@ class SettingGroupController extends AbstractBackgroundController
         return [
             'title' => ['required', 'max:255', Rule::unique(SettingGroup::class)->whereNull('deleted_at')->ignore($id)],
             'name' => [
-                'required', 'max:255',
+                'required', 'max:32', 'regex:/^[a-zA-Z][a-zA-Z0-9_]*$/',
                 Rule::unique(SettingGroup::class)->whereNull('deleted_at')->ignore($id),
             ],
             'weight' => 'integer|min:0|max:255',
-            'parent_id' => $parentId ? [
+            'parent_id' => 0 !== $parentId ? [
                 Rule::exists(SettingGroup::class, 'id')->whereNull('deleted_at'),
                 function ($attribute, $value, $fail) use ($id): void {
                     if ((int) $value === $id) {
@@ -107,9 +107,26 @@ class SettingGroupController extends AbstractBackgroundController
                     }
                 },
             ] : [],
-            'remark' => 'max:255',
+            'intro' => 'max:255',
             'status' => 'in:0,1',
-            'tab' => 'integer',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'title.required' => '请输入配置名称',
+            'title.max' => '配置名称最多不能超过255个字符',
+            'title.unique' => '配置名称已存在',
+            'name.required' => '请输入配置标识',
+            'name.max' => '配置标识最多不能超过32个字符',
+            'name.regex' => '配置标识只能以字母开头，且只能包含字母、数字和下划线',
+            'name.unique' => '配置标识已存在',
+            'weight.integer' => '权重必须为整数',
+            'weight.min' => '权重不能小于0',
+            'weight.max' => '权重不能大于255',
+            'intro.max' => '分组描述最多不能超过255个字符',
+            'status.in' => '分组状态值错误',
         ];
     }
 }
