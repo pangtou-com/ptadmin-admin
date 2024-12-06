@@ -55,8 +55,8 @@ class Initialization extends Migration
 
     private $setting = [
         ['title' => '基础设置', 'name' => 'base', 'weight' => '99', 'intro' => null, 'children' => [
-            ['title' => '站点设置', 'name' => 'website', 'weight' => '99', 'intro' => null, 'fields' => [
-                ['title' => '站点状态', 'name' => 'website_status', 'value' => '1', 'type' => 'radio', 'extra' => ['options' => ['关闭', '启用']]],
+            ['title' => '站点设置', 'name' => 'site', 'weight' => '99', 'intro' => null, 'fields' => [
+                ['title' => '站点状态', 'name' => 'website_status', 'value' => '1', 'type' => 'radio', 'extra' => "关闭\n启用"],
                 ['title' => '站点名称', 'name' => 'website_title', 'value' => 'PTAdmin', 'type' => 'text'],
                 ['title' => 'LOGO', 'name' => 'website_logo', 'value' => '', 'type' => 'img'],
                 ['title' => '关键词', 'name' => 'website_keyword', 'value' => '', 'type' => 'text'],

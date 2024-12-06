@@ -21,24 +21,17 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
-namespace App\Providers;
+namespace PTAdmin\Admin\Service\Auth;
 
-use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Route;
-
-class RouteServiceProvider extends ServiceProvider
+class TransientToken
 {
-    public const HOME = '/';
-
-    public function boot(): void
+    public function can($ability): bool
     {
-        $this->routes(function (): void {
-            Route::prefix('api')
-                ->middleware('api')
-                ->namespace($this->namespace)->group(base_path('routes/api.php'));
+        return true;
+    }
 
-            Route::middleware('web')
-                ->namespace($this->namespace)->group(base_path('routes/web.php'));
-        });
+    public function cant($ability): bool
+    {
+        return false;
     }
 }

@@ -22,7 +22,7 @@
         "laravel/serializable-closure": "^1.3",
         "laravel/tinker": "^2.5",
         "overtrue/laravel-pinyin": "~4.0",
-        "ptadmin/addon": "^0.1",
+        "ptadmin/addon": "^0.2",
         "ptadmin/build": "~0.0.1",
         "ptadmin/easy": "^0.1",
         "ptadmin/html": "^1.0",

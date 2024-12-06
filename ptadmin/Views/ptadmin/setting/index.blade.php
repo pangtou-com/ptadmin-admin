@@ -364,12 +364,7 @@
 
                 let label = formItem.querySelector('label');
                 let labelField = $(label).data('field');
-                let fieldKeyArr = labelField.split('_');
-
-                if (fieldKeyArr.length !== 2) {
-                    layer.msg('字段格式错误', { icon: 2 });
-                    return;
-                }
+                let fieldKeyArr = labelField.split('.');
                 PTSetting.getData(fieldKeyArr[0], fieldKeyArr[1]);
             })
 

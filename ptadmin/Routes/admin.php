@@ -104,4 +104,14 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
     Route::match(['get', 'put'], 'setting/{id}', [Admin\SettingController::class, 'edit']);
     Route::post('setting-val', [Admin\SettingController::class, 'saveValue']);
     Route::delete('setting/{id}', [Admin\SettingController::class, 'delete']);
+
+    // 插件管理
+    Route::get('addons', [Admin\AddonController::class, 'index']);
+    Route::post('addon-download', [Admin\AddonController::class, 'getAddonDownloadUrl']);
+    Route::post('my-addon', [Admin\AddonController::class, 'myAddon']);
+    Route::delete('addon-uninstall/{code}', [Admin\AddonController::class, 'uninstall']);
+    Route::post('addon-cloud', [Admin\AddonController::class, 'addonCloud']);
+
+    Route::match(['get', 'post'], 'cloud-login', [Admin\AddonCloudController::class, 'login']);
+    Route::get('cloud-logout', [Admin\AddonCloudController::class, 'logout']);
 });

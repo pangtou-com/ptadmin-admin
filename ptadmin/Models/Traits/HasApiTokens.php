@@ -23,9 +23,9 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Models\Traits;
 
-use App\Models\UserToken;
 use Illuminate\Support\Str;
-use Zane\Addon\Auth\NewAccessToken;
+use PTAdmin\Admin\Models\UserToken;
+use PTAdmin\Admin\Service\Auth\NewAccessToken;
 
 trait HasApiTokens
 {
@@ -53,7 +53,6 @@ trait HasApiTokens
 
     /**
      * 创建新的访问令牌.
-     * // TODO 待处理需求：1、更新token。 2、踢出其他设备。
      *
      * @param $guard_name
      * @param null $expiresAt

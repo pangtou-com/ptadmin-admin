@@ -21,24 +21,34 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
-namespace App\Providers;
+namespace PTAdmin\Admin\Service\Auth;
 
-use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Route;
+use PTAdmin\Admin\Models\UserToken;
 
-class RouteServiceProvider extends ServiceProvider
+class NewAccessToken
 {
-    public const HOME = '/';
+    /** @var UserToken 用户令牌实例 */
+    public $accessToken;
 
-    public function boot(): void
+    /** @var string 令牌文本 */
+    public $plainTextToken;
+
+    public function __construct(UserToken $accessToken, string $plainTextToken)
     {
-        $this->routes(function (): void {
-            Route::prefix('api')
-                ->middleware('api')
-                ->namespace($this->namespace)->group(base_path('routes/api.php'));
+        $this->accessToken = $accessToken;
+        $this->plainTextToken = $plainTextToken;
+    }
 
-            Route::middleware('web')
-                ->namespace($this->namespace)->group(base_path('routes/web.php'));
-        });
+    public function toArray(): array
+    {
+        return [
+            'accessToken' => $this->accessToken,
+            'plainTextToken' => $this->plainTextToken,
+        ];
+    }
+
+    public function toJson($options = 0)
+    {
+        return @json_encode($this->toArray(), $options);
     }
 }

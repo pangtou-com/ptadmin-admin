@@ -25,8 +25,6 @@ namespace PTAdmin\Admin\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use PTAdmin\Addon\AddonApi;
-use PTAdmin\Addon\Service\AddonInstall;
-use PTAdmin\Addon\Service\AddonManager;
 use PTAdmin\Admin\Models\Addon;
 use PTAdmin\Admin\Request\AddonRequest;
 use PTAdmin\Admin\Utils\ResultsVo;
@@ -107,14 +105,11 @@ class AddonController extends AbstractBackgroundController
     public function getAddonDownloadUrl(Request $request): \Illuminate\Http\JsonResponse
     {
         $data = $request->only(['code', 'addon_id', 'addon_version_id']);
-        $codes = AddonManager::getInstance()->getInstalledAddonsCode();
+        $codes = \PTAdmin\Addon\Addon::getInstalledAddonsCode();
         if (\in_array($data['code'], $codes, true)) {
             return ResultsVo::fail('插件已安装');
         }
         $result = AddonApi::getAddonDownloadUrl($data);
-        // $this->unAddon->unsetAddon($result);
-
-        AddonInstall::make($result['code'])->install();
 
         return ResultsVo::success($result);
     }

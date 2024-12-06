@@ -156,7 +156,7 @@ class SettingGroupService
     {
         $html = [];
         foreach ($data as $key => $item) {
-            $name = "{$parent['name']}_{$item['name']}";
+            $name = "{$parent['name']}.{$item['name']}";
             $view = Layui::{$item['type']}($name, $item['title'], $item['value']);
             if (null !== $item['default_val']) {
                 $view->default($item['default_val']);

@@ -59,6 +59,7 @@ class UserService
         $dao->password = Hash::make($data['password'].$dao->salt);
         $dao->join_at = time();
         $dao->join_ip = (int) ip2long(request()->getClientIp());
+        $dao->status = 1;
         $dao->save();
 
         return $dao;

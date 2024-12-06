@@ -25,6 +25,7 @@ namespace PTAdmin\Admin\Models;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticate;
+use PTAdmin\Admin\Models\Traits\HasApiTokens;
 use PTAdmin\Admin\Models\Traits\SearchTrait;
 
 /**
@@ -53,6 +54,7 @@ use PTAdmin\Admin\Models\Traits\SearchTrait;
  */
 class User extends Authenticate
 {
+    use HasApiTokens;
     use SearchTrait;
     use SoftDeletes;
 

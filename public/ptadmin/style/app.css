@@ -1484,7 +1484,8 @@ html {
   flex-direction: column;
   flex-wrap: nowrap;
   justify-content: center;
-  align-items: center; }
+  align-items: center;
+  width: 100%; }
   .empty i {
     font-size: 7em;
     color: #cbc4c4; }

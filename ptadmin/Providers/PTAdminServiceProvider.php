@@ -28,16 +28,32 @@ use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use PTAdmin\Admin\Service\Auth\AddonGuard;
 use PTAdmin\Admin\Utils\SystemAuth;
 
 class PTAdminServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        view()->share('PT', 'default');
-
+        $this->extendGuard();
         $this->registerPermissions();
         $this->mapSystemRoutes();
+    }
+
+    protected function extendGuard(): void
+    {
+        Auth::resolved(function ($auth): void {
+            $auth->extend('ptadmin', function ($app, $name, array $config) use ($auth) {
+                return tap($this->createGuard($auth, $name, $config), function ($guard): void {
+                    app()->refresh('request', $guard, 'setRequest');
+                });
+            });
+        });
+    }
+
+    protected function createGuard($auth, $guard_name, $config): AddonGuard
+    {
+        return new AddonGuard($auth, $guard_name, request(), $auth->createUserProvider($config['provider'] ?? null));
     }
 
     /**
@@ -65,7 +81,6 @@ class PTAdminServiceProvider extends ServiceProvider
 
     private function mapSystemRoutes(): void
     {
-        Route::pattern('id', '[1-9][0-9]*');
         Route::middleware(['web', 'operation.record'])->group(base_path('ptadmin/Routes/admin.php'));
     }
 }
