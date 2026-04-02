@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -32,7 +32,7 @@ class VerifyCsrfToken extends Middleware
     protected function inExceptArray($request): bool
     {
         foreach ($this->getExcept() as $except) {
-            if ($except !== '/') {
+            if ('/' !== $except) {
                 $except = trim($except, '/');
             }
 
@@ -46,10 +46,9 @@ class VerifyCsrfToken extends Middleware
 
     /**
      * 应排除在CSRF验证之外的URI。
-     *
      */
     protected function getExcept(): array
     {
-        return array_merge([admin_route_prefix().'/upload/*'], $this->except);
+        return array_merge([admin_route_prefix()], $this->except);
     }
 }

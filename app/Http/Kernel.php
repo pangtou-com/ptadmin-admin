@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -53,14 +53,13 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
-            \App\Http\Middleware\VerifyCsrfToken::class,
+            // \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
 
         'api' => [
             'throttle:60,1,api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
-            \App\Http\Middleware\OperationRecordMiddleware::class,
         ],
     ];
 

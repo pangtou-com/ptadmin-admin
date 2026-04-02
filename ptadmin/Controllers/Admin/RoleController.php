@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -24,30 +24,56 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Controllers\Admin;
 
 use Illuminate\Http\Request;
-use PTAdmin\Admin\Controllers\Traits\EditTrait;
-use PTAdmin\Admin\Controllers\Traits\ExtendTrait;
-use PTAdmin\Admin\Controllers\Traits\IndexTrait;
-use PTAdmin\Admin\Controllers\Traits\StoreTrait;
-use PTAdmin\Admin\Controllers\Traits\ValidateTrait;
 use PTAdmin\Admin\Models\Permission;
 use PTAdmin\Admin\Models\Role;
+use PTAdmin\Admin\Request\RoleRequest;
 use PTAdmin\Admin\Service\PermissionService;
 use PTAdmin\Admin\Utils\ResultsVo;
+use PTAdmin\Admin\Utils\SystemAuth;
 
 class RoleController extends AbstractBackgroundController
 {
-    use EditTrait;
-    use ExtendTrait;
-    use IndexTrait;
-    use StoreTrait;
-    use ValidateTrait;
-
     protected $permissionService;
 
     public function __construct(PermissionService $permissionService)
     {
         parent::__construct();
         $this->permissionService = $permissionService;
+    }
+
+    public function index(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = Role::query()->paginate();
+
+        return ResultsVo::pages($data);
+    }
+
+    public function store(RoleRequest $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->all();
+        if (!isset($data['guard_name'])) {
+            $data['guard_name'] = SystemAuth::getGuard();
+        }
+        Role::create($data);
+
+        return ResultsVo::success();
+    }
+
+    public function edit(RoleRequest $request, $id): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->all();
+        $dao = Role::findById((int) $id);
+        $dao->update($data);
+
+        return ResultsVo::success();
+    }
+
+    public function delete(): \Illuminate\Http\JsonResponse
+    {
+        $ids = $this->getIds();
+        Role::query()->whereIn('id', $ids)->delete();
+
+        return ResultsVo::success();
     }
 
     /**
@@ -80,7 +106,7 @@ class RoleController extends AbstractBackgroundController
      *
      * @param mixed $id
      */
-    public function getPermission($id)
+    public function getPermission($id): \Illuminate\Http\JsonResponse
     {
         $permission = Permission::getAllData();
         $role = Role::findById((int) $id, config('auth.app_guard_name'));
@@ -102,11 +128,6 @@ class RoleController extends AbstractBackgroundController
             'results' => $results,
         ];
 
-        if (request()->expectsJson()) {
-            return ResultsVo::success($result);
-        }
-        $view = $this->permissionService->getRolePermissionHtml($results);
-
-        return view('ptadmin.role.permission', compact('results', 'checked', 'id', 'view'));
+        return ResultsVo::success($result);
     }
 }

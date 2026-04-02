@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -50,76 +50,67 @@ class SystemController extends AbstractBackgroundController
         $this->systemService = $systemService;
     }
 
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (request()->expectsJson()) {
-            $data = $this->systemService->page($request->all());
+        $data = $this->systemService->page($request->all());
 
-            return ResultsVo::pages($data);
-        }
-
-        return $this->view();
+        return ResultsVo::pages($data);
     }
 
     /**
      * @throws \Exception
      */
-    public function store(SystemRequest $request)
+    public function store(SystemRequest $request): \Illuminate\Http\JsonResponse
     {
-        if ($request->expectsJson()) {
-            $data = $request->all();
-            DB::beginTransaction();
+        $data = $request->all();
+        DB::beginTransaction();
 
-            try {
-                $dao = (new System());
-                $dao->password = Hash::make(trim($data['password']));
-                $dao->fill($data)->save();
-
-                $dao->syncRoles((int) $request->get('role_id'));
-                DB::commit();
-            } catch (\Exception $exception) {
-                DB::rollBack();
-
-                throw $exception;
+        try {
+            $dao = new System();
+            $dao->password = Hash::make(trim($data['password']));
+            $dao->fill($data)->save();
+            $roleId = (int) $request->get('role_id');
+            if ($roleId > 0) {
+                $dao->syncRoles($roleId);
             }
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
 
-            return ResultsVo::success();
+            throw $exception;
         }
-        $dao = new System();
 
-        return $this->view(compact('dao'));
+        return ResultsVo::success();
     }
 
-    public function edit(SystemRequest $request, $id)
+    public function edit(SystemRequest $request, $id): \Illuminate\Http\JsonResponse
     {
         /** @var System $dao */
         $dao = System::query()->findOrFail($id);
-        if ($request->expectsJson()) {
-            $data = $request->all();
-            if (isset($data['password']) && $data['password']) {
-                $dao->password = Hash::make($data['password']);
-            }
-            $roleId = (int) $request->get('role_id');
-            $dao->syncRoles($roleId);
-            $dao->update($data);
-
-            return ResultsVo::success();
+        $data = $request->all();
+        if (isset($data['password']) && $data['password']) {
+            $dao->password = Hash::make($data['password']);
         }
+        $roleId = (int) $request->get('role_id');
+        if ($roleId > 0) {
+            $dao->syncRoles($roleId);
+        }
+        $dao->update($data);
 
-        return $this->view(compact('dao'));
+        return ResultsVo::success();
     }
 
     public function details($id): \Illuminate\Http\JsonResponse
     {
         /** @var System $dao */
-        $dao = System::query()->select(['id', 'nickname', 'username'])->firstOrFail($id);
+        $dao = System::query()->select(['id', 'nickname', 'username'])->findOrFail($id);
+        $roleIds = $dao->roles()->get()->pluck('id')->toArray();
         $results = [
             'id' => $dao->id,
             'nickname' => $dao->nickname,
             'username' => $dao->username,
-            'role_id' => $dao->roles()->get()->map(function ($item) {
-                return $item->id;
-            })->toArray(),
+            'role_ids' => $roleIds,
+            'role_id' => $roleIds[0] ?? null,
             'role' => Role::query()->select(['id', 'title'])->where('status', StatusEnum::ENABLE)->get(),
         ];
 
@@ -137,36 +128,45 @@ class SystemController extends AbstractBackgroundController
     public function setRole($id, Request $request): \Illuminate\Http\JsonResponse
     {
         $roleId = $request->get('role_id', []);
+        /** @var System $dao */
         $dao = System::query()->select(['id', 'nickname', 'username'])->firstOrFail($id);
         $dao->syncRoles($roleId);
 
         return ResultsVo::success();
     }
 
-    public function password(Request $request)
+    /**
+     * 修改密码
+     *
+     * @param Request $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function password(Request $request): \Illuminate\Http\JsonResponse
     {
-        if ($request->expectsJson()) {
-            $data = $request->validate([
-                'password' => 'required|confirmed|min:6|max:20',
-                'old_password' => 'required',
-            ]);
+        $data = $request->validate([
+            'password' => 'required|confirmed|min:6|max:20',
+            'old_password' => 'required',
+        ]);
 
-            /** @var System $user */
-            $user = SystemAuth::user();
-            if (!Hash::check($data['old_password'], $user->password)) {
-                throw new BackgroundException('原密码错误');
-            }
-            $user->password = Hash::make($data['password']);
-            $user->update();
-
-            Auth::guard(SystemAuth::getGuard())->logout();
-
-            return ResultsVo::success();
+        /** @var System $user */
+        $user = SystemAuth::user();
+        if (!Hash::check($data['old_password'], $user->password)) {
+            throw new BackgroundException('原密码错误');
         }
+        $user->password = Hash::make($data['password']);
+        $user->update();
 
-        return $this->view();
+        Auth::guard(SystemAuth::getGuard())->logout();
+
+        return ResultsVo::success();
     }
 
+    /**
+     * 删除账户.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function delete(): \Illuminate\Http\JsonResponse
     {
         $ids = $this->getIds();
@@ -178,19 +178,15 @@ class SystemController extends AbstractBackgroundController
     /**
      * 登录日志.
      */
-    public function loginLog()
+    public function loginLog(): \Illuminate\Http\JsonResponse
     {
-        if (request()->expectsJson()) {
-            $id = SystemAuth::user()->id;
-            $model = new SystemLog();
-            $filterMap = $model->query()->select(['id', 'system_id', 'login_at', 'login_ip', 'status'])->where('system_id', $id);
+        $id = SystemAuth::user()->id;
+        $model = new SystemLog();
+        $filterMap = $model->query()->select(['id', 'system_id', 'login_at', 'login_ip', 'status'])->where('system_id', $id);
 
-            $results = $filterMap->with('system:id,nickname')->orderBy('id', 'desc')->paginate();
+        $results = $filterMap->with('system:id,nickname')->orderBy('id', 'desc')->paginate();
 
-            return ResultsVo::pages($results);
-        }
-
-        return view('ptadmin.system.login_log');
+        return ResultsVo::pages($results);
     }
 
     public function status(): \Illuminate\Http\JsonResponse

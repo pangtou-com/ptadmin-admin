@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -23,10 +23,11 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Request;
 
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use PTAdmin\Admin\Models\Role;
 
-class RoleRequest
+class RoleRequest extends FormRequest
 {
     public function rules(): array
     {

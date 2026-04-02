@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -25,6 +25,7 @@ namespace PTAdmin\Admin\Models;
 
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticate;
+use PTAdmin\Admin\Models\Traits\HasApiTokens;
 use PTAdmin\Admin\Utils\SystemAuth;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -32,6 +33,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int    $id
  * @property string $username
  * @property string $nickname
+ * @property string $email
  * @property string $password
  * @property string $mobile
  * @property string $avatar
@@ -42,10 +44,11 @@ use Spatie\Permission\Traits\HasRoles;
  */
 class System extends Authenticate
 {
+    use HasApiTokens;
     use HasRoles;
     use SoftDeletes;
 
-    protected $appends = ['role_id', 'role_name'];
+    protected $appends = [];
     protected $hidden = ['password'];
     protected $guard_name;
     protected $fillable = ['username', 'nickname', 'mobile', 'email', 'avatar', 'login_at', 'login_ip', 'status'];
@@ -56,22 +59,6 @@ class System extends Authenticate
         $this->guard_name = $guardName;
         $attributes['guard_name'] = $guardName;
         parent::__construct($attributes);
-    }
-
-    public function getRoleIdAttribute()
-    {
-        $role = $this->roles()->pluck('id')->toArray();
-        $role = reset($role);
-
-        return $role ?? 0;
-    }
-
-    public function getRoleNameAttribute()
-    {
-        $role = $this->roles()->pluck('title')->toArray();
-        $role = reset($role);
-
-        return $role ?? '';
     }
 
     /**

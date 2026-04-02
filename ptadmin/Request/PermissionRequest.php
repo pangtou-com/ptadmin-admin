@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -33,17 +33,9 @@ class PermissionRequest extends FormRequest
 {
     public function rules(): array
     {
-        if (!$this->expectsJson()) {
-            return [];
-        }
         $id = (int) request()->route('id');
-        $parentName = (string) request()->get('parent_name', '');
 
         return [
-            'parent_name' => '' !== $parentName && Permission::TOP_PERMISSION_NAME !== $parentName ? [
-                'string',
-                Rule::exists(Permission::class, 'name'),
-            ] : [],
             'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:255', Rule::unique(Permission::class)->whereNull('deleted_at')->ignore($id)],
             'title' => ['required', 'max:255', Rule::unique(Permission::class)->whereNull('deleted_at')->ignore($id)],
             'route' => [Rule::requiredIf(function (): bool {

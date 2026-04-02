@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -30,6 +30,7 @@ use PTAdmin\Admin\Enum\StatusEnum;
 use PTAdmin\Admin\Exceptions\BackgroundException;
 use PTAdmin\Admin\Models\Permission;
 use PTAdmin\Admin\Models\System;
+use PTAdmin\Admin\Utils\SystemAuth;
 use PTAdmin\Html\Html;
 
 class PermissionService
@@ -41,13 +42,19 @@ class PermissionService
      */
     public function store($data): void
     {
-        $data['group_name'] = $data['group_name'] ?? config('auth.app_guard_name');
-        if (isset($data['parent_name']) && Permission::TOP_PERMISSION_NAME !== (string) $data['parent_name']) {
-            /** @var Permission $parent */
-            $parent = Permission::query()->where('name', $data['parent_name'])->firstOrFail();
-            $data['paths'] = array_merge($parent->paths ?? [], [$parent->name]);
+        if (!isset($data['guard_name'])) {
+            $data['guard_name'] = SystemAuth::getGuard();
+        }
+        if ($data['parent_ids'] && \is_array($data['parent_ids'])) {
+            $data['parent_id'] = end($data['parent_ids']);
         }
         Permission::create($data);
+    }
+
+    public function detail($id)
+    {
+        // @var Permission $perm
+        return Permission::query()->findOrFail($id);
     }
 
     /**
@@ -60,17 +67,13 @@ class PermissionService
     {
         /** @var Permission $perm */
         $perm = Permission::query()->findOrFail($id);
-        if ($data['parent_name'] === $perm->name) {
+        if ($data['parent_ids'] && \is_array($data['parent_ids'])) {
+            $data['parent_id'] = end($data['parent_ids']);
+        }
+        if (isset($data['parent_id']) && $data['parent_id'] === $perm->id) {
             throw new BackgroundException('父级菜单不能为自身');
         }
-        if (isset($data['parent_name']) && Permission::TOP_PERMISSION_NAME !== (string) $data['parent_name'] && $perm->parent_name !== $data['parent_name']) {
-            /** @var Permission $parent */
-            $parent = Permission::query()->where('name', $data['parent_name'])->firstOrFail();
-            $data['paths'] = array_merge($parent->paths ?? [], [$parent->name]);
-        }
         $perm->update($data);
-        // 需要如果存在子集的情况需要同步更新子集路径
-        Permission::renewChildrenPaths($perm->name, $perm->paths ?? []);
     }
 
     /**
@@ -84,7 +87,7 @@ class PermissionService
     {
         $results = $this->bySystemIdPermission($member->id);
 
-        return infinite_tree($results, Permission::TOP_PERMISSION_NAME, 'parent_name', 'name');
+        return infinite_tree($results);
     }
 
     /**
@@ -118,11 +121,11 @@ class PermissionService
                     continue;
                 }
                 $results[$value['id']] = $value;
-                $full_paths = array_merge($full_paths, $value['paths'] ?? []);
+                $full_paths = array_merge($full_paths, $value['parent_ids'] ?? []);
             }
         }
         $full_paths = array_unique($full_paths);
-        $full_results = Permission::query()->whereIn('name', $full_paths)->get()->toArray();
+        $full_results = Permission::query()->whereIn('id', $full_paths)->get()->toArray();
 
         return array_merge($results, $full_results);
     }

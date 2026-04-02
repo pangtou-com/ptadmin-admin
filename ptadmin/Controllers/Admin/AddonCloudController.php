@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -33,16 +33,12 @@ use PTAdmin\Admin\Utils\ResultsVo;
  */
 class AddonCloudController extends AbstractBackgroundController
 {
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
-        if ($request->isMethod('post')) {
-            $data = $request->validate(['username' => 'required|max:30', 'password' => 'required']);
-            $result = AddonApi::cloudLogin($data);
+        $data = $request->validate(['username' => 'required|max:30', 'password' => 'required']);
+        $result = AddonApi::cloudLogin($data);
 
-            return ResultsVo::pages($result);
-        }
-
-        return view('ptadmin.addon.cloud_login');
+        return ResultsVo::pages($result);
     }
 
     public function logout(): JsonResponse

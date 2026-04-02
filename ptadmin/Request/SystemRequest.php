@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -25,22 +25,18 @@ namespace PTAdmin\Admin\Request;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use PTAdmin\Admin\Models\Role;
 use PTAdmin\Admin\Models\System;
 
 class SystemRequest extends FormRequest
 {
     public function rules(): array
     {
-        if (!$this->expectsJson()) {
-            return [];
-        }
         $id = (int) $this->route('id');
 
         return [
             'username' => ['required', 'max:255', Rule::unique(System::class)->ignore($id)],
             'nickname' => ['required', 'max:255'],
-            'role_id' => ['required', Rule::exists(Role::class, 'id')->whereNotNull('deleted_at')],
+            'role_id' => ['integer'],
             'password' => [
                 Rule::requiredIf(function () use ($id) {
                     return 0 === $id;

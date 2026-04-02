@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -24,7 +24,6 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Controllers\Admin;
 
 use Illuminate\Http\Request;
-use PTAdmin\Admin\Controllers\Traits\ExtendTrait;
 use PTAdmin\Admin\Models\User;
 use PTAdmin\Admin\Request\UserRequest;
 use PTAdmin\Admin\Service\UserService;
@@ -32,7 +31,6 @@ use PTAdmin\Admin\Utils\ResultsVo;
 
 class UserController extends AbstractBackgroundController
 {
-    use ExtendTrait;
     private $userService;
 
     public function __construct(UserService $userService)

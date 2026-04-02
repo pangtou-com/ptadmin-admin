@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -28,6 +28,8 @@ use PTAdmin\Admin\Utils\SystemAuth;
 
 /**
  * @property int    $parent_id
+ * @property int    $origin_id
+ * @property int    $department_id
  * @property string $guard_name
  * @property string $name
  * @property string $title
@@ -38,7 +40,7 @@ class Role extends \Spatie\Permission\Models\Role
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'parent_id', 'title', 'guard_name', 'status', 'note'];
+    protected $fillable = ['name', 'parent_id', 'scope', 'origin_id', 'department_id', 'title', 'guard_name', 'status', 'note'];
 
     protected $guard_name;
 
@@ -49,6 +51,21 @@ class Role extends \Spatie\Permission\Models\Role
         $attributes['guard_name'] = $guardName;
 
         parent::__construct($attributes);
+    }
+
+    /**
+     * 同步角色数据范围，当前角色需要指定机构或者部门数据范围时使用.
+     *
+     * @param $results
+     */
+    public function syncScope($results): void
+    {
+        if (!$this->exists) {
+            return;
+        }
+        if (\in_array($this->scope, [5, 6], true)) {
+            // TODO 待实现指定机构或部门的情况
+        }
     }
 
     public function freshTimestamp(): int

@@ -1,0 +1,655 @@
+@import '_cascader';
+
+@mixin scrollStyle(){
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 5px;
+    }
+}
+.ptadmin-cm-association{
+    padding: 15px;
+    .ptadmin-page-container {
+        margin-top: 15px;
+            .ptadmin-header{
+                padding: 0;
+            }
+    }
+}
+.ptadmin-cms-box{
+    display: flex;
+    .expand-icon{
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: block;
+            padding: 5px 0;
+            cursor: pointer;
+            color: #FFF;
+            background: #16BAAA
+    }
+    .ptadmin-cms-aside{
+        background: var(--ptadmin-theme-white);
+        width: 200px;
+        height: 100vh;
+        margin-right: 10px;
+        box-sizing: border-box;
+        position: relative;
+        .aside-header{
+            line-height: 50px;
+            box-sizing: border-box;
+            padding: 0 10px;
+            .title{
+                font-size: 18px;
+                font-weight: 900;
+            }
+        }
+        .checkbox-box{
+            padding:0 10px;
+            display: flex;
+            box-sizing: border-box;
+            height: 40px;
+            display: flex;
+            align-items: center;
+        }
+        .ztree{
+            .layui-tree-main{
+                display: flex;
+                align-items: center;
+                .layui-tree-txt{
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+            }
+            .layui-icon-file{
+                display: none;
+            }
+            height: calc(100vh - 90px);
+            overflow: auto;
+            @include scrollStyle();
+        }
+        .close-navigation{
+            right: 0;
+            border-radius: 3px 0  0 3px;
+        }
+    }
+    header{
+        height: 50px;
+        border-bottom: 1px solid var(--border-color);
+        box-sizing: border-box;
+        text-align: center;
+    }
+}
+.ptadmin-cms-main{
+    background: var(--ptadmin-theme-white);
+    flex: 1;
+    position: relative;
+    .open-navigation{
+        border-radius: 0 3px  3px 0;
+        left: 0;
+        display: none;
+        z-index: 9999;
+    }
+    .main-header{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 10px;
+        height: 50px;
+        box-sizing: border-box;
+        .title{
+            font-size: 18px;
+        }
+    }
+    .content{
+        height: calc(100vh - 60px);
+    }
+}
+.ptadmin-cms-category{
+    padding: 0 15px;
+    .ptadmin-cms-category-form{
+        .section{
+            .title{
+                padding: 0 15px;
+                font-weight: 900;
+                line-height: 50px;
+                font-size: 18px;
+            }
+                padding-right: 15px;
+            }
+            .border{
+                border-right: 1px solid #ccc;
+        }
+    }
+}
+
+
+.ptadmin-seo-config-container{
+    --theme-color:#16BAAA;
+    --border-color:#eee;
+    --order-bg:#f8f8f8;
+    --order-color:#999;
+    --hover-color:#ff5722;
+    padding: 10px;
+    background: #FFF;
+    min-height: calc(100vh - 70px);
+    overflow-y: auto;
+    @include scrollStyle();
+
+    .layui-tab{
+        margin: 0;
+    }
+    .layui-form-item{
+        margin-bottom: 0;
+    }
+
+    .layui-tab-content{
+        padding: 10px 0;
+    }
+    .submit-footer{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        width: 100%;
+        bottom: 0;
+        left: 0;
+        background: #FFF;
+        padding: 10px 0;
+        height: 60px;
+        box-sizing: border-box;
+    }
+
+}
+
+// -- URL 规则 --
+.ptadmin-url-config-form{
+    .format-item{
+        display: flex;
+        align-items: center;
+        .format-demo{
+            margin: 6px 10px 0 0;
+            cursor: pointer;
+           span[format-hover]{
+            user-select: none;
+            &:hover{
+                    color: var(--theme-color) ;
+                }
+           }
+           span[format-demo]{
+            display: none;
+           }
+        }
+    }
+
+    .layui-col-space10{
+        margin: 0;
+    }
+
+    .ptadmin-url-config-main{
+        margin-top: 15px;
+        display: flex;
+        .ptadmin-url-tabs{
+            padding: 5px  15px 0 5px;
+            border-right: 1px solid var(--border-color);
+            >div{
+                padding: 9px 15px;
+                width: 80px;
+                font-weight: 400;
+                line-height: 20px;
+                text-align: right;
+                cursor: pointer;
+                margin-bottom: 5px;
+                user-select: none;
+                transition: all .3s;
+                position: relative;
+                &::before{
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 100%;
+                    width: 0%;
+                    height: 2px;
+                    transition: all .3s;
+                    background: var(--theme-color);
+                }
+                &:hover{
+                    color: var(--theme-color);
+                    background: var(--order-bg);
+                    &::before{
+                        width: 100%;
+                    }
+                }
+            }
+            .layui-this{
+                color: var(--theme-color);
+                background: var(--order-bg);
+                &::before{
+                    width: 100%;
+                }
+            }
+        }
+        .ptadmin-url-section{
+            width: 50%;
+            @media (max-width: 1399.98px) {
+                width: 100%;
+             }
+            padding-left: 15px;
+            .layui-form-item{
+                margin-bottom: 30px;
+            }
+        }
+    }
+    .ptadmin-url-config{
+        display: flex;
+        >div{
+            flex: 1;
+        }
+        .url-input{
+            .generate{
+                color: var(--order-color);
+                margin-top: 5px;
+                white-space: nowrap;
+            }
+            .layui-input-group{
+                width: 100%;
+                >.layui-input-suffix{
+                    width: 35px;
+                }
+            }
+        }
+        .tags{
+            margin-left: 15px;
+            .layui-elem-field legend{
+                font-size: 16px;
+            }
+            .layui-field-title{
+                margin: 0;
+            }
+            .content{
+                display: flex;
+                flex-wrap: wrap;
+                .item{
+                    margin: 5px 5px 0 0;
+                    padding: 5px 10px;
+                    border-radius: 2px;
+                    border: 1px solid var(--border-color);
+                    background: var(--order-bg);
+                }
+            }
+        }
+    }
+}
+
+// -- URL 规则 end --
+
+
+// -- 专题管理 --
+// 新增表单
+.ptadmin-topic-manage-form{
+    padding: 15px;
+    .topics-checkout-box{
+        .layui-form-item{
+            display: none;
+        }
+        .layui-form-item[show]{
+            display: block;
+        }
+    }
+
+    .topic-association{
+        .item{
+            display: none;
+        }
+        .show{
+            display: block;
+        }
+        .item[table]{
+            width: 100%;
+            .ptadmin-header{
+                padding: 0;
+            }
+            .table-header{
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                .hide{
+                    display: none;
+                }
+            }
+        }
+    }
+}
+// 详情
+.ptadmin-topic-details{
+    .ptadmin-card-info{
+        .item{
+            display: flex;
+        }
+        .middle{
+            align-items: center;
+        }
+    }
+}
+
+// 关联样式
+
+// -- 专题管理 end --
+
+
+// -- sitemap --
+.ptadmin-sitemap-config-form{
+    a{
+        padding-right: 15px;
+        color: var(--theme-color);
+        &:hover{
+           color:var(--hover-color);
+        }
+    }
+    .layui-form-item{
+        margin-bottom: 15px;
+    }
+    .ptadmin-config-map-type-item{
+        display: flex;
+        align-items: center;
+        .operate{
+            margin-top: 10px;
+            display: none;
+            .look-template{
+                color: var(--order-color);
+                a{
+                    padding-right: 0;
+                }
+                .text{
+                    display: none;
+                }
+                .show{
+                    display: inline;
+                }
+            }
+        }
+
+        .operate[show]{
+            display: block;
+        }
+    }
+
+    .tips-input-block{
+        display: flex;
+        align-items: center;
+        .tips-layer{
+            display: inline-block;
+            margin: 6px 10px 0 0;
+        }
+    }
+
+    .linkage-box{
+        display: flex;
+        .layui-input-inline{
+            display: flex;
+            align-items: center;
+            .label{
+                padding-right: 15px;
+                white-space: nowrap;
+            }
+        }
+    }
+
+    .create-data-box{
+        float: left;
+        .layui-input-inline{
+            margin-bottom: 10px;
+
+        }
+    }
+    .baidu-desc{
+        margin-top: 10px;
+        a{
+            padding-right: 0;
+        }
+    }
+}
+
+// -- sitemap end --
+
+
+// 标签生成器
+.ptadmin-tag-generations-box{
+    --border-color:#ddd;
+    --theme-color:#16BAAA;
+    --tag-bg:#f4f4f4;
+    --hover-bg:#f8f8f8;
+    --hover-tag-bg:#e7e7e7;
+    --hover-tag-border-color:#adadad;
+    position: relative;
+    height: 100vh;
+    display: flex;
+    .aside-box{
+        width: 200px;
+        background: #FFF;
+        margin-right: 10px;
+        .title{
+            text-align: center;
+            font-size: 19px;
+            font-weight: 999;
+            height: 50px;
+            line-height: 50px;
+            border-bottom: 1px solid var(--border-color);
+            box-sizing: border-box;
+        }
+        .nav-box{
+            height: calc(100% - 50px);
+            overflow: auto;
+            @include scrollStyle();
+
+            .item{
+                padding: 10px 15px;
+                cursor: pointer;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                &:first-child{
+                    margin-top: 10px;
+                }
+                &:last-child{
+                    margin-bottom: 10px;
+                }
+                &:hover{
+                    background: var(--hover-bg);
+                }
+            }
+            .active{
+                color: var(--theme-color);
+                background: var(--hover-bg);
+            }
+        }
+    }
+    .main-box{
+        flex: 1;
+        .section-box{
+           height: calc(100vh - 50px);
+           overflow: auto;
+           @include scrollStyle();
+            background: #FFF;
+            .content-container{
+                padding:0 10px 10px 10px;
+                .tag-generations-common-header{
+                    font-size: 18px;
+                    padding-bottom: 15px;
+                    margin-bottom: 15px;
+                    border-bottom: 1px solid var(--border-color);
+                }
+                .generations-tag{
+                    a{
+                        display: inline-block;
+                        padding: 6px 15px;
+                        border-radius: 2px;
+                        color: #444;
+                        background: var(--tag-bg);
+                        user-select: none;
+                        border: 1px solid var(--border-color);
+                        &:hover{
+                            background: var(--hover-tag-bg);
+                            border-color: var(--hover-tag-border-color);
+                        }
+                    }
+                }
+                .generations-tag-active{
+                    a{
+                        background: var(--theme-color);
+                        color: #FFF;
+                        &:hover{
+                            background: var(--theme-color);
+                            color: #FFF;
+                            border: 1px solid var(--border-color);
+                        }
+                    }
+                }
+                .result-btns{
+                    margin: 15px 0;
+                }
+            }
+            .tag-generations-content{
+                margin-bottom: 50px;
+                .layui-form-label{
+                    text-align: left;
+                    float: none;
+                    width: auto;
+                    padding: 0;
+                    margin-bottom: 6px;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    .layui-icon-about{
+                        cursor: pointer;
+                        font-size: 15px;
+                        margin-right: 5px;
+                    }
+                }
+                .layui-input-block{
+                    margin-left: 0;
+                }
+                .el-cascader__search-input{
+                    margin: 0;
+                    &::placeholder{
+                        color: #777;
+                    }
+                }
+            }
+            .tag-generations-form-reset{
+                display: none;
+            }
+        }
+        .tag-generations-footer{
+            height: 50px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFF;
+        }
+    }
+}
+// 标签生成器 end
+
+// 评分检测
+.ptadmin-score-detection-container{
+    .score-detection-list{
+        margin: 0;
+        background: #FFF;
+        padding: 0 15px;
+        .content{
+            .image{
+                width: 100%;
+                padding-top: 50%;
+                position: relative;
+                img{
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%,-50%);
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+            }
+            .info-box{
+                background: #f8f8f8;
+                .title{
+                    padding:10px 0 0 10px;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    margin-bottom: 8px;
+                }
+                .author{
+                    padding:0 10px;
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 8px;
+                    flex-wrap: wrap;
+                }
+
+                .footer{
+                    .layui-form-switch{
+                        margin-top: 0;
+                    }
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 8px 10px 10px 10px;
+                    border-top: 1px solid #ddd;
+                }
+
+            }
+
+        }
+        .layui-laypage{
+            margin: 0  auto;
+        }
+    }
+    .paging-box{
+        margin-top: 15px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+}
+.ptadmin-scan-box{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    .header{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #f0f0f0;
+        box-sizing: border-box;
+    }
+    .progress{
+        flex: 1;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        .detecting{
+            margin-bottom: 5px;
+        }
+    }
+    .footer{
+        padding: 10px;
+        border-top: 1px solid #f0f0f0;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+// 评分检测 end

@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -24,20 +24,12 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Controllers\Admin;
 
 use Illuminate\Validation\Rule;
-use PTAdmin\Admin\Controllers\Traits\EditTrait;
-use PTAdmin\Admin\Controllers\Traits\ExtendTrait;
-use PTAdmin\Admin\Controllers\Traits\StoreTrait;
-use PTAdmin\Admin\Controllers\Traits\ValidateTrait;
 use PTAdmin\Admin\Models\SettingGroup;
 use PTAdmin\Admin\Service\SettingGroupService;
 use PTAdmin\Admin\Utils\ResultsVo;
 
 class SettingGroupController extends AbstractBackgroundController
 {
-    use EditTrait;
-    use ExtendTrait;
-    use StoreTrait;
-    use ValidateTrait;
     protected $settingGroupService;
 
     public function __construct(SettingGroupService $settingGroupService)

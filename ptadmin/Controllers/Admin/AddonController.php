@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -25,7 +25,6 @@ namespace PTAdmin\Admin\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use PTAdmin\Addon\AddonApi;
-use PTAdmin\Admin\Models\Addon;
 use PTAdmin\Admin\Request\AddonRequest;
 use PTAdmin\Admin\Utils\ResultsVo;
 
@@ -59,12 +58,7 @@ class AddonController extends AbstractBackgroundController
 
     public function store(AddonRequest $addonRequest)
     {
-        if (request()->expectsJson()) {
-            return ResultsVo::success();
-        }
-        $dao = new Addon();
-
-        return $this->view(compact('dao'));
+        return ResultsVo::success();
     }
 
     /**
@@ -77,22 +71,12 @@ class AddonController extends AbstractBackgroundController
      */
     public function upLoadAddon($id, Request $request)
     {
-        if (request()->expectsJson()) {
-            return ResultsVo::success();
-        }
-        $dao = Addon::query()->findOrFail($id);
-        $directory = base_path('addons/'.ucfirst($dao->code));
-
-        return view('ptadmin.addon.upload_addon', compact('dao', 'directory'));
+        return ResultsVo::success();
     }
 
     public function localInstall(Request $request)
     {
-        if (request()->expectsJson()) {
-            return ResultsVo::success();
-        }
-
-        return view('ptadmin.addon.local_install');
+        return ResultsVo::success();
     }
 
     /**

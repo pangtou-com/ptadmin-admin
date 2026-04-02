@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -26,32 +26,48 @@ namespace PTAdmin\Admin\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use PTAdmin\Admin\Service\LoginService;
+use PTAdmin\Admin\Service\PermissionService;
 use PTAdmin\Admin\Utils\ResultsVo;
 use PTAdmin\Admin\Utils\SystemAuth;
 
 class LoginController extends AbstractBackgroundController
 {
     private $loginService;
+    private $permissionService;
 
-    public function __construct(LoginService $loginService)
+    public function __construct(LoginService $loginService, PermissionService $permissionService)
     {
         parent::__construct();
         $this->loginService = $loginService;
+        $this->permissionService = $permissionService;
     }
 
-    public function login(Request $request)
+    public function login(Request $request): \Illuminate\Http\JsonResponse
     {
-        if ($request->isMethod('post')) {
-            $request->validate([
-                'username' => 'required',
-                'password' => 'required',
-            ]);
-            $data = $this->loginService->login($request->only(['username', 'password', 'code']));
+        $request->validate([
+            'username' => 'required',
+            'password' => 'required',
+        ]);
+        $data = $this->loginService->login($request->only(['username', 'password', 'code']));
 
-            return ResultsVo::success($data);
+        return ResultsVo::success($data);
+    }
+
+    /**
+     * 获取登录账户授权菜单树.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function permissions(): \Illuminate\Http\JsonResponse
+    {
+        $data = $this->permissionService->myPermission(SystemAuth::user());
+        if (!SystemAuth::IsFounder()) {
+            $roles = SystemAuth::user()->roles()->get()->pluck('title')->toArray();
+        } else {
+            $roles = ['创始人'];
         }
 
-        return view('ptadmin.login');
+        return ResultsVo::success(['roles' => $roles, 'perm' => $data]);
     }
 
     public function logout(): \Illuminate\Http\JsonResponse

@@ -1,0 +1,29 @@
+{
+    "title": "CMS内容管理系统",
+    "code": "cms",
+    "addon_path": "Cms",
+    "type": "project",
+    "keywords": ["cms", "内容管理系统"],
+    "description": "CMS内容管理系统",
+    "version": "v0.0.1",
+    "framework": "v1.0",
+    "license": "private",
+    "license_key": "",
+    "homepage": "https://www.pangtou.com",
+    "docs": "https://www.pangtou.com",
+    "authors": {"name": "Zane", "email": "873934580@qq.com"},
+    "directives": [
+        {"title": "导航", "name": "nav", "class": "Addon\\Cms\\Service\\NavigationService", "method": "index"},
+        {"title": "广告", "name": "ad", "class": "Addon\\Cms\\Service\\AdExportService", "method": "handle"},
+        {"title": "栏目", "name": "cate", "class": "Addon\\Cms\\Service\\CategoryExportService", "method": "handle"},
+        {"title": "文章", "name": "arc", "class": "Addon\\Cms\\Service\\ArchiveExportService", "method": "handle"}
+    ],
+    "response": {
+        "asset": "./Assets",
+        "route": "./Routes",
+        "view": "./Response/views",
+        "lang": "./Response/Lang",
+        "config": "./Config",
+        "func": "./functions.php"
+    }
+}

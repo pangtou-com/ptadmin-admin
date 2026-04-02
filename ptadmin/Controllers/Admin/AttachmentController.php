@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -24,7 +24,6 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Controllers\Admin;
 
 use Illuminate\Http\Request;
-use PTAdmin\Admin\Controllers\Traits\IndexTrait;
 use PTAdmin\Admin\Service\AttachmentService;
 use PTAdmin\Admin\Utils\ResultsVo;
 
@@ -33,13 +32,17 @@ use PTAdmin\Admin\Utils\ResultsVo;
  */
 class AttachmentController extends AbstractBackgroundController
 {
-    use IndexTrait;
     protected $attachmentService;
 
     public function __construct(AttachmentService $attachmentService)
     {
         $this->attachmentService = $attachmentService;
         parent::__construct();
+    }
+
+    public function index(Request $request): \Illuminate\Http\JsonResponse
+    {
+        return ResultsVo::pages();
     }
 
     public function delete(): \Illuminate\Http\JsonResponse

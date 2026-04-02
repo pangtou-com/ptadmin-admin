@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -81,6 +81,6 @@ class PTAdminServiceProvider extends ServiceProvider
 
     private function mapSystemRoutes(): void
     {
-        Route::middleware(['web', 'operation.record'])->group(base_path('ptadmin/Routes/admin.php'));
+        Route::middleware(['api', 'operation.record'])->group(base_path('ptadmin/Routes/admin.php'));
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -26,12 +26,15 @@ use PTAdmin\Admin\Controllers\Admin;
 
 // 不登录接口地址
 Route::group(['prefix' => admin_route_prefix()], function (): void {
-    Route::match(['get', 'post'], 'login', [Admin\LoginController::class, 'login'])->name('admin_login');
+    Route::match(['post'], 'login', [Admin\LoginController::class, 'login'])->name('admin_login');
     Route::post('upload', [Admin\UploadController::class, 'upload']);
     Route::post('upload/tiny', [Admin\UploadController::class, 'tiny']);
 });
 
 Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmin\Admin\Utils\SystemAuth::getGuard()]], function (): void {
+    // 获取授权菜单树
+    Route::get('/user/permissions', [Admin\LoginController::class, 'permissions']);
+
     Route::get('/', [Admin\HomeController::class, 'layout']);
     Route::get('layout', [Admin\HomeController::class, 'layout']);
     Route::get('console', [Admin\HomeController::class, 'console']);
@@ -53,22 +56,26 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
     // 系统人员登录日志
     Route::get('system/login', [Admin\SystemController::class, 'loginLog']);
 
+    // 消息通知
+    Route::get('message/unread', [Admin\MessageController::class, 'unread']);
+
     // 系统人员管理
     Route::get('systems', [Admin\SystemController::class, 'index']);
-    Route::match(['get', 'put'], 'system/{id}', [Admin\SystemController::class, 'edit']);
-    Route::match(['get', 'post'], 'system', [Admin\SystemController::class, 'store']);
-    Route::match(['get', 'post'], 'system/password', [Admin\SystemController::class, 'password']);
-    Route::post('system-role/{id}', [Admin\SystemController::class, 'setRole']);
+    Route::get('systems/{id}', [Admin\SystemController::class, 'details']);
+    Route::match(['put'], 'systems/{id}', [Admin\SystemController::class, 'edit']);
+    Route::match(['post'], 'systems', [Admin\SystemController::class, 'store']);
+    Route::match(['post'], 'systems/password', [Admin\SystemController::class, 'password']);
+    Route::post('systems-role/{id}', [Admin\SystemController::class, 'setRole']);
     Route::put('systems-status/{id?}', [Admin\SystemController::class, 'status']);
-    Route::delete('system/{id?}', [Admin\SystemController::class, 'delete']);
+    Route::delete('systems/{id?}', [Admin\SystemController::class, 'delete']);
     Route::get('my-permission', [Admin\SystemController::class, 'myPermission']);
 
     // 系统角色管理
     Route::get('roles', [Admin\RoleController::class, 'index']);
-    Route::match(['get', 'put'], 'role/{id}', [Admin\RoleController::class, 'edit']);
+    Route::match(['put'], 'roles/{id}', [Admin\RoleController::class, 'edit']);
     Route::match(['put'], 'roles-status/{id}', [Admin\RoleController::class, 'status']);
-    Route::match(['get', 'post'], 'role', [Admin\RoleController::class, 'store']);
-    Route::delete('role/{id?}', [Admin\RoleController::class, 'delete']);
+    Route::match(['post'], 'roles', [Admin\RoleController::class, 'store']);
+    Route::delete('roles/{id?}', [Admin\RoleController::class, 'delete']);
 
     // 角色设置权限
     Route::post('roles-permission/{id}', [Admin\RoleController::class, 'setPermission']);
@@ -76,10 +83,16 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['auth:'.\PTAdmi
 
     // 权限管理
     Route::match(['get'], 'permissions', [Admin\PermissionController::class, 'index']);
-    Route::match(['get', 'post'], 'permission', [Admin\PermissionController::class, 'store']);
-    Route::match(['get', 'put'], 'permission/{id}', [Admin\PermissionController::class, 'edit']);
+    Route::match(['post'], 'permissions', [Admin\PermissionController::class, 'store']);
+    Route::match(['get'], 'permissions/{id}', [Admin\PermissionController::class, 'detail']);
+    Route::match(['put'], 'permissions/{id}', [Admin\PermissionController::class, 'edit']);
     Route::match(['put'], 'permission-field/{id}', [Admin\PermissionController::class, 'editField']);
-    Route::delete('permission/{id?}', [Admin\PermissionController::class, 'delete']);
+    Route::delete('permissions/{id?}', [Admin\PermissionController::class, 'delete']);
+    Route::get('permissions-role/{id}', [Admin\PermissionController::class, 'getRolePermission']);
+    Route::post('permissions-role/{id}', [Admin\PermissionController::class, 'saveRolePermission']);
+    Route::get('permissions-system/{id}', [Admin\PermissionController::class, 'getSystemPermission']);
+    Route::post('permissions-system/{id}', [Admin\PermissionController::class, 'saveSystemPermission']);
+    Route::get('permissions-tree', [Admin\PermissionController::class, 'tree']);
     Route::get('permissions-lists', [Admin\PermissionController::class, 'lists']);
 
     // 用户管理

@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -35,7 +35,8 @@ use PTAdmin\Admin\Utils\SystemAuth;
  * @property string $route
  * @property string $component
  * @property string $icon
- * @property string $parent_name
+ * @property int    $parent_id
+ * @property int[]  $parent_ids
  * @property string $addon_code
  * @property string $guard_name
  * @property string $weight
@@ -57,13 +58,13 @@ class Permission extends \Spatie\Permission\Models\Permission
     public const TOP_PERMISSION_NAME = '0';
 
     protected $fillable = [
-        'name', 'title', 'route', 'component', 'icon', 'parent_name', 'addon_code', 'guard_name', 'weight', 'note', 'type',
+        'name', 'title', 'route', 'component', 'icon', 'parent_id', 'parent_ids', 'addon_code', 'guard_name', 'weight', 'note', 'type',
         'status', 'is_nav', 'controller', 'paths',
     ];
 
     protected $guard_name;
-    protected $appends = ['icon_show'];
-    protected $casts = ['paths' => 'array'];
+    protected $appends = [];
+    protected $casts = ['parent_ids' => 'array'];
 
     public function __construct(array $attributes = [])
     {
@@ -97,13 +98,6 @@ class Permission extends \Spatie\Permission\Models\Permission
         return date('Y-m-d H:i:s', $this->attributes['updated_at']);
     }
 
-    public function getIconShowAttribute(): ?string
-    {
-        return whenNotBlank(data_get($this->attributes, 'icon'), function ($val) {
-            return '<i class="'.$val.'"></i> ';
-        });
-    }
-
     /**
      * 刷新子集路径信息.
      *
@@ -113,10 +107,10 @@ class Permission extends \Spatie\Permission\Models\Permission
     public static function renewChildrenPaths($parentName, array $paths): void
     {
         // 更新下级
-        self::query()->where('parent_name', $parentName)->update(['paths' => $paths]);
-        self::query()->where('parent_name', $parentName)->get()->map(function ($item) use ($paths): void {
-            self::renewChildrenPaths($item->name, array_merge($paths, [$item->name]));
-        });
+//        self::query()->where('parent_id', $parentName)->update(['paths' => $paths]);
+//        self::query()->where('parent_id', $parentName)->get()->map(function ($item) use ($paths): void {
+//            self::renewChildrenPaths($item->name, array_merge($paths, [$item->name]));
+//        });
     }
 
     /**
@@ -130,7 +124,7 @@ class Permission extends \Spatie\Permission\Models\Permission
 
         return whenBlank($model->getAllCachedData('levels'), function () use ($model) {
             $value = [];
-            infinite_level(self::getAllData(), $value, 'name', 'parent_name', self::TOP_PERMISSION_NAME);
+            infinite_level(self::getAllData(), $value);
             $model->setAllCachedData('levels', $value);
 
             return $value;
@@ -147,7 +141,7 @@ class Permission extends \Spatie\Permission\Models\Permission
         $model = new self();
 
         return whenBlank($model->getAllCachedData('trees'), function () use ($model) {
-            $value = infinite_tree(self::getAllData(), self::TOP_PERMISSION_NAME, 'parent_name', 'name');
+            $value = infinite_tree(self::getAllData());
             $model->setAllCachedData('trees', $value);
 
             return $value;
@@ -165,7 +159,7 @@ class Permission extends \Spatie\Permission\Models\Permission
     public static function getAllData($where = [], $order = ['weight' => 'desc']): array
     {
         $filterMap = self::query()->select([
-            'id', 'parent_name', 'title', 'name', 'status', 'route', 'component', 'weight', 'type', 'is_nav', 'icon',
+            'id', 'parent_id', 'parent_ids', 'title', 'name', 'status', 'route', 'component', 'weight', 'type', 'is_nav', 'icon',
         ])->where($where);
 
         if (\count($order) > 0) {

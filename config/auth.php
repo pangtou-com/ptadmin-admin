@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -28,7 +28,7 @@ return [
         'passwords' => 'users',
     ],
     // 管理后台守卫名称
-    'app_guard_name' => 'admin',
+    'app_guard_name' => 'api',
 
     // 授权前缀
     'ptadmin_auth_prefix' => env('APP_AUTH_PREFIX', 'ptadmin'),
@@ -50,10 +50,6 @@ return [
         ],
         'api' => [
             'driver' => 'ptadmin',
-            'provider' => 'system',
-        ],
-        'admin' => [
-            'driver' => 'session',
             'provider' => 'system',
         ],
     ],
