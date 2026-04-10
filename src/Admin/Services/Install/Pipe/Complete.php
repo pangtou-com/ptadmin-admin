@@ -33,6 +33,8 @@ class Complete
 
     public function handle($data, \Closure $next): void
     {
+        $installedMarkerWritten = false;
+
         try {
             $this->process('创建管理员账户');
             $status = Artisan::call('admin:init', ['-u' => $data['username'], '-p' => $data['password'], '-f' => true]);
@@ -47,6 +49,9 @@ class Complete
             if (false === $written || !File::exists(storage_path('installed'))) {
                 throw new \RuntimeException('安装标记写入失败');
             }
+            $installedMarkerWritten = true;
+
+            $this->persistEnvFile($data);
 
             Artisan::call('cache:clear');
             Artisan::call('config:clear');
@@ -58,7 +63,29 @@ class Complete
 
             $next($data);
         } catch (\Throwable $throwable) {
+            if ($installedMarkerWritten && File::exists(storage_path('installed'))) {
+                File::delete(storage_path('installed'));
+            }
             $this->error('安装收尾失败: '.$throwable->getMessage());
+        }
+    }
+
+    /**
+     * 将安装阶段准备好的环境配置在最后一步写入磁盘，
+     * 尽量避免影响正在执行的安装流程。
+     */
+    private function persistEnvFile($data): void
+    {
+        $envContent = $data['__install_env_content'] ?? null;
+        if (!is_string($envContent) || '' === $envContent) {
+            return;
+        }
+
+        $envPath = $data['__install_env_path'] ?? base_path('.env');
+        $this->process('保存配置文件');
+        $saved = File::put($envPath, $envContent);
+        if (false === $saved || !File::exists($envPath)) {
+            throw new \RuntimeException(sprintf('无法写入环境文件：%s', $envPath));
         }
     }
 }

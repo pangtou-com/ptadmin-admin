@@ -24,7 +24,6 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services\Install\Pipe;
 
 use Illuminate\Encryption\Encrypter;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use PTAdmin\Admin\Support\Concerns\FormatInstallOutput;
@@ -44,7 +43,8 @@ class ConfigEnv
         if (!$this->checkDatabaseConnection($data)) {
             return;
         }
-        if (!$this->saveEnvFile($data)) {
+        $data = $this->prepareEnvFilePayload($data);
+        if (null === $data) {
             return;
         }
 
@@ -85,17 +85,15 @@ class ConfigEnv
     }
 
     /**
-     * 保存配置文件.
-     *
-     * @param $data
-     *
-     * @return bool
+     * 先准备环境配置内容，延后到安装收尾阶段再真正写入 .env，
+     * 避免开发态服务因为 .env 变更中断当前安装请求。
      */
-    private function saveEnvFile($data): bool
+    private function prepareEnvFilePayload($data): ?array
     {
         $content = config('ptadmin-install.env_example', []);
         $envPath = base_path('.env');
         $results = [];
+
         foreach ($content as $key => $value) {
             if (is_numeric($key)) {
                 $results[] = '' !== $value ? '# '.$value : '';
@@ -119,19 +117,16 @@ class ConfigEnv
         }
 
         try {
-            $saved = file_put_contents($envPath, implode(PHP_EOL, $results).PHP_EOL, LOCK_EX);
-            if (false === $saved) {
-                throw new \RuntimeException(sprintf('无法写入环境文件：%s', $envPath));
-            }
-            Artisan::call('config:clear');
-            $this->process('保存配置文件');
-        } catch (\Exception $e) {
-            $this->error('保存配置文件失败: '.$e->getMessage());
+            $data['__install_env_path'] = $envPath;
+            $data['__install_env_content'] = implode(PHP_EOL, $results).PHP_EOL;
+            $this->process('准备配置文件');
+        } catch (\Throwable $e) {
+            $this->error('准备配置文件失败: '.$e->getMessage());
 
-            return false;
+            return null;
         }
 
-        return true;
+        return $data;
     }
 
     /**

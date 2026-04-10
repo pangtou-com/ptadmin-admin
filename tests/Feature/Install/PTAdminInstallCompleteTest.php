@@ -54,6 +54,7 @@ class PTAdminInstallCompleteTest extends TestCase
     public function test_complete_writes_installed_marker_after_admin_init_succeeds(): void
     {
         $commands = [];
+        $envPath = storage_path('install-test.env');
 
         Artisan::shouldReceive('call')
             ->andReturnUsing(function (string $command, array $arguments = []) use (&$commands): int {
@@ -71,6 +72,8 @@ class PTAdminInstallCompleteTest extends TestCase
         $pipe->handle([
             'username' => 'admin',
             'password' => 'secret123',
+            '__install_env_path' => $envPath,
+            '__install_env_content' => "APP_NAME=PTAdmin\nAPP_ENV=local\n",
         ], function () use (&$nextCalled): void {
             $nextCalled = true;
         });
@@ -78,7 +81,10 @@ class PTAdminInstallCompleteTest extends TestCase
 
         self::assertTrue($nextCalled);
         self::assertFileExists($this->installedMarkerPath());
+        self::assertFileExists($envPath);
+        self::assertSame("APP_NAME=PTAdmin\nAPP_ENV=local\n", file_get_contents($envPath));
         self::assertStringContainsString('安装成功', $output);
+        self::assertStringContainsString('保存配置文件', $output);
         self::assertSame([
             ['admin:init', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
             ['cache:clear', []],
@@ -88,6 +94,8 @@ class PTAdminInstallCompleteTest extends TestCase
             ['view:clear', []],
             ['permission:cache-reset', []],
         ], $commands);
+
+        @unlink($envPath);
     }
 
     private function installedMarkerPath(): string
