@@ -45,8 +45,9 @@ class PTAdminPackageBootstrapTest extends TestCase
         self::assertSame('ptadmin-auth.php', basename((string) array_key_first($configPublishes)));
         self::assertSame('ptadmin-auth.php', basename((string) current($configPublishes)));
 
-        self::assertCount(4, $migrationPublishes);
+        self::assertCount(5, $migrationPublishes);
         self::assertSame([
+            '2026_04_09_110000_create_admin_foundation_tables.php',
             '2026_04_09_120000_create_admin_authorization_tables.php',
             '2026_04_09_130000_create_admin_authorization_extension_tables.php',
             '2026_04_09_140000_seed_admin_default_resources.php',

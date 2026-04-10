@@ -10,11 +10,17 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminDatabaseMigrationTest extends TestCase
 {
-    public function test_package_migrations_create_authorization_tables_and_seed_default_resources(): void
+    public function test_package_migrations_create_foundation_and_authorization_tables_and_seed_default_resources(): void
     {
         $this->migratePackageTables();
 
         foreach ([
+            'systems',
+            'system_logs',
+            'user_tokens',
+            'operation_records',
+            'system_config_groups',
+            'system_configs',
             'admin_roles',
             'admin_resources',
             'admin_user_roles',

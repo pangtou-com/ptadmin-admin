@@ -88,6 +88,7 @@ class PTAdminServiceProvider extends ServiceProvider
             ], 'ptadmin-config');
 
             $this->publishes([
+                __DIR__.'/../../../database/Migrations/2026_04_09_110000_create_admin_foundation_tables.php' => database_path('migrations/2026_04_09_110000_create_admin_foundation_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_120000_create_admin_authorization_tables.php' => database_path('migrations/2026_04_09_120000_create_admin_authorization_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php' => database_path('migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_140000_seed_admin_default_resources.php' => database_path('migrations/2026_04_09_140000_seed_admin_default_resources.php'),
