@@ -53,4 +53,24 @@ class PTAdminInstallDatabaseInitializeTest extends TestCase
 
         self::assertTrue($nextCalled);
     }
+
+    public function test_database_initialize_reports_default_message_when_migrate_output_is_empty(): void
+    {
+        Artisan::shouldReceive('call')
+            ->once()
+            ->with('migrate', ['--force' => true])
+            ->andReturn(1);
+        Artisan::shouldReceive('output')
+            ->once()
+            ->andReturn('');
+
+        $pipe = new DatabaseInitialize();
+
+        ob_start();
+        $pipe->handle([], static function (): void {
+        });
+        $output = (string) ob_get_clean();
+
+        self::assertStringContainsString('迁移命令执行失败:迁移命令返回非零状态码: 1', $output);
+    }
 }

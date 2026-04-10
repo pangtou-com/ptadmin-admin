@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Controllers;
 
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\Log;
 use PTAdmin\Admin\Services\Install\Pipe\Complete;
 use PTAdmin\Admin\Services\Install\Pipe\ConfigEnv;
 use PTAdmin\Admin\Services\Install\Pipe\DatabaseInitialize;
@@ -102,6 +103,9 @@ class InstallController
                         Complete::class,
                     ])->thenReturn();
             } catch (\Throwable $throwable) {
+                Log::error('PTAdmin install stream failed', [
+                    'message' => $throwable->getMessage(),
+                ]);
                 echo json_encode([
                     'type' => 'error',
                     'message' => '安装执行失败: '.$throwable->getMessage(),

@@ -165,6 +165,7 @@
                         return reader.read().then(function (result) {
                             if (result.done) {
                                 flushBuffer();
+                                flushRemainingBuffer();
                                 complete();
                                 return;
                             }
@@ -185,6 +186,14 @@
                                 eventAction.process(item);
                             }
                         });
+                    }
+
+                    function flushRemainingBuffer() {
+                        const item = buffer.trim();
+                        if (item !== '') {
+                            eventAction.process(item);
+                        }
+                        buffer = '';
                     }
 
                     return read();
@@ -208,6 +217,7 @@
 
             xhr.onload = function () {
                 flushBuffer();
+                flushRemainingBuffer();
                 if (xhr.status < 200 || xhr.status >= 300) {
                     eventAction.process({type: 'error', message: '安装请求失败，状态码: ' + xhr.status});
                 }
@@ -231,6 +241,14 @@
                         eventAction.process(item);
                     }
                 });
+            }
+
+            function flushRemainingBuffer() {
+                const item = buffer.trim();
+                if (item !== '') {
+                    eventAction.process(item);
+                }
+                buffer = '';
             }
         }
 

@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services\Install\Pipe;
 
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use PTAdmin\Admin\Support\Concerns\FormatInstallOutput;
 
 class DatabaseInitialize
@@ -49,11 +50,23 @@ class DatabaseInitialize
 
             $status = Artisan::call('migrate', ['--force' => true]);
             if (0 !== $status) {
-                $this->error('迁移命令执行失败:'.trim(Artisan::output()));
+                $message = trim(Artisan::output());
+                if ('' === $message) {
+                    $message = sprintf('迁移命令返回非零状态码: %d', $status);
+                }
+
+                Log::error('PTAdmin install migrate failed', [
+                    'status' => $status,
+                    'output' => $message,
+                ]);
+                $this->error('迁移命令执行失败:'.$message);
 
                 return false;
             }
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
+            Log::error('PTAdmin install migrate threw exception', [
+                'message' => $exception->getMessage(),
+            ]);
             $this->error('迁移命令执行失败:'.$exception->getMessage());
 
             return false;
