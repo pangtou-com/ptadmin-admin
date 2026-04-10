@@ -83,29 +83,38 @@ class InstallController
      */
     public function stream(): StreamedResponse
     {
-        header('Content-Type:text/event-stream');
-        header('X-Powered-By:ptadmin');
-        header('Cache-Control:no-cache');
-        header('X-Accel-Buffering:no');
-
         $data = request()->all();
-        $response = response()->stream(function () use ($data): void {
-            ob_end_flush();
-            ob_implicit_flush(1);
 
-            app(Pipeline::class)
-                ->send($data)
-                ->through([
-                    ValidateData::class,
-                    ConfigEnv::class,
-                    DatabaseInitialize::class,
-                    Complete::class,
-                ])->thenReturn();
+        return response()->stream(function () use ($data): void {
+            while (ob_get_level() > 0) {
+                ob_end_flush();
+            }
 
-            ob_implicit_flush(0);
-        });
-        $response->sendContent();
+            ob_implicit_flush(true);
 
-        return $response;
+            try {
+                app(Pipeline::class)
+                    ->send($data)
+                    ->through([
+                        ValidateData::class,
+                        ConfigEnv::class,
+                        DatabaseInitialize::class,
+                        Complete::class,
+                    ])->thenReturn();
+            } catch (\Throwable $throwable) {
+                echo json_encode([
+                    'type' => 'error',
+                    'message' => $throwable->getMessage(),
+                    'data' => [],
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
+            } finally {
+                ob_implicit_flush(false);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'X-Powered-By' => 'ptadmin',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 }

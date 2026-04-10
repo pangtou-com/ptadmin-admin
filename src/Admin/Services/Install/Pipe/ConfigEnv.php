@@ -25,6 +25,7 @@ namespace PTAdmin\Admin\Services\Install\Pipe;
 
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use PTAdmin\Admin\Support\Concerns\FormatInstallOutput;
 
@@ -34,6 +35,9 @@ class ConfigEnv
 
     public function handle($data, \Closure $next): void
     {
+        if (!$this->ensureRuntimeDirectories()) {
+            return;
+        }
         if (!$this->ensureDatabaseExists($data)) {
             return;
         }
@@ -45,6 +49,39 @@ class ConfigEnv
         }
 
         $next($data);
+    }
+
+    /**
+     * 安装流程会执行多个 artisan 命令，先确保 Laravel 运行时目录存在。
+     */
+    private function ensureRuntimeDirectories(): bool
+    {
+        $directories = [
+            base_path('bootstrap/cache'),
+            storage_path('logs'),
+        ];
+
+        foreach ($directories as $directory) {
+            try {
+                if (!File::isDirectory($directory)) {
+                    File::ensureDirectoryExists($directory, 0755, true);
+                }
+            } catch (\Throwable $throwable) {
+                $this->error('运行目录准备失败: '.$throwable->getMessage());
+
+                return false;
+            }
+
+            if (!is_writable($directory)) {
+                $this->error(sprintf('目录不可写: %s', $directory));
+
+                return false;
+            }
+        }
+
+        $this->process('运行目录检查完成');
+
+        return true;
     }
 
     /**
