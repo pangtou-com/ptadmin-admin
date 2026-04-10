@@ -29,9 +29,11 @@
         const eventAction = {
             state: 0,
             sendData: null,
+            receivedSuccess: false,
             reset: function () {
                 this.state = 0;
                 this.sendData = null;
+                this.receivedSuccess = false;
                 consoleBox.innerHTML = '';
                 dialogActions.innerHTML = '';
                 dialogActions.style.display = 'none';
@@ -69,6 +71,9 @@
 
                 if (data.type === 'error') {
                     this.state = 2;
+                }
+                if (data.type === 'success') {
+                    this.receivedSuccess = true;
                 }
 
                 this.append(data.type || 'info', data.message || '');
@@ -144,6 +149,10 @@
         function fetchStream(formData) {
             fetch(url, {method: 'POST', body: formData})
                 .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('安装请求失败，状态码: ' + response.status);
+                    }
+
                     if (!response.body) {
                         throw new Error('浏览器不支持流式响应');
                     }
@@ -199,6 +208,9 @@
 
             xhr.onload = function () {
                 flushBuffer();
+                if (xhr.status < 200 || xhr.status >= 300) {
+                    eventAction.process({type: 'error', message: '安装请求失败，状态码: ' + xhr.status});
+                }
                 complete();
             };
 
@@ -223,7 +235,7 @@
         }
 
         function complete() {
-            if (eventAction.state === 2) {
+            if (eventAction.state === 2 || !eventAction.receivedSuccess) {
                 eventAction.fail();
                 return;
             }

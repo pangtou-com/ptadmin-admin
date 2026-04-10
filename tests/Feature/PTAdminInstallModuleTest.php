@@ -32,7 +32,8 @@ class PTAdminInstallModuleTest extends TestCase
 
         $this->get('/install')
             ->assertOk()
-            ->assertSee('欢迎使用PTAdmin');
+            ->assertSee('欢迎使用PTAdmin')
+            ->assertDontSee('layui');
 
         $this->get('/install/requirements')
             ->assertOk()
@@ -42,7 +43,9 @@ class PTAdminInstallModuleTest extends TestCase
 
         $this->get('/install/env')
             ->assertOk()
-            ->assertSee('基础信息');
+            ->assertSee('基础信息')
+            ->assertSee('install-dialog-mask')
+            ->assertSee('fetch(url, {method: \'POST\', body: formData})', false);
     }
 
     public function test_install_routes_are_not_registered_after_system_is_installed(): void

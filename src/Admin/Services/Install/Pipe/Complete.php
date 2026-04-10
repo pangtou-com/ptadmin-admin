@@ -33,23 +33,32 @@ class Complete
 
     public function handle($data, \Closure $next): void
     {
-        $this->process('创建管理员账户');
-        $status = Artisan::call('admin:init', ['-u' => $data['username'], '-p' => $data['password'], '-f' => true]);
-        if (0 !== $status) {
-            $this->error('创建管理员失败:'.Artisan::output());
+        try {
+            $this->process('创建管理员账户');
+            $status = Artisan::call('admin:init', ['-u' => $data['username'], '-p' => $data['password'], '-f' => true]);
+            if (0 !== $status) {
+                $this->error('创建管理员失败:'.Artisan::output());
 
-            return;
+                return;
+            }
+
+            $this->process('写入安装标记');
+            $written = File::put(storage_path('installed'), date('Y-m-d H:i:s', time()));
+            if (false === $written || !File::exists(storage_path('installed'))) {
+                throw new \RuntimeException('安装标记写入失败');
+            }
+
+            Artisan::call('cache:clear');
+            Artisan::call('config:clear');
+            Artisan::call('event:clear');
+            Artisan::call('route:clear');
+            Artisan::call('view:clear');
+            Artisan::call('permission:cache-reset');
+            $this->success('安装成功');
+
+            $next($data);
+        } catch (\Throwable $throwable) {
+            $this->error('安装收尾失败: '.$throwable->getMessage());
         }
-
-        File::put(storage_path('installed'), date('Y-m-d H:i:s', time()));
-        Artisan::call('cache:clear');
-        Artisan::call('config:clear');
-        Artisan::call('event:clear');
-        Artisan::call('route:clear');
-        Artisan::call('view:clear');
-        Artisan::call('permission:cache-reset');
-        $this->success('安装成功');
-
-        $next($data);
     }
 }

@@ -104,7 +104,7 @@ class InstallController
             } catch (\Throwable $throwable) {
                 echo json_encode([
                     'type' => 'error',
-                    'message' => $throwable->getMessage(),
+                    'message' => '安装执行失败: '.$throwable->getMessage(),
                     'data' => [],
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
             } finally {

@@ -47,7 +47,12 @@ class DatabaseInitialize
         try {
             $this->process('正在执行数据库迁移命令...');
 
-            Artisan::call('migrate', ['--force' => true]);
+            $status = Artisan::call('migrate', ['--force' => true]);
+            if (0 !== $status) {
+                $this->error('迁移命令执行失败:'.trim(Artisan::output()));
+
+                return false;
+            }
         } catch (\Exception $exception) {
             $this->error('迁移命令执行失败:'.$exception->getMessage());
 
