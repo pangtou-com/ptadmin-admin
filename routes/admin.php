@@ -27,20 +27,15 @@ use PTAdmin\Admin\Controllers as Admin;
 // 不登录接口地址
 Route::group(['prefix' => admin_route_prefix()], function (): void {
     Route::match(['post'], 'login', [Admin\LoginController::class, 'login'])->name('admin_login');
-    Route::post('auth/bootstrap-founder', [Admin\AuthorizationController::class, 'bootstrapFounder']);
-    Route::post('upload', [Admin\UploadController::class, 'upload']);
-    Route::post('upload/tiny', [Admin\UploadController::class, 'tiny']);
 });
 
 Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'.\PTAdmin\Foundation\Auth\AdminAuth::getGuard()]], function (): void {
     // 获取授权菜单树
     Route::get('/user/resources', [Admin\LoginController::class, 'userResources']);
     Route::get('auth/status', [Admin\AuthorizationController::class, 'status']);
-    Route::post('auth/bootstrap', [Admin\AuthorizationController::class, 'bootstrap']);
 
-    Route::get('/', [Admin\HomeController::class, 'layout']);
-    Route::get('layout', [Admin\HomeController::class, 'layout']);
-    Route::get('console', [Admin\HomeController::class, 'console']);
+    Route::post('upload', [Admin\UploadController::class, 'upload']);
+    Route::post('upload/tiny', [Admin\UploadController::class, 'tiny']);
 
     // 上传资源列表
     Route::get('assets', [Admin\AssetController::class, 'index']);

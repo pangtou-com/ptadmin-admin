@@ -10,8 +10,9 @@
 - 资源授权、角色授权、直接授权
 - 租户、组织、部门扩展表结构
 - 后台 API 路由与中间件注册
+- 后台前端入口路由与运行时配置脚本
 - 默认后台资源初始化
-- 配置、迁移、语言包发布
+- 配置、迁移、语言包、前端静态资源发布
 
 ## 安装
 
@@ -33,10 +34,29 @@ php artisan vendor:publish --provider="PTAdmin\\Admin\\Providers\\PTAdminService
 php artisan vendor:publish --provider="PTAdmin\\Admin\\Providers\\PTAdminServiceProvider" --tag=ptadmin-migrations
 ```
 
+发布后台前端静态资源：
+
+```bash
+php artisan vendor:publish --provider="PTAdmin\\Admin\\Providers\\PTAdminServiceProvider" --tag=ptadmin-assets
+```
+
 执行迁移：
 
 ```bash
 php artisan migrate
+```
+
+## 前端入口
+
+后台前端页面入口与接口入口已拆分：
+
+- `PTADMIN_WEB_PREFIX`：后台页面入口，默认 `admin`
+- `PTADMIN_API_PREFIX`：后台接口入口，默认 `system`
+
+运行时配置脚本固定为：
+
+```text
+/{PTADMIN_WEB_PREFIX}/ptconfig.js
 ```
 
 ## 初始化命令

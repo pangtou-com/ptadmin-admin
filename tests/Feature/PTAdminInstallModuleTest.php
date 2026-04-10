@@ -11,6 +11,13 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminInstallModuleTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        @unlink($this->installedMarkerPath());
+
+        parent::setUp();
+    }
+
     protected function tearDown(): void
     {
         @unlink($this->installedMarkerPath());
@@ -44,6 +51,8 @@ class PTAdminInstallModuleTest extends TestCase
         $this->get('/install/env')
             ->assertOk()
             ->assertSee('基础信息')
+            ->assertSee('后台页面路径')
+            ->assertSee('后台接口路径')
             ->assertSee('install-dialog-mask')
             ->assertSee('fetch(url, {method: \'POST\', body: formData})', false);
     }
@@ -66,6 +75,13 @@ class PTAdminInstallModuleTest extends TestCase
 
     private function installedMarkerPath(): string
     {
-        return storage_path('installed');
+        if (app()->bound('path.storage')) {
+            return storage_path('installed');
+        }
+
+        /** @var string $packageRoot */
+        $packageRoot = dirname(__DIR__, 2);
+
+        return $packageRoot.'/storage/installed';
     }
 }

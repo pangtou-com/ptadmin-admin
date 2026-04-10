@@ -32,7 +32,57 @@ if (!function_exists('admin_route_prefix')) {
      */
     function admin_route_prefix(): string
     {
-        return config('ptadmin-auth.route_prefix', config('app.prefix', 'system'));
+        return admin_api_prefix();
+    }
+}
+
+if (!function_exists('admin_api_prefix')) {
+    /**
+     * 管理后台接口地址前缀
+     */
+    function admin_api_prefix(): string
+    {
+        return trim((string) config('ptadmin-auth.api_prefix', config('ptadmin-auth.route_prefix', config('app.prefix', 'system'))), '/');
+    }
+}
+
+if (!function_exists('admin_web_prefix')) {
+    /**
+     * 管理后台页面地址前缀
+     */
+    function admin_web_prefix(): string
+    {
+        return trim((string) config('ptadmin-auth.web_prefix', 'admin'), '/');
+    }
+}
+
+if (!function_exists('admin_web_asset_path')) {
+    /**
+     * 管理后台静态资源发布目录
+     */
+    function admin_web_asset_path(): string
+    {
+        return trim((string) config('ptadmin-auth.web_asset_path', 'vendor/ptadmin/admin'), '/');
+    }
+}
+
+if (!function_exists('admin_web_url')) {
+    /**
+     * 生成后台页面相对路径
+     */
+    function admin_web_url(string $path = ''): string
+    {
+        return '/'.trim(admin_web_prefix().'/'.ltrim($path, '/'), '/');
+    }
+}
+
+if (!function_exists('admin_api_url')) {
+    /**
+     * 生成后台接口相对路径
+     */
+    function admin_api_url(string $path = ''): string
+    {
+        return '/'.trim(admin_api_prefix().'/'.ltrim($path, '/'), '/');
     }
 }
 

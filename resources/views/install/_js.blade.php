@@ -121,7 +121,7 @@
                 adminButton.className = 'install-button install-button-primary';
                 adminButton.textContent = '进入管理后台';
                 adminButton.addEventListener('click', function () {
-                    const prefix = form.querySelector('input[name="app_system_prefix"]');
+                    const prefix = form.querySelector('input[name="ptadmin_web_prefix"]');
                     window.location.href = '/' + (prefix && prefix.value ? prefix.value : '');
                 });
                 dialogActions.appendChild(adminButton);

@@ -20,8 +20,12 @@ class PTAdminPackageBootstrapTest extends TestCase
     public function test_package_registers_config_routes_translations_and_middlewares(): void
     {
         self::assertSame('api', config('ptadmin-auth.guard'));
-        self::assertSame('system', config('ptadmin-auth.route_prefix'));
+        self::assertSame('system', config('ptadmin-auth.api_prefix'));
+        self::assertSame('admin', config('ptadmin-auth.web_prefix'));
         self::assertSame('system', admin_route_prefix());
+        self::assertSame('system', admin_api_prefix());
+        self::assertSame('admin', admin_web_prefix());
+        self::assertSame('vendor/ptadmin/admin', admin_web_asset_path());
 
         $routerMiddleware = app('router')->getMiddleware();
 
@@ -33,6 +37,8 @@ class PTAdminPackageBootstrapTest extends TestCase
         self::assertSame('操作成功', __('ptadmin::common.success'));
         self::assertSame('登录失败，账户密码错误', __('ptadmin::background.login.fail'));
         self::assertSame('/system/login', route('admin_login', [], false));
+        self::assertSame('/admin', route('ptadmin.web.index', [], false));
+        self::assertSame('/admin/ptconfig.js', route('ptadmin.web.config', [], false));
     }
 
     public function test_package_exposes_publishable_assets_and_console_commands(): void
@@ -40,6 +46,7 @@ class PTAdminPackageBootstrapTest extends TestCase
         $configPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-config');
         $migrationPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-migrations');
         $langPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-lang');
+        $assetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-assets');
 
         self::assertCount(1, $configPublishes);
         self::assertSame('ptadmin-auth.php', basename((string) array_key_first($configPublishes)));
@@ -57,6 +64,10 @@ class PTAdminPackageBootstrapTest extends TestCase
         self::assertCount(1, $langPublishes);
         self::assertSame('lang', basename((string) array_key_first($langPublishes)));
         self::assertSame('ptadmin', basename((string) current($langPublishes)));
+
+        self::assertCount(1, $assetPublishes);
+        self::assertSame('dist', basename((string) array_key_first($assetPublishes)));
+        self::assertSame('admin', basename((string) current($assetPublishes)));
 
         $commands = Artisan::all();
 

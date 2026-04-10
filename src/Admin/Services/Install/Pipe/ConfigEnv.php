@@ -107,10 +107,11 @@ class ConfigEnv
 
                 continue;
             }
-            if ('APP_SYSTEM_PREFIX' === $key) {
+            if (\in_array($key, ['PTADMIN_WEB_PREFIX', 'PTADMIN_API_PREFIX'], true)) {
                 if (!isset($data[$k]) || blank($data[$k])) {
                     $data[$k] = Str::random(8);
                 }
+                $data[$k] = $this->normalizePrefix((string) $data[$k]);
             }
             $value = $data[$k] ?? $value;
             $results[] = "{$key}={$value}";
@@ -239,5 +240,12 @@ class ConfigEnv
         }
 
         return $tableName;
+    }
+
+    private function normalizePrefix(string $value): string
+    {
+        $normalized = trim($value, '/');
+
+        return '' === $normalized ? Str::random(8) : $normalized;
     }
 }

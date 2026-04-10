@@ -33,8 +33,8 @@ use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 
 class LoginController extends AbstractBackgroundController
 {
-    private $loginService;
-    private $adminResourceService;
+    private LoginService $loginService;
+    private AdminResourceService $adminResourceService;
     private AdminRoleServiceInterface $adminRoleService;
 
     public function __construct(LoginService $loginService, AdminResourceService $adminResourceService, AdminRoleServiceInterface $adminRoleService)

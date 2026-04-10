@@ -22,8 +22,12 @@
                     <input type="password" name="password" placeholder="请输入管理员登录密码" autocomplete="off" class="install-input">
                 </label>
                 <label class="install-field">
-                    <span class="install-field-label">后台地址</span>
-                    <input type="text" name="app_system_prefix" value="{!! \Illuminate\Support\Str::random(8) !!}" autocomplete="off" class="install-input">
+                    <span class="install-field-label">后台页面路径</span>
+                    <input type="text" name="ptadmin_web_prefix" value="{!! \Illuminate\Support\Str::random(8) !!}" autocomplete="off" class="install-input">
+                </label>
+                <label class="install-field">
+                    <span class="install-field-label">后台接口路径</span>
+                    <input type="text" name="ptadmin_api_prefix" value="{!! \Illuminate\Support\Str::random(8) !!}" autocomplete="off" class="install-input">
                 </label>
             </div>
         </div>

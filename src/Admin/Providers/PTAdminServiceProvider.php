@@ -98,6 +98,10 @@ class PTAdminServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../../../lang' => resource_path('lang/vendor/ptadmin'),
             ], 'ptadmin-lang');
+
+            $this->publishes([
+                __DIR__.'/../../../resources/dist' => public_path(admin_web_asset_path()),
+            ], 'ptadmin-assets');
         }
 
         $this->loadMigrationsFrom(__DIR__.'/../../../database/Migrations');
@@ -107,6 +111,7 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->extendGuard();
         $this->registerAuthorizationGate();
         $this->mapInstallRoutes();
+        $this->mapFrontendRoutes();
         $this->mapSystemRoutes();
     }
 
@@ -150,6 +155,11 @@ class PTAdminServiceProvider extends ServiceProvider
     private function mapSystemRoutes(): void
     {
         Route::middleware(['api', 'ptadmin.response', 'ptadmin.operation.record'])->group(__DIR__.'/../../../routes/admin.php');
+    }
+
+    private function mapFrontendRoutes(): void
+    {
+        Route::middleware(['web', 'ptadmin.install'])->group(__DIR__.'/../../../routes/web.php');
     }
 
     private function mapInstallRoutes(): void

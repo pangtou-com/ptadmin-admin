@@ -24,6 +24,7 @@ abstract class TestCase extends Orchestra
 
     protected function getEnvironmentSetUp($app): void
     {
+        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('a', 32)));
         $app['config']->set('app.prefix', 'system');
         $app['config']->set('app.locale', 'zh-cn');
         $app['config']->set('app.fallback_locale', 'zh-cn');

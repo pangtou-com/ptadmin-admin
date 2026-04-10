@@ -22,9 +22,12 @@ class PTAdminUploadApiTest extends TestCase
 
     public function test_upload_endpoints_can_store_files_deduplicate_and_return_tiny_response(): void
     {
+        $this->createSystemsTable();
+        $this->createUserTokensTable();
         $this->createAssetsTable();
+        $token = $this->issueFounderToken();
 
-        $uploadResponse = $this->withHeaders($this->jsonApiHeaders())
+        $uploadResponse = $this->withHeaders($this->jsonApiHeaders($token))
             ->post('/system/upload', [
                 'group' => 'docs',
                 'file' => UploadedFile::fake()->createWithContent('manual.txt', 'same-file-content'),
@@ -44,7 +47,7 @@ class PTAdminUploadApiTest extends TestCase
         Storage::disk('public')->assertExists($firstPath);
         self::assertSame(1, Asset::query()->count());
 
-        $duplicateResponse = $this->withHeaders($this->jsonApiHeaders())
+        $duplicateResponse = $this->withHeaders($this->jsonApiHeaders($token))
             ->post('/system/upload', [
                 'group' => 'docs',
                 'file' => UploadedFile::fake()->createWithContent('copy.txt', 'same-file-content'),
@@ -57,7 +60,7 @@ class PTAdminUploadApiTest extends TestCase
         self::assertSame($firstId, (int) $duplicateResponse->json('data.id'));
         self::assertSame(1, Asset::query()->count());
 
-        $tinyResponse = $this->withHeaders($this->jsonApiHeaders())
+        $tinyResponse = $this->withHeaders($this->jsonApiHeaders($token))
             ->post('/system/upload/tiny', [
                 'group' => 'editor',
                 'file' => UploadedFile::fake()->createWithContent('editor.txt', 'tiny-content'),
@@ -70,9 +73,12 @@ class PTAdminUploadApiTest extends TestCase
 
     public function test_upload_endpoint_returns_validation_error_for_missing_file(): void
     {
+        $this->createSystemsTable();
+        $this->createUserTokensTable();
         $this->createAssetsTable();
+        $token = $this->issueFounderToken();
 
-        $this->withHeaders($this->jsonApiHeaders())
+        $this->withHeaders($this->jsonApiHeaders($token))
             ->postJson('/system/upload', [
                 'group' => 'docs',
             ])
@@ -82,9 +88,30 @@ class PTAdminUploadApiTest extends TestCase
             ]);
     }
 
+    public function test_upload_endpoint_requires_login(): void
+    {
+        $this->createSystemsTable();
+        $this->createUserTokensTable();
+        $this->createAssetsTable();
+
+        $this->withHeaders($this->jsonApiHeaders())
+            ->post('/system/upload', [
+                'group' => 'docs',
+                'file' => UploadedFile::fake()->createWithContent('manual.txt', 'same-file-content'),
+            ])
+            ->assertOk()
+            ->assertJson([
+                'code' => 10001,
+                'message' => '未登录',
+            ]);
+    }
+
     public function test_upload_endpoint_can_switch_to_addon_storage_by_system_config(): void
     {
+        $this->createSystemsTable();
+        $this->createUserTokensTable();
         $this->createAssetsTable();
+        $token = $this->issueFounderToken();
 
         Cache::forever('systemConfig', [
             'system' => [
@@ -110,7 +137,7 @@ class PTAdminUploadApiTest extends TestCase
             }
         });
 
-        $response = $this->withHeaders($this->jsonApiHeaders())
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
             ->post('/system/upload', [
                 'group' => 'images',
                 'file' => UploadedFile::fake()->createWithContent('banner.png', 'oss-content'),
