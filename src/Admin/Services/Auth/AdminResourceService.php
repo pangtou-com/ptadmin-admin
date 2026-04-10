@@ -172,10 +172,16 @@ class AdminResourceService implements AdminResourceServiceInterface
             $parentId = (int) AdminResource::query()->where('code', $parent)->value('id');
         }
 
+        $type = $this->mapResourceType((string) ($definition['type'] ?? ResourceType::PAGE));
+        $abilities = array_values(array_unique((array) ($definition['abilities'] ?? $definition['ability_hint_json'] ?? array())));
+        if ([] === $abilities) {
+            $abilities = $this->resolveAbilities($type);
+        }
+
         return [
             'code' => (string) ($definition['code'] ?? ''),
             'name' => (string) ($definition['name'] ?? ''),
-            'type' => (string) ($definition['type'] ?? 'page'),
+            'type' => $type,
             'module' => (string) ($definition['module'] ?? 'system'),
             'addon_code' => $definition['addon_code'] ?? null,
             'parent_id' => $parentId,
@@ -184,7 +190,7 @@ class AdminResourceService implements AdminResourceServiceInterface
             'route' => $definition['route'] ?? null,
             'component' => $definition['component'] ?? null,
             'icon' => $definition['icon'] ?? null,
-            'ability_hint_json' => array_values(array_unique((array) ($definition['abilities'] ?? $definition['ability_hint_json'] ?? []))),
+            'ability_hint_json' => $abilities,
             'meta_json' => (array) ($definition['meta'] ?? $definition['meta_json'] ?? []),
             'is_nav' => (int) ($definition['is_nav'] ?? 0),
             'status' => (int) ($definition['status'] ?? 1),

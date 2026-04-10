@@ -420,19 +420,41 @@ class AdminResourceService
 
     public static function addonInstallMenu($addonInfo, $menu, $parentName = null): void
     {
-        $parentId = 0;
-        if (null !== $parentName) {
-            $parent = app(AdminResourceServiceInterface::class)->findByCode((string) $parentName);
-            if (null !== $parent) {
-                $parentId = (int) $parent->id;
-            }
+        $addonInfo = (array) $addonInfo;
+        $addonCode = (string) ($addonInfo['code'] ?? '');
+        if ('' === $addonCode) {
+            return;
         }
-        $instance = app(self::class);
-        if ($parentId <= 0) {
-            $parent = $instance->installParentMenu($addonInfo);
-            $parentId = (int) $parent->id;
+
+        $module = isset($addonInfo['module']) && '' !== (string) $addonInfo['module']
+            ? (string) $addonInfo['module']
+            : $addonCode;
+        $definitions = array();
+
+        if (null === $parentName || '' === (string) $parentName) {
+            $definitions[] = array(
+                'code' => $addonCode,
+                'name' => (string) ($addonInfo['title'] ?? $addonCode),
+                'type' => MenuTypeEnum::DIR,
+                'module' => $module,
+                'addon_code' => $addonCode,
+                'is_nav' => 1,
+                'status' => 1,
+                'sort' => 0,
+                'meta_json' => array(
+                    'note' => (string) ($addonInfo['description'] ?? ''),
+                    'controller' => '',
+                ),
+            );
+            $parentName = $addonCode;
         }
-        $instance->installChildMenu($addonInfo, $menu, $parentId);
+
+        $definitions = array_merge(
+            $definitions,
+            self::normalizeAddonMenuDefinitions($addonCode, (array) $menu, (string) $parentName, $module)
+        );
+
+        app(AdminResourceServiceInterface::class)->syncAddonResources($addonCode, $definitions);
     }
 
     public function installChildMenu($addonInfo, $menu, $parentId): void
@@ -483,6 +505,60 @@ class AdminResourceService
     public static function addonUninstallMenu($addonName): void
     {
         app(AdminResourceServiceInterface::class)->deleteByAddonCode((string) $addonName);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $menu
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function normalizeAddonMenuDefinitions(string $addonCode, array $menu, string $parentCode, string $module): array
+    {
+        $definitions = array();
+
+        foreach ($menu as $item) {
+            if (!\is_array($item)) {
+                continue;
+            }
+
+            $name = trim((string) ($item['name'] ?? $item['code'] ?? ''));
+            if ('' === $name) {
+                continue;
+            }
+
+            $code = isset($item['code']) && '' !== trim((string) $item['code'])
+                ? trim((string) $item['code'])
+                : $addonCode.'.'.$name;
+
+            $definitions[] = array(
+                'code' => $code,
+                'name' => (string) ($item['title'] ?? $name),
+                'type' => (string) ($item['type'] ?? MenuTypeEnum::NAV),
+                'module' => $module,
+                'addon_code' => $addonCode,
+                'parent' => $parentCode,
+                'path' => $item['path'] ?? null,
+                'route' => $item['route'] ?? null,
+                'component' => $item['component'] ?? null,
+                'icon' => $item['icon'] ?? null,
+                'is_nav' => isset($item['is_nav']) ? (int) $item['is_nav'] : 1,
+                'status' => isset($item['status']) ? (int) $item['status'] : 1,
+                'sort' => isset($item['weight']) ? (int) $item['weight'] : 0,
+                'meta_json' => array(
+                    'note' => (string) ($item['note'] ?? ''),
+                    'controller' => (string) ($item['controller'] ?? ''),
+                ),
+            );
+
+            if (isset($item['children']) && \is_array($item['children']) && [] !== $item['children']) {
+                $definitions = array_merge(
+                    $definitions,
+                    self::normalizeAddonMenuDefinitions($addonCode, $item['children'], $code, $module)
+                );
+            }
+        }
+
+        return $definitions;
     }
 
     public function buildGrantPayloadsFromResourceIds(array $resourceIds): array

@@ -94,6 +94,11 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     Route::get('resources-tree', [Admin\AdminResourceController::class, 'tree']);
     Route::get('resources-lists', [Admin\AdminResourceController::class, 'lists']);
 
+    // 后台仪表盘组件
+    Route::get('dashboard/widgets', [Admin\AdminDashboardController::class, 'widgets']);
+    Route::post('dashboard/widgets/{code}/query', [Admin\AdminDashboardController::class, 'query']);
+    Route::post('dashboard/widgets/{code}/actions/{action}', [Admin\AdminDashboardController::class, 'action']);
+
     // 扩展能力：租户、组织、部门
     Route::get('tenants', [Admin\AdminTenantController::class, 'index']);
     Route::post('tenants', [Admin\AdminTenantController::class, 'store']);
