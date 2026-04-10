@@ -2,51 +2,56 @@
 
 @section('content')
     @foreach($results as $result)
-        <ul class="requirement"><li class="li-title">{{$result['title']}}</li><li class="li-title">推荐配置</li><li class="li-title">当前状态</li></ul>
-        @if(isset($result['results']) && $result['results'])
-            @foreach($result['results'] as $item)
-                <ul class="requirement lists @if(!$item['state']) error @endif">
-                    <li class="body">{{$item['title']}}</li>
-                    <li class="body">{{$item['config']}}</li>
-                    <li class="body">
-                        @if($item['state'])
-                            <i class="layui-icon layui-icon-success"></i>
-                        @else
-                            <i class="layui-icon layui-icon-error" style="color: red"></i>
-                        @endif
-                    </li>
-                </ul>
-            @endforeach
-        @endif
+        <div class="install-section">
+            <h2 class="install-section-title">{{ $result['title'] }}</h2>
+            <div class="install-table">
+                <div class="install-table-head">
+                    <div>检测项</div>
+                    <div>推荐配置</div>
+                    <div>状态</div>
+                </div>
+                @if(isset($result['results']) && $result['results'])
+                    @foreach($result['results'] as $item)
+                        <div class="install-table-row @if(!$item['state']) is-error @endif">
+                            <div>{{ $item['title'] }}</div>
+                            <div>{{ $item['config'] }}</div>
+                            <div>
+                                @if($item['state'])
+                                    <span class="install-status install-status-success">通过</span>
+                                @else
+                                    <span class="install-status install-status-error">失败</span>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                @endif
+            </div>
+        </div>
     @endforeach
 @endsection
 
 @section('button')
-    <div style="text-align: center">
-        <div class="layui-btn-group">
-            <button type="button" id="pre" class="layui-btn layui-btn-sm">上一步</button>
-            <button type="button" id="reload" class="layui-btn layui-bg-orange layui-btn-sm">重新检测</button>
-            <button type="button" id="next" class="layui-btn layui-bg-blue layui-btn-sm">下一步</button>
-        </div>
+    <div class="button-row">
+        <button type="button" id="pre" class="install-button install-button-secondary">上一步</button>
+        <button type="button" id="reload" class="install-button install-button-warning">重新检测</button>
+        <button type="button" id="next" class="install-button install-button-primary">下一步</button>
     </div>
 @endsection
 
 @section('script')
 <script>
-    layui.use('form', function() {
-        const $ = layui.$
-        $("#pre").on('click', () => {
-            location.href = '/install'
-        })
+    (function () {
+        document.getElementById('pre').addEventListener('click', function () {
+            window.location.href = @json(route('ptadmin.install.welcome'));
+        });
 
-        $("#reload").on('click', () => {
-            location.reload()
-        })
+        document.getElementById('reload').addEventListener('click', function () {
+            window.location.reload();
+        });
 
-        $("#next").on('click', () => {
-            location.href = '/install/env'
-
-        })
-    })
+        document.getElementById('next').addEventListener('click', function () {
+            window.location.href = @json(route('ptadmin.install.environment'));
+        });
+    })();
 </script>
 @endsection

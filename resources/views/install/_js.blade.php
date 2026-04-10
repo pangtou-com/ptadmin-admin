@@ -1,270 +1,234 @@
-<script type="text/html" id="console_html">
-    <div class="console-box">
-        <div class="title loading-dots">正在执行安装程序 <span>.</span><span>.</span><span>.</span></div>
-        <ul class="item"></ul>
+<div id="install-dialog-mask" class="install-dialog-mask" aria-hidden="true">
+    <div class="install-dialog">
+        <div class="install-dialog-header">正在执行安装程序</div>
+        <div id="install-console" class="install-console"></div>
+        <div id="install-dialog-actions" class="install-dialog-actions" style="display: none;"></div>
     </div>
-</script>
-<script type="text/html" id="success_btn">
-    <div class="layui-btn-group">
-        <button class="layui-btn layui-btn-sm" data-event="home" >返回首页</button>
-        <button class="layui-btn layui-btn-sm layui-btn-normal" data-event="admin" >进入管理后台</button>
-    </div>
-</script>
+</div>
 <script>
     (function () {
-        const url = "/install/stream"
-        const success_url = "/"
+        const url = @json(route('ptadmin.install.stream'));
+        const successUrl = @json(url('/'));
+        const form = document.getElementById('install-form');
+        const submitButton = document.getElementById('submit');
+        const dialogMask = document.getElementById('install-dialog-mask');
+        const consoleBox = document.getElementById('install-console');
+        const dialogActions = document.getElementById('install-dialog-actions');
+
+        if (!form || !submitButton || !dialogMask || !consoleBox || !dialogActions) {
+            return;
+        }
+
+        const stateMap = {
+            error: 'error',
+            success: 'success',
+            process: 'process',
+            info: 'info'
+        };
+
         const eventAction = {
-            console: null,      // 当前的控制台对象
-            height: 0,          // 当前的控制台对象
-            nodeNumber: 30,     // 允许的节点总数
-            state: 0,           // 当前执行状态： 0 => 未开始, 1 => 执行中, 2 => 执行失败
-            index: null,        // 弹出窗口的标识
-            send_data: null,    // 请求数据
-            type_map: {
-                error: 'layui-bg-red',
-                success: 'layui-bg-green',
-                process: 'layui-bg-blue',
-                info: 'layui-bg-gray'
+            state: 0,
+            sendData: null,
+            reset: function () {
+                this.state = 0;
+                this.sendData = null;
+                consoleBox.innerHTML = '';
+                dialogActions.innerHTML = '';
+                dialogActions.style.display = 'none';
+                dialogMask.classList.remove('is-visible');
+                dialogMask.setAttribute('aria-hidden', 'true');
+                submitButton.disabled = false;
+                submitButton.classList.remove('is-disabled');
             },
-            start: function (index) {
-                if (this.state !== 0) {
-                    console.log("正在执行中，请不要重复操作")
-                    return
-                }
-                if (this.console === null) {
-                    this.console = document.querySelector(".console-box > .item")
-                    this.height = this.console.clientHeight;
-                }
-                this.index = index
-                this.state = 1
-                this.process({type: 'info', message: '发送安装请求'})
+            open: function () {
+                dialogMask.classList.add('is-visible');
+                dialogMask.setAttribute('aria-hidden', 'false');
+                submitButton.disabled = true;
+                submitButton.classList.add('is-disabled');
             },
-            process: function (data) {
-                console.log(data)
+            append: function (type, message) {
+                const row = document.createElement('div');
+                row.className = 'install-console-item';
+                row.innerHTML = '<span class="install-console-badge ' + (stateMap[type] || 'info') + '">' + type + '</span><div>' + message + '</div>';
+                consoleBox.appendChild(row);
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+                return row;
+            },
+            process: function (payload) {
+                let data = payload;
                 if (typeof data === 'string') {
                     try {
-                        data = JSON.parse(data)
-                    }catch (e) {
-                        data = {type: 'error', message: `解析失败${e.toString()}`}
+                        data = JSON.parse(data);
+                    } catch (error) {
+                        data = {
+                            type: 'error',
+                            message: '解析失败: ' + error.toString()
+                        };
                     }
                 }
-                // 出现执行错误，改变状态
-                if (data.type === 'error') {
-                    this.state = 2
-                }
-                this.editConsole(data)
-            },
-            error: function (err) {
-                this.editConsole({type: 'error', message: err.toString()})
-                this.state = 0
-            },
-            complete: function () {
-                if (this.state === 2) {
-                    this.fail()
-                    return
-                }
-                this.success()
-            },
-            editConsole: function (data) {
-                const li = document.createElement('li')
-                li.innerHTML = `<span class="layui-badge ${this.type_map[data.type] || ""}">${data.type}</span> ${data.message}`
-                this.console.appendChild(li)
-                this.clear()
-                this.scrollbarAuto()
 
-                return li
-            },
-            success_btn: function () {
-                const li = document.createElement('li')
-                li.innerHTML = document.getElementById("success_btn").innerHTML
-                li.setAttribute("style", "text-align:center;margin-top:20px")
-                this.console.appendChild(li)
-                this.clear()
-                this.scrollbarAuto()
-                li.addEventListener("click", function ({target}) {
-                    const { event } = target.dataset
-                    if (event === 'home') {
-                        window.location.href = success_url
-                    } else {
-                        if (eventAction.send_data === null || eventAction.send_data["app_system_prefix"] === undefined) {
-                            eventAction.send_data = {
-                                "app_system_prefix": document.querySelector("input[name='app_system_prefix']").value
-                            }
-                        }
-                        window.location.href = `/${eventAction.send_data["app_system_prefix"]}`
-                    }
-                })
-            },
-            scrollbarAuto: function () {
-                const scrollHeight = this.console.scrollHeight;
-                if (scrollHeight < this.height) {
-                    return;
+                if (data.type === 'error') {
+                    this.state = 2;
                 }
-                let diff = scrollHeight - this.height;
-                if (this.console.scrollTop > 50) {
-                    diff += 50;
-                }
-                this.console.scrollTop += diff;
-            },
-            clear: function () {
-                let list = this.console.getElementsByTagName('li');
-                if (list.length > this.nodeNumber) {
-                    list[0].remove();
-                }
-            },
-            send: function (data) {
-                if (window.fetch !== undefined) {
-                    fetchStream(url, data)
-                    return
-                }
-                xhrStream(url, data)
-            },
-            reset: function () {
-                this.console = null
-                this.height = 0
-                this.state = 0
-                this.index = null
+
+                this.append(data.type || 'info', data.message || '');
             },
             fail: function () {
-                this.editConsole({type: 'error', message: "安装失败请重试 [点击空白位置关闭窗口]"})
-                const thiz = this
-                const closeShade = document.querySelector(".layui-layer-shade")
-                const close = () => {
-                    const { layer } = window['layui']
-                    layer.close(thiz.index)
-                    thiz.reset()
-                    closeShade.removeEventListener('click', close)
-                }
-                closeShade.addEventListener('click', close)
+                this.append('error', '安装失败，请检查上方日志后重试。');
+                this.renderActions(false);
             },
             success: function () {
-                const html = this.editConsole({
-                    type: 'success',
-                    message: `安装完成 [等待<font class="time"> 50 </font>秒后自动跳转]`
-                })
-                this.success_btn()
-                let timer = 50
-                let timerId = null
-                const thiz = this
-                const cronClose = () => {
-                    html.querySelector(".time").innerHTML = ` ${(timer--).toString()} `
+                const row = this.append('success', '安装完成，准备跳转。');
+                this.renderActions(true);
+
+                let timer = 8;
+                const timerNode = document.createElement('strong');
+                timerNode.style.marginLeft = '6px';
+                timerNode.textContent = String(timer);
+                row.querySelector('div').appendChild(timerNode);
+
+                const countdown = window.setInterval(function () {
+                    timer -= 1;
+                    timerNode.textContent = String(timer);
                     if (timer <= 0) {
-                        close()
-                        return
+                        window.clearInterval(countdown);
+                        window.location.href = successUrl;
                     }
-                    timerId = setTimeout(function (){
-                        cronClose()
-                    }, 1000)
+                }, 1000);
+            },
+            renderActions: function (isSuccess) {
+                dialogActions.style.display = 'flex';
+                dialogActions.innerHTML = '';
+
+                const closeButton = document.createElement('button');
+                closeButton.type = 'button';
+                closeButton.className = 'install-button install-button-secondary';
+                closeButton.textContent = isSuccess ? '返回首页' : '关闭窗口';
+                closeButton.addEventListener('click', this.reset.bind(this));
+                dialogActions.appendChild(closeButton);
+
+                if (!isSuccess) {
+                    return;
                 }
-                const closeShade = document.querySelector(".layui-layer-shade")
-                const close = () => {
-                    const { layer } = window['layui']
-                    layer.close(thiz.index)
-                    thiz.reset()
-                    if (timerId !== null) {
-                        clearTimeout(timerId)
-                    }
-                    closeShade.removeEventListener('click', close)
-                    window.location.href = success_url
-                }
-                closeShade.addEventListener('click', close)
-                cronClose()
+
+                const adminButton = document.createElement('button');
+                adminButton.type = 'button';
+                adminButton.className = 'install-button install-button-primary';
+                adminButton.textContent = '进入管理后台';
+                adminButton.addEventListener('click', function () {
+                    const prefix = form.querySelector('input[name="app_system_prefix"]');
+                    window.location.href = '/' + (prefix && prefix.value ? prefix.value : '');
+                });
+                dialogActions.appendChild(adminButton);
             }
+        };
+
+        submitButton.addEventListener('click', function () {
+            eventAction.reset();
+            eventAction.open();
+            eventAction.state = 1;
+            eventAction.sendData = new FormData(form);
+            eventAction.process({type: 'info', message: '发送安装请求'});
+            eventAction.send(eventAction.sendData);
+        });
+
+        eventAction.send = function (formData) {
+            if (window.fetch && window.ReadableStream) {
+                fetchStream(formData);
+                return;
+            }
+
+            xhrStream(formData);
+        };
+
+        function fetchStream(formData) {
+            fetch(url, {method: 'POST', body: formData})
+                .then(function (response) {
+                    if (!response.body) {
+                        throw new Error('浏览器不支持流式响应');
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    function read() {
+                        return reader.read().then(function (result) {
+                            if (result.done) {
+                                flushBuffer();
+                                complete();
+                                return;
+                            }
+
+                            buffer += decoder.decode(result.value, {stream: true});
+                            flushBuffer();
+
+                            return read();
+                        });
+                    }
+
+                    function flushBuffer() {
+                        const chunks = buffer.split('\n\n');
+                        buffer = chunks.pop();
+                        chunks.forEach(function (chunk) {
+                            const item = chunk.trim();
+                            if (item !== '') {
+                                eventAction.process(item);
+                            }
+                        });
+                    }
+
+                    return read();
+                })
+                .catch(function (error) {
+                    eventAction.process({type: 'error', message: error.toString()});
+                    eventAction.fail();
+                });
         }
 
-        document.getElementById("submit").addEventListener('click', function (e) {
-            e.stopPropagation()
-            const { form, layer } = window['layui'] || {}
-            if (form === undefined || layer  === undefined) {
-                return
-            }
-            const data = form.val('form-data')
-            const formData = new FormData()
-            for (const dataKey in data) {
-                formData.append(dataKey, data[dataKey])
-            }
-            const html = document.getElementById("console_html").innerHTML
-            layer.open({
-                type: 1,
-                area: ['50%', '500px'],
-                title: false,
-                closeBtn: 0,
-                shadeClose: false,
-                content: html,
-                success: (obj, index) => {
-                    eventAction.start(index)
-                    eventAction.send(formData)
-                },
-                end: function () {
-                    eventAction.reset()
-                }
-            });
-        })
-
-        /**
-         * 使用fetch 请求
-         *
-         * @param url
-         * @param data
-         */
-        function fetchStream(url, data) {
-            fetch(url, { method: "post", body: data}).then(response => {
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                function read() {
-                    reader.read().then(({ done, value }) => {
-                        if (done) {
-                            eventAction.complete()
-                            return
-                        }
-                        const chunk = decoder.decode(value, { stream: true });
-                        eventAction.process(chunk)
-                        read()
-                    })
-                }
-                read()
-            }).catch(error => {
-                eventAction.error(error)
-            })
-        }
-
-        /**
-         * 使用XMLHttpRequest
-         * @param url
-         * @param data
-         */
-        function xhrStream(url, data)
-        {
+        function xhrStream(formData) {
             const xhr = new XMLHttpRequest();
-            let lastProcessedIndex = 0;  // 记录上次处理的结束位置
-            let buffer = '';  // 用于缓存数据块
-            xhr.onprogress = function() {
-                // 累积数据块
+            let lastProcessedIndex = 0;
+            let buffer = '';
+
+            xhr.onprogress = function () {
                 buffer += xhr.responseText.substring(lastProcessedIndex);
                 lastProcessedIndex = xhr.responseText.length;
-                // 处理每个完整的事件块
-                let events = buffer.split("\n\n");
-                for (let i = 0; i < events.length - 1; i++) {
-                    let event = events[i].trim();
-                    if (event) {
-                        eventAction.process(event)
+                flushBuffer();
+            };
+
+            xhr.onload = function () {
+                flushBuffer();
+                complete();
+            };
+
+            xhr.onerror = function () {
+                eventAction.process({type: 'error', message: '安装请求发送失败'});
+                eventAction.fail();
+            };
+
+            xhr.open('POST', url, true);
+            xhr.send(formData);
+
+            function flushBuffer() {
+                const chunks = buffer.split('\n\n');
+                buffer = chunks.pop();
+                chunks.forEach(function (chunk) {
+                    const item = chunk.trim();
+                    if (item !== '') {
+                        eventAction.process(item);
                     }
-                }
-                // 保留未完成的最后一部分
-                buffer = events[events.length - 1];
+                });
             }
-
-            xhr.onload = function() {
-                eventAction.complete()
-            }
-
-            xhr.onerror = function() {
-                eventAction.error()
-            }
-
-            xhr.open('post', url, true);
-            xhr.send(data);
         }
-    })()
+
+        function complete() {
+            if (eventAction.state === 2) {
+                eventAction.fail();
+                return;
+            }
+
+            eventAction.success();
+        }
+    })();
 </script>

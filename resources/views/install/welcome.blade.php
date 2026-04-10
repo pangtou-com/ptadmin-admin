@@ -1,44 +1,48 @@
 @extends("ptadmin-install::layouts.base")
 
 @section('content')
-  @include("ptadmin-install::install_protocols")
+    @php
+        $protocolHtml = str_replace(
+            ['&', '"'],
+            ['&amp;', '&quot;'],
+            preg_replace("/[\r\n]+/", ' ', view('ptadmin-install::install_protocols')->render()) ?? ''
+        );
+    @endphp
+    <iframe
+        title="安装协议"
+        style="width:100%;min-height:420px;border:1px solid #dbe4ef;border-radius:16px;background:#fff;"
+        srcdoc="{{ $protocolHtml }}"
+    ></iframe>
 @endsection
 
 @section('button')
-    <div style="display: flex; justify-content: center;align-items: center;">
-        <form class="layui-form" lay-filter="form-data">
-            <div class="layui-form-item">
-                <div class="layui-input-inline">
-                    <input lay-filter="checkbox" value="yes" type="checkbox" name="accept" title="我已阅读，并同意协议">
-                </div>
-            </div>
-        </form>
-        <button type="button" id="next" class="layui-btn layui-btn-sm layui-bg-blue layui-btn-disabled">下一步</button>
+    <div class="button-row">
+        <label class="install-checkbox">
+            <input type="checkbox" id="accept" value="yes">
+            <span>我已阅读，并同意协议</span>
+        </label>
+        <button type="button" id="next" class="install-button install-button-primary is-disabled" disabled>下一步</button>
     </div>
 @endsection
 
 @section("script")
 <script>
-    layui.use('form', function(){
-        const form = layui.form
-        const $ = layui.$
+    (function () {
+        const accept = document.getElementById('accept');
+        const next = document.getElementById('next');
 
-        form.on("checkbox(checkbox)", (data) => {
-            const elem = data.elem;
-            const checked = elem.checked;
-            if (!checked) {
-                $("#next").addClass("layui-btn-disabled")
-            } else {
-                $("#next").removeClass("layui-btn-disabled")
-            }
-        })
+        accept.addEventListener('change', function () {
+            next.disabled = !accept.checked;
+            next.classList.toggle('is-disabled', !accept.checked);
+        });
 
-        $("#next").on('click', () => {
-            const data = form.val('form-data')
-            if (data['accept'] === 'yes') {
-                location.href = '/install/requirements'
+        next.addEventListener('click', function () {
+            if (!accept.checked) {
+                return;
             }
-        })
-    })
+
+            window.location.href = @json(route('ptadmin.install.requirements'));
+        });
+    })();
 </script>
 @endsection

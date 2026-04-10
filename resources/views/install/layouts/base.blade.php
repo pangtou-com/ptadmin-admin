@@ -3,260 +3,455 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PTAdmin 管理系统</title>
-    <link rel="icon" href="{{asset("ptadmin/images/favicon.png")}}">
-    <link rel="stylesheet" href="{{asset("ptadmin/bin/css/layui.css")}}">
+    <title>PTAdmin 安装向导</title>
     <style>
         :root {
-            --button-hover-text-color: #ffffff;
-            --button-hover-border-color: #eebe77;
-            --button-hover-bg-color: #eebe77;
+            --install-bg-start: #0f4c81;
+            --install-bg-end: #77a8d8;
+            --install-card-bg: rgba(255, 255, 255, 0.96);
+            --install-border: #dbe4ef;
+            --install-muted: #6b7280;
+            --install-text: #1f2937;
+            --install-primary: #1d6fdc;
+            --install-primary-hover: #1658ae;
+            --install-secondary: #eef3f8;
+            --install-secondary-hover: #dde7f2;
+            --install-success: #1f8f53;
+            --install-error: #c0392b;
+            --install-info: #60758a;
+            --install-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
         }
+
+        * {
+            box-sizing: border-box;
+        }
+
         html, body {
-            padding: 0;
             margin: 0;
-            font-family: "微软雅黑 Bold", "微软雅黑 Regular", "微软雅黑", sans-serif;
-            font-size: 62.5%;
-            width: 100%;
-            height: 100%;
+            min-height: 100%;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            color: var(--install-text);
+            background:
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 34%),
+                linear-gradient(135deg, var(--install-bg-start), var(--install-bg-end));
         }
+
         a {
+            color: inherit;
             text-decoration: none;
         }
-        .install {
-            width: 100%;
-            height: 100vh;
-            background: #5c93ec url("{{asset('/ptadmin/images/install_bg.svg')}}") no-repeat;
-            background-size: cover;
+
+        .install-shell {
+            min-height: 100vh;
+            padding: 48px 16px;
             display: flex;
+            align-items: center;
             justify-content: center;
-            align-items: center;
-        }
-        .install .card {
-            padding: 2rem;
-            background-color: white;
-            box-sizing: border-box;
-            width: 50%;
-            height: auto;
-            border-radius: 5px;
-        }
-        .install .title {
-            color: #5c93ec;
-            font-size: 3rem;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .install .title img {
-            margin-right: 10px;
-            width: 30px;
-        }
-        .install .step {
-            display: flex;
-            padding: 20px 0;
-            justify-content: space-evenly;
-            align-items: center;
-        }
-        .install .step .step-title {
-            font-size: 2rem;
-            width: 25%;
-            text-align: center;
-        }
-        .install .step .step-title i {
-            margin-right: 5px;
-        }
-        .install .step .step-title.is-wait {
-            color: #a8abb2;
-        }
-        .install .step .step-title.is-process {
-            color: #303133;
-        }
-        .install .step .step-title.is-finish {
-            color: #409eff;
-        }
-        .install .content {
-            border: 1px solid #e4e7ed;
-            border-radius: 5px;
-            height: 500px;
-            overflow-y: auto;
-            padding: 20px;
-            width: calc(100% - 40px);
-        }
-        .install .footer {
-            padding: 20px 0;
         }
 
-        .pt-button {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            line-height: 1;
-            height: 32px;
-            width: auto;
-            white-space: nowrap;
-            cursor: pointer;
-            color: white;
-            text-align: center;
-            box-sizing: border-box;
-            outline: 0;
-            transition: 0.1s;
-            font-weight: 500;
-            vertical-align: middle;
-            background-color: var(--button-bg-color);
-            border: 1px solid var(--button-bg-color);
-            padding: 8px 15px;
-            font-size: 14px;
-            border-radius: 4px;
-        }
-        .pt-button:hover, .pt-button:focus {
-            color: var(--button-hover-text-color);
-            border-color: var(--button-hover-border-color);
-            background-color: var(--button-hover-bg-color);
-            outline: none;
+        .install-card {
+            width: min(1080px, 100%);
+            border-radius: 24px;
+            background: var(--install-card-bg);
+            box-shadow: var(--install-shadow);
+            overflow: hidden;
         }
 
-        .group {
-            display: inline-block;
-            vertical-align: middle;
-        }
-        .group .button {
-            float: left;
-            position: relative;
-        }
-        .group .button:first-child {
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-        }
-        .group .button:not(:last-child) {
-            margin-right: -1px;
+        .install-header {
+            padding: 36px 40px 24px;
+            background: linear-gradient(135deg, rgba(29, 111, 220, 0.12), rgba(255, 255, 255, 0.5));
+            border-bottom: 1px solid rgba(219, 228, 239, 0.8);
         }
 
-        .button-info {
-            --button-bg-color: #909399;
-        }
-        .button-info:first-child {
-            border-right-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .checkbox__original {
-            opacity: 0;
-            outline: 0;
-            position: absolute;
+        .install-title {
             margin: 0;
-            width: 0;
-            height: 0;
-            z-index: -1;
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
         }
 
-        .requirement {
+        .install-subtitle {
+            margin: 10px 0 0;
+            font-size: 15px;
+            color: var(--install-muted);
+        }
+
+        .install-steps {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            padding: 0 40px 24px;
+            background: linear-gradient(135deg, rgba(29, 111, 220, 0.12), rgba(255, 255, 255, 0.2));
+        }
+
+        .install-step {
             display: flex;
-            height: 40px;
-            width: 100%;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.72);
+            color: var(--install-muted);
         }
-        .requirement li {
-            list-style: none;
-            line-height: 40px;
-            text-align: center;
-            width: 100%;
+
+        .install-step.is-active {
+            background: rgba(29, 111, 220, 0.12);
+            color: var(--install-text);
         }
-        .requirement .li-title {
-            background-color: #5c93ec;
-            color: white;
-            font-size: 16px;
+
+        .install-step.is-done {
+            background: rgba(31, 143, 83, 0.12);
+            color: var(--install-success);
         }
-        .requirement.lists {
-            border-bottom: 1px solid #e4e7ed;
+
+        .install-step-index {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            background: rgba(148, 163, 184, 0.18);
         }
-        .red {
-            color: red;
-        }
-        .error{
-            background: red;
+
+        .install-step.is-active .install-step-index {
+            background: var(--install-primary);
             color: #fff;
         }
-        .console-box{
+
+        .install-step.is-done .install-step-index {
+            background: var(--install-success);
+            color: #fff;
+        }
+
+        .install-step-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .install-content {
+            min-height: 520px;
+            padding: 32px 40px 24px;
+        }
+
+        .install-footer {
+            padding: 0 40px 32px;
+        }
+
+        .button-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .install-button {
+            border: 0;
+            border-radius: 12px;
+            padding: 11px 18px;
+            min-width: 112px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        .install-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .install-button-primary {
+            background: var(--install-primary);
+            color: #fff;
+        }
+
+        .install-button-primary:hover {
+            background: var(--install-primary-hover);
+        }
+
+        .install-button-secondary {
+            background: var(--install-secondary);
+            color: var(--install-text);
+        }
+
+        .install-button-secondary:hover {
+            background: var(--install-secondary-hover);
+        }
+
+        .install-button-warning {
+            background: #f59e0b;
+            color: #fff;
+        }
+
+        .install-button-warning:hover {
+            background: #d97706;
+        }
+
+        .install-button[disabled],
+        .install-button.is-disabled {
+            cursor: not-allowed;
+            opacity: 0.45;
+            transform: none;
+        }
+
+        .install-checkbox {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--install-muted);
+        }
+
+        .install-checkbox input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .install-section {
+            border: 1px solid var(--install-border);
+            border-radius: 18px;
+            padding: 22px 24px;
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .install-section + .install-section {
+            margin-top: 20px;
+        }
+
+        .install-section-title {
+            margin: 0 0 18px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .install-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .install-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .install-field-label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .install-field-label .required {
+            color: var(--install-error);
+        }
+
+        .install-input,
+        .install-select {
             width: 100%;
-            height: 100%;
-            background: rgba(31, 31, 32, 0.9);
-            color: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #fff;
+            color: var(--install-text);
+            min-height: 44px;
+            padding: 10px 14px;
+            font-size: 14px;
         }
-        .console-box .title {
-            padding: 20px 20px 5px;
+
+        .install-input:focus,
+        .install-select:focus {
+            outline: none;
+            border-color: var(--install-primary);
+            box-shadow: 0 0 0 4px rgba(29, 111, 220, 0.12);
         }
-        .console-box .item {
-            padding: 0 20px 20px;
-            height: calc(100% - 80px);
-            overflow-y: auto;
+
+        .install-table {
+            display: grid;
+            gap: 10px;
         }
-        .console-box .item .time{
-            color: #b7d5a0;
-            font-size: 20px;
+
+        .install-table-head,
+        .install-table-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 90px;
+            gap: 12px;
+            align-items: center;
+            border-radius: 14px;
+            padding: 12px 14px;
         }
-        .console-box .item li{
-            line-height: 2!important;
-            height: auto!important;
+
+        .install-table-head {
+            background: var(--install-primary);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
         }
-        .console-box .item li span{
-            display: inline-block;
-            width: 60px;
-            margin-right: 10px;
+
+        .install-table-row {
+            border: 1px solid var(--install-border);
+            background: rgba(255, 255, 255, 0.72);
+            font-size: 14px;
         }
-        .loading-dots {
-            display: inline-block;
+
+        .install-table-row.is-error {
+            border-color: rgba(192, 57, 43, 0.3);
+            background: rgba(192, 57, 43, 0.08);
+        }
+
+        .install-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .install-status-success {
+            color: var(--install-success);
+            background: rgba(31, 143, 83, 0.12);
+        }
+
+        .install-status-error {
+            color: var(--install-error);
+            background: rgba(192, 57, 43, 0.12);
+        }
+
+        .protocol-shell {
+            line-height: 1.75;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .install-dialog-mask {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.62);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 16px;
+        }
+
+        .install-dialog-mask.is-visible {
+            display: flex;
+        }
+
+        .install-dialog {
+            width: min(780px, 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            background: #0f172a;
+            color: #e2e8f0;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+        }
+
+        .install-dialog-header {
+            padding: 18px 22px;
             font-size: 16px;
-            letter-spacing: 3px;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
         }
-        .loading-dots span {
-            animation: loading 1.5s infinite;
-            opacity: 0;
+
+        .install-console {
+            min-height: 320px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding: 18px 22px;
         }
-        .loading-dots span:nth-child(1) {
-            animation-delay: 0s;
+
+        .install-console-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 1.7;
         }
-        .loading-dots span:nth-child(2) {
-            animation-delay: 0.3s;
+
+        .install-console-badge {
+            flex: 0 0 auto;
+            border-radius: 999px;
+            padding: 2px 9px;
+            font-size: 12px;
+            font-weight: 700;
         }
-        .loading-dots span:nth-child(3) {
-            animation-delay: 0.6s;
+
+        .install-console-badge.process {
+            background: rgba(29, 111, 220, 0.2);
+            color: #93c5fd;
         }
-        @keyframes loading {
-            0% {
-                opacity: 0;
+
+        .install-console-badge.success {
+            background: rgba(31, 143, 83, 0.2);
+            color: #86efac;
+        }
+
+        .install-console-badge.error {
+            background: rgba(192, 57, 43, 0.2);
+            color: #fca5a5;
+        }
+
+        .install-console-badge.info {
+            background: rgba(100, 116, 139, 0.2);
+            color: #cbd5e1;
+        }
+
+        .install-dialog-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 0 22px 22px;
+        }
+
+        @media (max-width: 900px) {
+            .install-steps,
+            .install-form-grid {
+                grid-template-columns: 1fr;
             }
-            50% {
-                opacity: 1;
+
+            .install-header,
+            .install-steps,
+            .install-content,
+            .install-footer {
+                padding-left: 20px;
+                padding-right: 20px;
             }
-            100% {
-                opacity: 0;
+
+            .install-table-head,
+            .install-table-row {
+                grid-template-columns: 1.6fr 1.6fr 72px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="install">
-        <div class="card">
-            <div class="title">
-                <img src="{{asset("ptadmin/images/logo.png")}}" alt="PTAdmin" />
-                欢迎使用PTAdmin
+    <div class="install-shell">
+        <div class="install-card">
+            <div class="install-header">
+                <h1 class="install-title">欢迎使用PTAdmin</h1>
+                <p class="install-subtitle">按照步骤完成环境检查、配置写入与管理员初始化。</p>
             </div>
-            <div class="step">
+            <div class="install-steps">
                 @foreach($tabs as $key => $val)
-                    <div class="step-title @if($key === $step) is-process @elseif($key < $step) is-finish @else is-wait @endif ">
-                        <i class="layui-icon {{$val['icon']}}"></i><span>{{$val['title']}}</span>
+                    <div class="install-step @if($key === $step) is-active @elseif($key < $step) is-done @endif">
+                        <span class="install-step-index">{{ $key + 1 }}</span>
+                        <span class="install-step-title">{{ $val['title'] }}</span>
                     </div>
                 @endforeach
             </div>
-            <div class="content">
-                @yield("content")
+            <div class="install-content">
+                @yield('content')
             </div>
-            <div class="footer">
-                @yield("button")
+            <div class="install-footer">
+                @yield('button')
             </div>
         </div>
     </div>
+    @yield('script')
 </body>
 </html>
-<script src="{{asset("ptadmin/bin/layui.js")}}"></script>
-@yield('script')
-
