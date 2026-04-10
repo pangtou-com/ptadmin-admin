@@ -77,12 +77,12 @@ class PTAdminServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                AdminBootstrapAuthCommand::class,
-                AdminInitCommand::class,
-            ]);
+        $this->commands([
+            AdminBootstrapAuthCommand::class,
+            AdminInitCommand::class,
+        ]);
 
+        if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../../../config/ptadmin-auth.php' => config_path('ptadmin-auth.php'),
             ], 'ptadmin-config');
