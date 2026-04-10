@@ -42,11 +42,10 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     Route::get('layout', [Admin\HomeController::class, 'layout']);
     Route::get('console', [Admin\HomeController::class, 'console']);
 
-    // 附件列表
-    Route::get('attachments', [Admin\AttachmentController::class, 'index']);
-    Route::delete('attachment/{id?}', [Admin\AttachmentController::class, 'delete']);
-    // 选择或者上传附件
-    Route::get('attachment', [Admin\AttachmentController::class, 'attachment']);
+    // 上传资源列表
+    Route::get('assets', [Admin\AssetController::class, 'index']);
+    Route::delete('assets/{id?}', [Admin\AssetController::class, 'delete']);
+    Route::get('assets/picker', [Admin\AssetController::class, 'picker']);
 
     // 退出登录
     Route::get('logout', [Admin\LoginController::class, 'logout']);
@@ -121,21 +120,21 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
 
     // 环境分类配置
     Route::get('system-config-groups', [Admin\SystemConfigGroupController::class, 'index']);
-    Route::get('system-config-group-full/{id}', [Admin\SystemConfigGroupController::class, 'byConfigureCategoryId']);
-    Route::get('system-config-group-root/{id}', [Admin\SystemConfigGroupController::class, 'getRootConfigureCategoryId']);
-    Route::match(['get', 'post'], 'system-config-group', [Admin\SystemConfigGroupController::class, 'store']);
-    Route::match(['get', 'put'], 'system-config-group/{id}', [Admin\SystemConfigGroupController::class, 'edit']);
-    Route::delete('system-config-group/{id}', [Admin\SystemConfigGroupController::class, 'delete']);
+    Route::get('system-config-groups/{id}/sections', [Admin\SystemConfigGroupController::class, 'sectionConfigs']);
+    Route::get('system-config-groups/{id}/children', [Admin\SystemConfigGroupController::class, 'children']);
+    Route::post('system-config-groups', [Admin\SystemConfigGroupController::class, 'store']);
+    Route::put('system-config-groups/{id}', [Admin\SystemConfigGroupController::class, 'edit']);
+    Route::delete('system-config-groups/{id}', [Admin\SystemConfigGroupController::class, 'delete']);
 
     // 系统配置
     Route::get('system-configs', [Admin\SystemConfigController::class, 'index']);
     Route::get('system-configs/{id}', [Admin\SystemConfigController::class, 'details']);
     Route::put('system-configs/{id}', [Admin\SystemConfigController::class, 'updateSection']);
-    Route::get('system-config-page', [Admin\SystemConfigController::class, 'page']);
-    Route::match(['get', 'post'], 'system-config', [Admin\SystemConfigController::class, 'store']);
-    Route::match(['get', 'put'], 'system-config/{id}', [Admin\SystemConfigController::class, 'edit']);
-    Route::post('system-config-val', [Admin\SystemConfigController::class, 'saveValue']);
-    Route::delete('system-config/{id}', [Admin\SystemConfigController::class, 'delete']);
+    Route::get('system-config-items', [Admin\SystemConfigController::class, 'items']);
+    Route::post('system-config-items/values', [Admin\SystemConfigController::class, 'saveValues']);
+    Route::post('system-config-items', [Admin\SystemConfigController::class, 'store']);
+    Route::put('system-config-items/{id}', [Admin\SystemConfigController::class, 'edit']);
+    Route::delete('system-config-items/{id}', [Admin\SystemConfigController::class, 'delete']);
 
     // 插件管理
     Route::get('addons', [Admin\AddonController::class, 'index']);

@@ -17,7 +17,7 @@ class PTAdminSystemConfigItemApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $pageResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/system-config-page');
+            ->getJson('/system/system-config-items');
 
         $pageResponse->assertOk()->assertJson([
             'code' => 0,
@@ -31,7 +31,7 @@ class PTAdminSystemConfigItemApiTest extends TestCase
         self::assertSame('基础配置', $pageResponse->json('data.results.0.category.title'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/system-config', [
+            ->postJson('/system/system-config-items', [
                 'system_config_group_id' => $section->id,
                 'title' => '站点关键字',
                 'name' => 'site_keywords',
@@ -51,7 +51,7 @@ class PTAdminSystemConfigItemApiTest extends TestCase
         self::assertSame('站点关键字', $created->title);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/system-config/'.$created->id, [
+            ->putJson('/system/system-config-items/'.$created->id, [
                 'system_config_group_id' => $section->id,
                 'title' => '站点关键字更新',
                 'name' => 'site_keywords',
@@ -72,7 +72,7 @@ class PTAdminSystemConfigItemApiTest extends TestCase
         self::assertSame(66, (int) $created->weight);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/system-config-val', [
+            ->postJson('/system/system-config-items/values', [
                 'ids' => [$section->id],
                 'basic_site_title' => 'PTAdmin Legacy Save',
                 'basic_site_keywords' => 'legacy,keywords',
@@ -87,7 +87,7 @@ class PTAdminSystemConfigItemApiTest extends TestCase
         self::assertSame('PTAdmin Legacy Save', system_config('system.basic.site_title'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/system-config/'.$created->id)
+            ->deleteJson('/system/system-config-items/'.$created->id)
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -102,7 +102,7 @@ class PTAdminSystemConfigItemApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/system-config', [
+            ->postJson('/system/system-config-items', [
                 'system_config_group_id' => $section->id,
                 'title' => '',
                 'name' => '1invalid-name',
@@ -112,6 +112,36 @@ class PTAdminSystemConfigItemApiTest extends TestCase
             ->assertJson([
                 'code' => 20000,
             ]);
+    }
+
+    public function test_system_config_item_list_endpoint_supports_filters(): void
+    {
+        [, $section] = $this->seedSystemConfigItemFixtures();
+        $token = $this->issueFounderToken();
+
+        SystemConfig::query()->create([
+            'system_config_group_id' => $section->id,
+            'title' => '登录验证码',
+            'name' => 'login_captcha',
+            'type' => 'switch',
+            'value' => '1',
+            'default_val' => '0',
+            'weight' => 90,
+            'intro' => '登录验证码开关',
+        ]);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/system-config-items?system_config_group_id='.$section->id.'&title=登录&name=login&type=switch');
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'total' => 1,
+            ],
+        ]);
+
+        self::assertSame('login_captcha', $response->json('data.results.0.name'));
+        self::assertSame('switch', $response->json('data.results.0.type'));
     }
 
     /**

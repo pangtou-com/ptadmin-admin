@@ -25,6 +25,7 @@ namespace PTAdmin\Admin\Models;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use PTAdmin\Addon\Addon;
 use PTAdmin\Support\Utils\ThumbService;
 
 /**
@@ -39,8 +40,9 @@ use PTAdmin\Support\Utils\ThumbService;
  * @property string $groups
  * @property string $quote
  */
-class Attachment extends \PTAdmin\Foundation\Database\Models\AbstractModel
+class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
 {
+    protected $table = 'assets';
     protected $appends = ['preview', 'url'];
 
     /**
@@ -50,7 +52,7 @@ class Attachment extends \PTAdmin\Foundation\Database\Models\AbstractModel
      *
      * @return null|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Model|object
      */
-    public static function byMd5($md5)
+    public static function byMd5(string $md5)
     {
         return (new self())->newQuery()->where('md5', $md5)->first();
     }
@@ -62,24 +64,74 @@ class Attachment extends \PTAdmin\Foundation\Database\Models\AbstractModel
      */
     public function getPreviewAttribute(): string
     {
+        if ($this->isAddonDriver()) {
+            return Str::startsWith((string) ($this->attributes['mime'] ?? ''), 'image')
+                ? $this->getUrlAttribute()
+                : (string) config('constant.file_image', '');
+        }
+
         if (Str::startsWith($this->attributes['mime'], 'image')) {
             if (file_exists(Storage::path($this->attributes['path']))) {
                 return url(Storage::url(ThumbService::save($this->attributes['path'])));
             }
 
-            return config('constant.empty_image');
+            return (string) config('constant.empty_image', '');
         }
 
-        return config('constant.file_image');
+        return (string) config('constant.file_image', '');
     }
 
     public function getUrlAttribute(): string
     {
+        $addonDriver = $this->parseAddonDriver();
+        if (null !== $addonDriver) {
+            try {
+                $result = (array) Addon::executeInject('storage', $addonDriver['code'], [
+                    'disk' => $addonDriver['disk'],
+                    'bucket' => null,
+                    'path' => (string) ($this->attributes['path'] ?? ''),
+                    'expires_in' => 3600,
+                    'disposition' => null,
+                    'meta' => [],
+                ], 'temporaryUrl');
+
+                return (string) ($result['url'] ?? '');
+            } catch (\Throwable $e) {
+                return '';
+            }
+        }
+
         return url(Storage::url($this->attributes['path']));
     }
 
     public function getSizeAttribute(): string
     {
         return byte_format($this->attributes['size']);
+    }
+
+    private function isAddonDriver(): bool
+    {
+        return Str::startsWith((string) ($this->attributes['driver'] ?? ''), 'addon:');
+    }
+
+    /**
+     * @return array{code:string,disk:string}|null
+     */
+    private function parseAddonDriver(): ?array
+    {
+        $driver = (string) ($this->attributes['driver'] ?? '');
+        if (!$this->isAddonDriver()) {
+            return null;
+        }
+
+        $segments = explode(':', $driver, 3);
+        if (\count($segments) < 3 || '' === $segments[1] || '' === $segments[2]) {
+            return null;
+        }
+
+        return [
+            'code' => $segments[1],
+            'disk' => $segments[2],
+        ];
     }
 }

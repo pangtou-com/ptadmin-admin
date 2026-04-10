@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Orchestra\Testbench\TestCase as Orchestra;
 use PTAdmin\Admin\Models\System;
 use PTAdmin\Admin\Providers\PTAdminServiceProvider;
@@ -35,7 +36,15 @@ abstract class TestCase extends Orchestra
         $app['config']->set('auth.providers.systems.model', System::class);
         $app['config']->set('database.default', 'sqlite');
         $app['config']->set('database.connections.sqlite.database', ':memory:');
+        $app['config']->set('filesystems.default', 'public');
         $app['config']->set('ptadmin-auth.guard', 'api');
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Storage::fake('public');
     }
 
     protected function migratePackageTables(): void
@@ -174,6 +183,29 @@ abstract class TestCase extends Orchestra
             $table->text('extra')->nullable();
             $table->text('value')->nullable();
             $table->text('default_val')->nullable();
+            $table->unsignedInteger('created_at')->default(0);
+            $table->unsignedInteger('updated_at')->default(0);
+            $table->unsignedInteger('deleted_at')->nullable();
+        });
+    }
+
+    protected function createAssetsTable(): void
+    {
+        if (Schema::hasTable('assets')) {
+            return;
+        }
+
+        Schema::create('assets', function (Blueprint $table): void {
+            $table->id();
+            $table->string('title', 255)->default('');
+            $table->string('md5', 32)->default('');
+            $table->string('mime', 100)->default('');
+            $table->string('suffix', 20)->default('');
+            $table->string('driver', 50)->default('public');
+            $table->unsignedBigInteger('size')->default(0);
+            $table->string('path', 255)->default('');
+            $table->string('groups', 50)->default('default');
+            $table->unsignedInteger('quote')->default(0);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();

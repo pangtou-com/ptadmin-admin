@@ -51,32 +51,66 @@ class SystemConfig extends \PTAdmin\Foundation\Database\Models\AbstractModel
         return $this->belongsTo(SystemConfigGroup::class, 'system_config_group_id', 'id');
     }
 
+    /**
+     * 将换行文本格式的 options 转为统一存储结构。
+     *
+     * 支持：
+     * - `key=value`
+     * - 单行纯文本，自动使用顺序索引作为 key
+     * - 已经是数组结构时直接归一化
+     *
+     * @param mixed $val
+     */
     public function setExtraAttribute($val): void
     {
+        if (null === $val || '' === $val) {
+            $this->attributes['extra'] = json_encode(['options' => []], JSON_UNESCAPED_UNICODE);
+
+            return;
+        }
+
         $extraOptions = [];
-        $allOptions = explode("\n", $val);
-        foreach ($allOptions as $key => $option) {
-            $option = explode('=', $option);
-            $key = 1 === \count($option) ? $key : $option[0];
-            $value = 1 === \count($option) ? $option[0] : $option[1];
-            if (isset($extraOptions[$key])) {
+        $options = \is_array($val) ? ($val['options'] ?? $val) : preg_split('/\r\n|\r|\n/', (string) $val);
+
+        foreach ((array) $options as $key => $option) {
+            if (\is_array($option)) {
+                $normalizedKey = (string) ($option['value'] ?? $key);
+                $normalizedValue = (string) ($option['label'] ?? $option['name'] ?? $normalizedKey);
+            } else {
+                $line = trim((string) $option);
+                if ('' === $line) {
+                    continue;
+                }
+
+                $parts = explode('=', $line, 2);
+                $normalizedKey = 1 === \count($parts) ? (string) $key : trim($parts[0]);
+                $normalizedValue = 1 === \count($parts) ? $line : trim($parts[1]);
+            }
+
+            if ('' === $normalizedKey) {
+                $normalizedKey = (string) $key;
+            }
+
+            if (isset($extraOptions[$normalizedKey])) {
                 throw new ServiceException('配置项键名重复，请规范填写');
             }
-            $extraOptions[$key] = $value;
+
+            $extraOptions[$normalizedKey] = $normalizedValue;
         }
-        $this->attributes['extra'] = json_encode(['options' => $extraOptions]);
+
+        $this->attributes['extra'] = json_encode(['options' => $extraOptions], JSON_UNESCAPED_UNICODE);
     }
 
     public function getExtraValueAttribute(): string
     {
         $extra = $this->extra;
-        $extra_value = [];
-        if (isset($extra['options']) && '' !== $extra['options']) {
+        $extraValue = [];
+        if (isset($extra['options']) && \is_array($extra['options'])) {
             foreach ($extra['options'] as $key => $value) {
-                $extra_value[] = $key.'='.$value;
+                $extraValue[] = $key.'='.$value;
             }
         }
 
-        return implode("\n", $extra_value);
+        return implode("\n", $extraValue);
     }
 }

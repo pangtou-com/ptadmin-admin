@@ -56,9 +56,12 @@ class SystemConfigController extends AbstractBackgroundController
         ]);
     }
 
-    public function page(Request $request): JsonResponse
+    /**
+     * 返回系统配置项定义列表。
+     */
+    public function items(Request $request): JsonResponse
     {
-        $results = $this->systemConfigService->page($request->all());
+        $results = $this->systemConfigService->items($request->all());
 
         return AdminResponse::pages($results);
     }
@@ -91,9 +94,9 @@ class SystemConfigController extends AbstractBackgroundController
      *
      * @return JsonResponse
      */
-    public function saveValue(Request $request): JsonResponse
+    public function saveValues(Request $request): JsonResponse
     {
-        $this->systemConfigService->save($request->all());
+        $this->systemConfigService->saveValues($request->all());
 
         return AdminResponse::success();
     }
@@ -125,7 +128,7 @@ class SystemConfigController extends AbstractBackgroundController
         }
 
         $data = $validated;
-        $this->systemConfigService->edit($id, $data);
+        $this->systemConfigService->edit((int) $id, $data);
 
         return AdminResponse::success();
     }

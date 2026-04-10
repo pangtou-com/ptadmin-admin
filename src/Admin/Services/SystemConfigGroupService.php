@@ -150,7 +150,7 @@ class SystemConfigGroupService
      *
      * @return array
      */
-    public function getRootConfigureCategoryId($id): array
+    public function children(int $id): array
     {
         $results = SystemConfigGroup::query()
             ->select(['id', 'parent_id', 'title', 'name', 'weight', 'intro', 'status'])
@@ -178,9 +178,8 @@ class SystemConfigGroupService
      *
      * @return array
      */
-    public function byParentId($id): array
+    public function sectionConfigs(int $id): array
     {
-        $id = (int) $id;
         $results = SystemConfigGroup::query()
             ->select(['id', 'parent_id', 'title', 'name', 'weight', 'intro', 'status'])
             ->where('parent_id', $id)
@@ -208,24 +207,34 @@ class SystemConfigGroupService
     /**
      * 安装时数据初始化.
      *
-     * @param array $data
-     * @param mixed $parentId
+     * @param array<int, array<string, mixed>> $data
      */
-    public static function installInitialize(array $data, $parentId = 0): void
+    public static function installInitialize(array $data, int $parentId = 0): void
     {
         foreach ($data as $item) {
-            $item['parent_id'] = $parentId;
+            $groupData = $item;
+            $groupData['parent_id'] = $parentId;
+            unset($groupData['children'], $groupData['fields']);
+
             /** @var SystemConfigGroup $model */
-            $model = SystemConfigGroup::query()->updateOrCreate(['name' => $item['name']], $item);
+            $model = SystemConfigGroup::query()->updateOrCreate(['name' => $item['name']], $groupData);
+
             if (isset($item['children']) && \count($item['children']) > 0) {
                 self::installInitialize($item['children'], $model->id);
 
                 continue;
             }
+
             if (isset($item['fields']) && \count($item['fields']) > 0) {
                 foreach ($item['fields'] as $field) {
                     $field['system_config_group_id'] = $model->id;
-                    (new SystemConfig())->fill($field)->save();
+                    SystemConfig::query()->updateOrCreate(
+                        [
+                            'system_config_group_id' => $model->id,
+                            'name' => $field['name'],
+                        ],
+                        $field
+                    );
                 }
             }
         }

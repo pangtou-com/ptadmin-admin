@@ -25,15 +25,16 @@ namespace PTAdmin\Admin\Providers;
 
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use PTAdmin\Admin\Commands\AdminBootstrapAuthCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
-use PTAdmin\Admin\Http\Middleware\ExceptionResponseMiddleware;
 use PTAdmin\Admin\Commands\AdminInitCommand;
 use PTAdmin\Admin\Http\Middleware\AuthorizationMiddleware;
+use PTAdmin\Admin\Http\Middleware\CanInstallMiddleware;
+use PTAdmin\Admin\Http\Middleware\ExceptionResponseMiddleware;
 use PTAdmin\Admin\Http\Middleware\OperationRecordMiddleware;
 use PTAdmin\Admin\Services\Auth\AuthorizationContext;
 use PTAdmin\Admin\Services\Auth\AuthorizationService;
@@ -61,6 +62,7 @@ class PTAdminServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../../../config/ptadmin-auth.php', 'ptadmin-auth');
+        $this->mergeConfigFrom(__DIR__.'/../../../config/install.php', 'ptadmin-install');
         $this->app->register(EasyServiceProviders::class);
 
         $this->app->singleton(AuthorizationServiceInterface::class, AuthorizationService::class);
@@ -89,6 +91,7 @@ class PTAdminServiceProvider extends ServiceProvider
                 __DIR__.'/../../../database/Migrations/2026_04_09_120000_create_admin_authorization_tables.php' => database_path('migrations/2026_04_09_120000_create_admin_authorization_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php' => database_path('migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_140000_seed_admin_default_resources.php' => database_path('migrations/2026_04_09_140000_seed_admin_default_resources.php'),
+                __DIR__.'/../../../database/Migrations/2026_04_10_120000_rename_attachments_to_assets.php' => database_path('migrations/2026_04_10_120000_rename_attachments_to_assets.php'),
             ], 'ptadmin-migrations');
 
             $this->publishes([
@@ -98,9 +101,11 @@ class PTAdminServiceProvider extends ServiceProvider
 
         $this->loadMigrationsFrom(__DIR__.'/../../../database/Migrations');
         $this->loadTranslationsFrom(__DIR__.'/../../../lang', 'ptadmin');
+        $this->loadViewsFrom(__DIR__.'/../../../resources/views/install', 'ptadmin-install');
         $this->registerRouteMiddleware();
         $this->extendGuard();
         $this->registerAuthorizationGate();
+        $this->mapInstallRoutes();
         $this->mapSystemRoutes();
     }
 
@@ -146,10 +151,20 @@ class PTAdminServiceProvider extends ServiceProvider
         Route::middleware(['api', 'ptadmin.response', 'ptadmin.operation.record'])->group(__DIR__.'/../../../routes/admin.php');
     }
 
+    private function mapInstallRoutes(): void
+    {
+        if (file_exists(storage_path('installed'))) {
+            return;
+        }
+
+        Route::group([], __DIR__.'/../../../routes/install.php');
+    }
+
     private function registerRouteMiddleware(): void
     {
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('ptadmin.auth', AuthenticateMiddleware::class);
+        $router->aliasMiddleware('ptadmin.install', CanInstallMiddleware::class);
         $router->aliasMiddleware('ptadmin.response', ExceptionResponseMiddleware::class);
         $router->aliasMiddleware('ptadmin.resource', AuthorizationMiddleware::class);
         $router->aliasMiddleware('ptadmin.operation.record', OperationRecordMiddleware::class);

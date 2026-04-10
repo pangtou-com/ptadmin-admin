@@ -23,6 +23,7 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'admin_organizations',
             'admin_departments',
             'admin_user_org_relations',
+            'assets',
         ] as $table) {
             self::assertTrue(Schema::hasTable($table), sprintf('Missing table [%s].', $table));
         }
@@ -54,7 +55,7 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'system.login',
             'system.operate',
             'system.config',
-            'system.attachments',
+            'system.assets',
             'addon',
             'addon.addons',
         ], $codes);

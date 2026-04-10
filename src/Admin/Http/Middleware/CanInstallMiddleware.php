@@ -21,22 +21,36 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
-namespace PTAdmin\Admin\Services;
+namespace PTAdmin\Admin\Http\Middleware;
 
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Storage;
-use PTAdmin\Admin\Models\Attachment;
+use Closure;
+use Illuminate\Http\Request;
 
-class AttachmentService
+/**
+ * 宿主项目可按需挂载该中间件，在未安装时统一跳转到安装向导。
+ */
+class CanInstallMiddleware
 {
-    public function delete($ids): void
+    public function handle(Request $request, Closure $next)
     {
-        $attachments = Attachment::query()->whereIn('id', Arr::wrap($ids))->get();
-
-        foreach ($attachments as $attachment) {
-            //同步删除文件
-            @unlink(Storage::path($attachment->path));
-            $attachment->delete();
+        if ($this->isInstalled() && $this->isInstallRequest($request)) {
+            abort(404);
         }
+
+        if (!$this->isInstalled() && !$this->isInstallRequest($request)) {
+            return redirect('/install');
+        }
+
+        return $next($request);
+    }
+
+    private function isInstallRequest(Request $request): bool
+    {
+        return 0 === strpos('/'.$request->path(), '/install');
+    }
+
+    private function isInstalled(): bool
+    {
+        return file_exists(storage_path('installed'));
     }
 }

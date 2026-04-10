@@ -115,8 +115,25 @@ class PTAdminSystemConfigApiTest extends TestCase
         );
 
         self::assertSame('PTAdmin Next', system_config('system.basic.site_title'));
+        self::assertSame('PTAdmin Next', system_config('basic.site_title'));
         self::assertSame(0, system_config('system.basic.login_captcha'));
         self::assertSame(['bottom_left'], system_config('system.basic.watermark_positions'));
+    }
+
+    public function test_system_config_runtime_read_helpers_return_grouped_values(): void
+    {
+        $this->seedSettingFixtures();
+
+        self::assertSame([
+            'basic' => [
+                'site_title' => 'PTAdmin',
+                'site_description' => '后台管理系统',
+                'login_captcha' => 1,
+                'watermark_positions' => ['top_left', 'bottom_right'],
+            ],
+        ], \PTAdmin\Admin\Services\SystemConfigService::byGroupName('system'));
+
+        self::assertSame('fallback', system_config('missing.path', 'fallback'));
     }
 
     /**

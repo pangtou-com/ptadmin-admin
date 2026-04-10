@@ -21,34 +21,35 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
-namespace PTAdmin\Admin\Models;
+namespace PTAdmin\Admin\Services\Install\Pipe;
 
-/**
- * @property string $title
- * @property string $name
- * @property int    $weight
- * @property int    $parent_id
- * @property string $addon_code
- * @property string $intro
- * @property int    $status
- */
-class SystemConfigGroup extends \PTAdmin\Foundation\Database\Models\AbstractModel
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
+use PTAdmin\Admin\Support\Concerns\FormatInstallOutput;
+
+class Complete
 {
-    protected $table = 'system_config_groups';
-    protected $fillable = ['title', 'name', 'weight', 'parent_id', 'addon_code', 'intro', 'status'];
+    use FormatInstallOutput;
 
-    public function configs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function handle($data, \Closure $next): void
     {
-        return $this->hasMany(SystemConfig::class, 'system_config_group_id', 'id');
-    }
+        $this->process('创建管理员账户');
+        $status = Artisan::call('admin:init', ['-u' => $data['username'], '-p' => $data['password'], '-f' => true]);
+        if (0 !== $status) {
+            $this->error('创建管理员失败:'.Artisan::output());
 
-    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(self::class, 'parent_id', 'id');
-    }
+            return;
+        }
 
-    public static function getParentLists(int $id): array
-    {
-        return array_to_options(self::query()->where('parent_id', 0)->where('id', '<>', $id)->get()->toArray());
+        File::put(storage_path('installed'), date('Y-m-d H:i:s', time()));
+        Artisan::call('cache:clear');
+        Artisan::call('config:clear');
+        Artisan::call('event:clear');
+        Artisan::call('route:clear');
+        Artisan::call('view:clear');
+        Artisan::call('permission:cache-reset');
+        $this->success('安装成功');
+
+        $next($data);
     }
 }

@@ -24,9 +24,13 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use PTAdmin\Admin\Services\SystemConfigGroupService;
+use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Admin\Services\SystemService;
+use PTAdmin\Admin\Support\SystemConfigPreset;
 
 class AdminInitCommand extends Command
 {
@@ -68,6 +72,7 @@ class AdminInitCommand extends Command
 
         try {
             SystemService::initializeFounder($data);
+            $this->initializeSystemConfigs();
         } catch (\Exception $e) {
             $this->error($e->getMessage());
 
@@ -81,6 +86,19 @@ class AdminInitCommand extends Command
         $this->info('请妥善保管好您的账户信息，不要泄露给其他人');
 
         return 0;
+    }
+
+    /**
+     * 初始化后台默认系统配置。
+     */
+    private function initializeSystemConfigs(): void
+    {
+        if (!Schema::hasTable('system_config_groups') || !Schema::hasTable('system_configs')) {
+            return;
+        }
+
+        SystemConfigGroupService::installInitialize(SystemConfigPreset::definitions());
+        SystemConfigService::updateSystemConfigCache();
     }
 
     private function check($data): bool

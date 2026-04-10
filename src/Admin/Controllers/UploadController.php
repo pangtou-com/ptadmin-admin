@@ -23,8 +23,10 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use PTAdmin\Support\Utils\UploadService;
+use Illuminate\Support\Facades\Validator;
+use PTAdmin\Admin\Services\UploadService;
 use PTAdmin\Foundation\Response\AdminResponse;
 
 class UploadController extends AbstractBackgroundController
@@ -38,25 +40,70 @@ class UploadController extends AbstractBackgroundController
     }
 
     /**
-     * todo 大文件需要做切片上传.
-     *
-     * @param Request $request
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * 上传单个文件。
      */
-    public function upload(Request $request): \Illuminate\Http\JsonResponse
+    public function upload(Request $request): JsonResponse
     {
-        $dao = $this->uploadService->upload($request);
+        $validated = $this->validatePayload($request);
+        if ($validated instanceof JsonResponse) {
+            return $validated;
+        }
 
-        return AdminResponse::success($dao);
+        return AdminResponse::success($this->uploadService->upload($request));
     }
 
-    public function tiny(Request $request): \Illuminate\Http\JsonResponse
+    /**
+     * TinyMCE 上传接口，仅返回编辑器要求的 location 字段。
+     */
+    public function tiny(Request $request): JsonResponse
     {
-        $res = $this->uploadService->upload($request);
+        $validated = $this->validatePayload($request);
+        if ($validated instanceof JsonResponse) {
+            return $validated;
+        }
+
+        $result = $this->uploadService->upload($request);
 
         return response()->json([
-            'location' => $res['url'],
+            'location' => $result['url'],
         ]);
+    }
+    
+    /**
+     * 对上传接口做显式参数校验，统一返回后台 JSON 结构。
+     *
+     * @param Request $request
+     * @return array<string, mixed>|JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    private function validatePayload(Request $request)
+    {
+        $fieldName = (string) $request->get('filename', 'file');
+        $payload = array_merge($request->all(), [
+            $fieldName => $request->file($fieldName),
+        ]);
+
+        $validator = Validator::make($payload, [
+            'group' => 'nullable|string|max:50',
+            'filename' => 'nullable|string|max:50',
+            $fieldName => 'required|file',
+        ], [
+            "{$fieldName}.required" => '请上传文件',
+            "{$fieldName}.file" => '上传内容必须是有效文件',
+            'group.max' => '上传分组最多50个字符',
+            'filename.max' => '文件字段名最多50个字符',
+        ]);
+
+        if ($validator->fails()) {
+            $message = collect($validator->errors()->toArray())
+                ->map(static function (array $item): string {
+                    return implode('|', $item);
+                })
+                ->implode('');
+
+            return AdminResponse::fail($message, 20000);
+        }
+
+        return $validator->validated();
     }
 }

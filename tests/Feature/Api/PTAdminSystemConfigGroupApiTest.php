@@ -47,7 +47,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
             ]);
 
         $createResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/system-config-group', [
+            ->postJson('/system/system-config-groups', [
                 'title' => '登录配置',
                 'name' => 'login',
                 'parent_id' => $root->id,
@@ -68,7 +68,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
         $createdId = (int) $createResponse->json('data.id');
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/system-config-group/'.$createdId, [
+            ->putJson('/system/system-config-groups/'.$createdId, [
                 'title' => '登录与安全',
                 'name' => 'login_security',
                 'parent_id' => $root->id,
@@ -88,7 +88,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
             ]);
 
         $fullResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/system-config-group-full/'.$root->id);
+            ->getJson('/system/system-config-groups/'.$root->id.'/sections');
 
         $fullResponse->assertOk()->assertJson([
             'code' => 0,
@@ -102,7 +102,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
         self::assertSame('upload', $fullResponse->json('data.2.category.name'));
 
         $rootResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/system-config-group-root/'.$root->id);
+            ->getJson('/system/system-config-groups/'.$root->id.'/children');
 
         $rootResponse->assertOk()->assertJson([
             'code' => 0,
@@ -116,7 +116,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
         self::assertSame('upload', $rootResponse->json('data.2.name'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/system-config-group/'.$empty->id)
+            ->deleteJson('/system/system-config-groups/'.$empty->id)
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -131,7 +131,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/system-config-group/'.$root->id)
+            ->deleteJson('/system/system-config-groups/'.$root->id)
             ->assertOk()
             ->assertJson([
                 'code' => 10000,
@@ -139,11 +139,29 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
             ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/system-config-group/'.$basic->id)
+            ->deleteJson('/system/system-config-groups/'.$basic->id)
             ->assertOk()
             ->assertJson([
                 'code' => 10000,
                 'message' => '请删除配置项后再删除分类',
+            ]);
+    }
+
+    public function test_system_config_group_store_endpoint_returns_validation_error_for_invalid_payload(): void
+    {
+        [$root] = $this->seedSystemConfigGroupFixtures();
+        $token = $this->issueFounderToken();
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/system/system-config-groups', [
+                'title' => '',
+                'name' => '1invalid-name',
+                'parent_id' => $root->id,
+                'status' => 9,
+            ])
+            ->assertStatus(200)
+            ->assertJson([
+                'code' => 20000,
             ]);
     }
 

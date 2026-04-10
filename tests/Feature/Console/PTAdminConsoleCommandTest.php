@@ -9,6 +9,8 @@ use PTAdmin\Admin\Models\AdminGrant;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Models\AdminRole;
 use PTAdmin\Admin\Models\System;
+use PTAdmin\Admin\Models\SystemConfig;
+use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminConsoleCommandTest extends TestCase
@@ -47,6 +49,8 @@ class PTAdminConsoleCommandTest extends TestCase
     public function test_admin_init_command_creates_founder_account(): void
     {
         $this->createSystemsTable();
+        $this->createSystemConfigGroupsTable();
+        $this->createSystemConfigsTable();
 
         $this->artisan('admin:init', [
             '--username' => 'root',
@@ -66,6 +70,8 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertSame(1, (int) $founder->is_founder);
         self::assertSame('Root', $founder->nickname);
         self::assertTrue(Hash::check('secret123', $founder->getAuthPassword()));
+        self::assertNotNull(SystemConfigGroup::query()->where('name', 'upload')->first());
+        self::assertSame('local', SystemConfig::query()->where('name', 'storage_driver')->value('value'));
     }
 
     public function test_admin_init_command_rejects_invalid_mobile_number(): void

@@ -23,39 +23,47 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use PTAdmin\Admin\Services\AttachmentService;
+use PTAdmin\Admin\Services\AssetService;
 use PTAdmin\Foundation\Response\AdminResponse;
 
 /**
- * 附件管理器.
+ * 上传资源管理器.
  */
-class AttachmentController extends AbstractBackgroundController
+class AssetController extends AbstractBackgroundController
 {
-    protected $attachmentService;
+    protected $assetService;
 
-    public function __construct(AttachmentService $attachmentService)
+    public function __construct(AssetService $assetService)
     {
-        $this->attachmentService = $attachmentService;
+        $this->assetService = $assetService;
         parent::__construct();
     }
 
-    public function index(Request $request): \Illuminate\Http\JsonResponse
+    /**
+     * 返回资源分页列表。
+     */
+    public function index(Request $request): JsonResponse
     {
-        return AdminResponse::pages();
+        return AdminResponse::pages($this->assetService->page($request->all()));
     }
 
-    public function delete(): \Illuminate\Http\JsonResponse
+    /**
+     * 删除资源记录及对应物理文件。
+     */
+    public function delete(): JsonResponse
     {
-        $this->attachmentService->delete($this->getIds());
+        $this->assetService->delete($this->getIds());
 
         return AdminResponse::success();
     }
 
-    public function attachment(Request $request)
+    /**
+     * 返回资源选择器需要的分页数据。
+     */
+    public function picker(Request $request): JsonResponse
     {
-        $data = $request->only(['limit', 'currentLen']);
-
-        return view('ptadmin.attachment.attachment', compact('data'));
+        return AdminResponse::pages($this->assetService->page($request->all()));
     }
 }

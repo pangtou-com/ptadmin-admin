@@ -23,7 +23,10 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Services\SystemConfigGroupService;
 use PTAdmin\Foundation\Response\AdminResponse;
@@ -37,7 +40,7 @@ class SystemConfigGroupController extends AbstractBackgroundController
         $this->systemConfigGroupService = $systemConfigGroupService;
     }
 
-    public function index(): \Illuminate\Http\JsonResponse
+    public function index(): JsonResponse
     {
         return AdminResponse::success(['results' => $this->systemConfigGroupService->tree()]);
     }
@@ -45,45 +48,50 @@ class SystemConfigGroupController extends AbstractBackgroundController
     /**
      * 新增系统配置分组。
      */
-    public function store(): \Illuminate\Http\JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        $data = request()->validate($this->rules(), $this->messages());
+        $validated = $this->validatePayload($request);
+        if ($validated instanceof JsonResponse) {
+            return $validated;
+        }
 
-        return AdminResponse::success($this->systemConfigGroupService->store($data)->toArray());
+        return AdminResponse::success($this->systemConfigGroupService->store($validated)->toArray());
     }
 
     /**
      * 编辑系统配置分组。
      */
-    public function edit(int $id): \Illuminate\Http\JsonResponse
+    public function edit(int $id, Request $request): JsonResponse
     {
-        $data = request()->validate($this->rules(), $this->messages());
+        $validated = $this->validatePayload($request);
+        if ($validated instanceof JsonResponse) {
+            return $validated;
+        }
 
-        return AdminResponse::success($this->systemConfigGroupService->edit($id, $data)->toArray());
+        return AdminResponse::success($this->systemConfigGroupService->edit($id, $validated)->toArray());
     }
 
-    public function byConfigureCategoryId($id): \Illuminate\Http\JsonResponse
+    /**
+     * 返回指定配置分组下各 section 及其配置项。
+     */
+    public function sectionConfigs(int $id): JsonResponse
     {
-        $data = $this->systemConfigGroupService->byParentId($id);
+        $data = $this->systemConfigGroupService->sectionConfigs($id);
 
         return AdminResponse::success($data);
     }
 
     /**
-     * 通过根节点ID获取当前节点下的分类信息和分类字段信息.
-     *
-     * @param $id
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * 返回指定配置分组下的直接子分组及其配置项。
      */
-    public function getRootConfigureCategoryId($id): \Illuminate\Http\JsonResponse
+    public function children(int $id): JsonResponse
     {
-        $results = $this->systemConfigGroupService->getRootConfigureCategoryId($id);
+        $results = $this->systemConfigGroupService->children($id);
 
         return AdminResponse::success($results);
     }
 
-    public function delete(): \Illuminate\Http\JsonResponse
+    public function delete(): JsonResponse
     {
         try {
             $ids = $this->getIds();
@@ -136,5 +144,26 @@ class SystemConfigGroupController extends AbstractBackgroundController
             'intro.max' => '分组描述最多不能超过255个字符',
             'status.in' => '分组状态值错误',
         ];
+    }
+
+    /**
+     * 对系统配置分组写接口做显式参数校验，统一返回后台 JSON 结构。
+     *
+     * @return array<string, mixed>|JsonResponse
+     */
+    private function validatePayload(Request $request)
+    {
+        $validator = Validator::make($request->all(), $this->rules(), $this->messages());
+        if ($validator->fails()) {
+            $message = collect($validator->errors()->toArray())
+                ->map(static function (array $item): string {
+                    return implode('|', $item);
+                })
+                ->implode('');
+
+            return AdminResponse::fail($message, 20000);
+        }
+
+        return $validator->validated();
     }
 }

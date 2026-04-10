@@ -34,42 +34,74 @@ use PTAdmin\Support\Enums\StatusEnum;
 
 class SystemConfigService
 {
+    private const CACHE_KEY = 'systemConfig';
+
     /**
-     * 存储配置值信息.
+     * 批量保存指定分组下的配置项值。
      *
-     * @param $data
+     * 这里兼容旧接口的扁平字段格式：
+     * - ids: [section_id]
+     * - basic_site_title: PTAdmin
+     *
+     * @param array<string, mixed> $data
      */
-    public function save($data): void
+    public function saveValues(array $data): void
     {
         DB::transaction(function () use ($data): void {
-            $ids = $data['ids'] ?? [];
-            $configure = SystemConfig::query()->whereIn('system_config_group_id', $ids)->get()->toArray();
-            if (0 === \count($configure)) {
+            $sectionIds = array_values(array_filter(array_map('intval', (array) ($data['ids'] ?? []))));
+            if (0 === \count($sectionIds)) {
                 return;
             }
-            $parent = SystemConfigGroup::query()->select(['id', 'name'])->whereIn('id', $ids)->get()->toArray();
-            $parent = array_to_map($parent, 'id', 'name');
 
-            foreach ($configure as $item) {
-                $name = ($parent[$item['system_config_group_id']] ?? '').'_'.$item['name'];
-                SystemConfig::query()
-                    ->where('id', $item['id'])
-                    ->where('name', $item['name'])->update(['value' => $data[$name] ?? '']);
+            $sectionNames = SystemConfigGroup::query()
+                ->whereIn('id', $sectionIds)
+                ->pluck('name', 'id')
+                ->all();
+
+            $configs = SystemConfig::query()
+                ->whereIn('system_config_group_id', $sectionIds)
+                ->get();
+
+            /** @var SystemConfig $config */
+            foreach ($configs as $config) {
+                $fieldName = ($sectionNames[$config->system_config_group_id] ?? '').'_'.$config->name;
+                $config->value = $this->serializeSystemConfigValue($config, $data[$fieldName] ?? '');
+                $config->save();
             }
         });
 
         self::updateSystemConfigCache();
     }
 
-    public function page($search = []): array
+    public function items(array $search = []): array
     {
-        $filterMap = SystemConfig::query();
+        $query = SystemConfig::query()->with('category');
 
-        $filterMap->orderBy('system_config_group_id');
-        $filterMap->orderBy('weight', 'desc');
-        $filterMap->with('category');
+        $groupId = (int) ($search['system_config_group_id'] ?? 0);
+        if (0 !== $groupId) {
+            $query->where('system_config_group_id', $groupId);
+        }
 
-        return $filterMap->paginate()->toArray();
+        $title = trim((string) ($search['title'] ?? ''));
+        if ('' !== $title) {
+            $query->where('title', 'like', "%{$title}%");
+        }
+
+        $name = trim((string) ($search['name'] ?? ''));
+        if ('' !== $name) {
+            $query->where('name', 'like', "%{$name}%");
+        }
+
+        $type = trim((string) ($search['type'] ?? ''));
+        if ('' !== $type) {
+            $query->where('type', $type);
+        }
+
+        return $query
+            ->orderBy('system_config_group_id')
+            ->orderBy('weight', 'desc')
+            ->paginate()
+            ->toArray();
     }
 
     /**
@@ -164,28 +196,31 @@ class SystemConfigService
     /**
      * 通过分组名称获取分组数据.
      *
-     * @param $name
-     * @param null|mixed $default
+     * @param mixed $default
      *
      * @return array|mixed
      */
-    public static function byGroupName($name, $default = null)
+    public static function byGroupName(string $name, $default = null)
     {
-        $cate = SystemConfigGroup::query()->with(['children', 'children.configs'])->where('name', $name)->first();
-        if (!$cate) {
+        $group = SystemConfigGroup::query()
+            ->with(['children', 'children.configs'])
+            ->where('name', $name)
+            ->first();
+        if (!$group) {
             return $default;
         }
-        $cate = $cate->toArray();
-        $children = $cate['children'];
+
+        $groupData = $group->toArray();
+        $children = $groupData['children'];
         $data = [];
         foreach ($children as $child) {
-            $temp = [];
+            $sectionValues = [];
             if ($child['configs'] && \count($child['configs']) > 0) {
                 foreach ($child['configs'] as $item) {
-                    $temp[$item['name']] = self::resolveRuntimeValue($item['type'] ?? 'text', $item['value'] ?? null);
+                    $sectionValues[$item['name']] = self::resolveRuntimeValue($item['type'] ?? 'text', $item['value'] ?? null);
                 }
             }
-            $data[$child['name']] = $temp;
+            $data[$child['name']] = $sectionValues;
         }
 
         return $data;
@@ -226,15 +261,14 @@ class SystemConfigService
     /**
      * 编辑配置信息.
      *
-     * @param $id
-     * @param array $data
+     * @param array<string, mixed> $data
      */
-    public function edit($id, array $data): void
+    public function edit(int $id, array $data): void
     {
         try {
             DB::transaction(function () use ($id, $data): void {
-                $filter = SystemConfig::query()->findOrFail($id);
-                $filter->fill($data)->save();
+                $config = SystemConfig::query()->findOrFail($id);
+                $config->fill($data)->save();
             });
         } catch (\Exception $e) {
             throw new ServiceException($e->getMessage());
@@ -304,8 +338,8 @@ class SystemConfigService
      */
     public static function getSystemConfigCache()
     {
-        if (Cache::has('systemConfig')) {
-            $data = Cache::get('systemConfig');
+        if (Cache::has(self::CACHE_KEY)) {
+            $data = Cache::get(self::CACHE_KEY);
             if (null !== $data) {
                 return $data;
             }
@@ -347,7 +381,7 @@ class SystemConfigService
 
         $data['__group_names__'] = $keys;
 
-        Cache::forever('systemConfig', $data);
+        Cache::forever(self::CACHE_KEY, $data);
 
         return $data;
     }
@@ -385,7 +419,7 @@ class SystemConfigService
     }
 
     /**
-     * 将 Setting 元数据转换为 easy 可识别的 schema 蓝图。
+     * 将系统配置项元数据转换为 easy 可识别的 schema 蓝图。
      *
      * 配置系统本质上不是普通资源 CRUD，而是“单例表单”。
      * 因此这里只借用 easy 的 schema 编译、标准化和字段协议输出能力，
@@ -439,7 +473,7 @@ class SystemConfigService
     /**
      * 生成单个配置项的 easy 字段定义。
      *
-     * 这里会把历史 Setting.type 映射成 easy 的标准字段类型，
+     * 这里会把历史系统配置字段类型映射成 easy 的标准字段类型，
      * 并把 extra.options 收敛为统一的 options 协议。
      *
      * @return array<string, mixed>
@@ -532,7 +566,7 @@ class SystemConfigService
     }
 
     /**
-     * 将请求值写回 Setting.value。
+     * 将请求值写回 SystemConfig.value。
      *
      * 保存时统一先做字段级归一化，再转换为数据库可存储格式，
      * 这样读取缓存与接口详情时可以得到稳定结果。

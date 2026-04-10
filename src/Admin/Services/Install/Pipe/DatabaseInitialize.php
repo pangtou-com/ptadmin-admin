@@ -21,34 +21,39 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
-namespace PTAdmin\Admin\Models;
+namespace PTAdmin\Admin\Services\Install\Pipe;
 
-/**
- * @property string $title
- * @property string $name
- * @property int    $weight
- * @property int    $parent_id
- * @property string $addon_code
- * @property string $intro
- * @property int    $status
- */
-class SystemConfigGroup extends \PTAdmin\Foundation\Database\Models\AbstractModel
+use Illuminate\Support\Facades\Artisan;
+use PTAdmin\Admin\Support\Concerns\FormatInstallOutput;
+
+class DatabaseInitialize
 {
-    protected $table = 'system_config_groups';
-    protected $fillable = ['title', 'name', 'weight', 'parent_id', 'addon_code', 'intro', 'status'];
+    use FormatInstallOutput;
 
-    public function configs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function handle($data, \Closure $next): void
     {
-        return $this->hasMany(SystemConfig::class, 'system_config_group_id', 'id');
+        if (!$this->migrate()) {
+            return;
+        }
+
+        $next($data);
     }
 
-    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
+    /**
+     * 执行迁移命令.
+     */
+    private function migrate(): bool
     {
-        return $this->hasMany(self::class, 'parent_id', 'id');
-    }
+        try {
+            $this->process('正在执行数据库迁移命令...');
 
-    public static function getParentLists(int $id): array
-    {
-        return array_to_options(self::query()->where('parent_id', 0)->where('id', '<>', $id)->get()->toArray());
+            Artisan::call('migrate', ['--force' => true]);
+        } catch (\Exception $exception) {
+            $this->error('迁移命令执行失败:'.$exception->getMessage());
+
+            return false;
+        }
+
+        return true;
     }
 }
