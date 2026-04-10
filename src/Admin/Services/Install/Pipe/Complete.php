@@ -52,13 +52,7 @@ class Complete
             $installedMarkerWritten = true;
 
             $this->persistEnvFile($data);
-
-            Artisan::call('cache:clear');
-            Artisan::call('config:clear');
-            Artisan::call('event:clear');
-            Artisan::call('route:clear');
-            Artisan::call('view:clear');
-            Artisan::call('permission:cache-reset');
+            $this->resetRuntimeCaches();
             $this->success('安装成功');
 
             $next($data);
@@ -86,6 +80,21 @@ class Complete
         $saved = File::put($envPath, $envContent);
         if (false === $saved || !File::exists($envPath)) {
             throw new \RuntimeException(sprintf('无法写入环境文件：%s', $envPath));
+        }
+    }
+
+    /**
+     * 安装完成后清理运行时缓存。
+     * 某些宿主项目未集成权限缓存命令，跳过即可，不影响安装结果。
+     */
+    private function resetRuntimeCaches(): void
+    {
+        foreach (['cache:clear', 'config:clear', 'event:clear', 'route:clear', 'view:clear'] as $command) {
+            Artisan::call($command);
+        }
+
+        if (array_key_exists('permission:cache-reset', Artisan::all())) {
+            Artisan::call('permission:cache-reset');
         }
     }
 }

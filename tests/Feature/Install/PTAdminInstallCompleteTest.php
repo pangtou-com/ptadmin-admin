@@ -56,6 +56,11 @@ class PTAdminInstallCompleteTest extends TestCase
         $commands = [];
         $envPath = storage_path('install-test.env');
 
+        Artisan::shouldReceive('all')
+            ->once()
+            ->andReturn([
+                'permission:cache-reset' => new \stdClass(),
+            ]);
         Artisan::shouldReceive('call')
             ->andReturnUsing(function (string $command, array $arguments = []) use (&$commands): int {
                 $commands[] = [$command, $arguments];
@@ -96,6 +101,48 @@ class PTAdminInstallCompleteTest extends TestCase
         ], $commands);
 
         @unlink($envPath);
+    }
+
+    public function test_complete_skips_permission_cache_reset_when_command_is_unavailable(): void
+    {
+        $commands = [];
+        $envPath = storage_path('install-test-no-permission.env');
+
+        Artisan::shouldReceive('all')
+            ->once()
+            ->andReturn([]);
+        Artisan::shouldReceive('call')
+            ->andReturnUsing(function (string $command, array $arguments = []) use (&$commands): int {
+                $commands[] = [$command, $arguments];
+
+                return 0;
+            });
+        Artisan::shouldReceive('output')
+            ->never();
+
+        $pipe = new Complete();
+
+        ob_start();
+        $pipe->handle([
+            'username' => 'admin',
+            'password' => 'secret123',
+            '__install_env_path' => $envPath,
+            '__install_env_content' => "APP_NAME=PTAdmin\n",
+        ], static function (): void {
+        });
+        ob_end_clean();
+
+        self::assertSame([
+            ['admin:init', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
+            ['cache:clear', []],
+            ['config:clear', []],
+            ['event:clear', []],
+            ['route:clear', []],
+            ['view:clear', []],
+        ], $commands);
+
+        @unlink($envPath);
+        @unlink($this->installedMarkerPath());
     }
 
     private function installedMarkerPath(): string
