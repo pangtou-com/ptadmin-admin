@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/ptadmin.iml" filepath="$PROJECT_DIR$/.idea/ptadmin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ptadmin-addon/.idea/ptadmin-addon.iml" filepath="$PROJECT_DIR$/../ptadmin-addon/.idea/ptadmin-addon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ptadmin-easy/.idea/ptadmin-easy.iml" filepath="$PROJECT_DIR$/../ptadmin-easy/.idea/ptadmin-easy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ptadmin-skeleton/.idea/ptadmin-skeleton.iml" filepath="$PROJECT_DIR$/../ptadmin-skeleton/.idea/ptadmin-skeleton.iml" />
+    </modules>
+  </component>
+</project>

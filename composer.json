@@ -1,0 +1,54 @@
+{
+    "name": "ptadmin/admin",
+    "description": "PTAdmin admin package for Laravel.",
+    "type": "library",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Zane",
+            "email": "873934580@qq.com"
+        }
+    ],
+    "require": {
+        "php": "^7.4|^8.0",
+        "ext-json": "*",
+        "laravel/framework": "^8.75",
+        "ptadmin/addon": "^1.0",
+        "ptadmin/easy": "^1.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.44",
+        "phpunit/phpunit": "^9.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "PTAdmin\\Admin\\": "src/Admin/",
+            "PTAdmin\\Foundation\\": "src/Foundation/",
+            "PTAdmin\\Contracts\\": "src/Contracts/",
+            "PTAdmin\\Support\\": "src/Support/"
+        },
+        "files": [
+            "src/Support/Helpers/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PTAdmin\\Admin\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "PTAdmin\\Admin\\Providers\\PTAdminServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit -c phpunit.xml.dist"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

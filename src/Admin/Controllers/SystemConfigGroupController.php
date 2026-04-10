@@ -1,0 +1,140 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ *  PTAdmin
+ *  ============================================================================
+ *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
+ *  网站地址: https://www.pangtou.com
+ *  ----------------------------------------------------------------------------
+ *  尊敬的用户，
+ *     感谢您对我们产品的关注与支持。我们希望提醒您，在商业用途中使用我们的产品时，请务必前往官方渠道购买正版授权。
+ *  购买正版授权不仅有助于支持我们不断提供更好的产品和服务，更能够确保您在使用过程中不会引起不必要的法律纠纷。
+ *  正版授权是保障您合法使用产品的最佳方式，也有助于维护您的权益和公司的声誉。我们一直致力于为客户提供高质量的解决方案，并通过正版授权机制确保产品的可靠性和安全性。
+ *  如果您有任何疑问或需要帮助，我们的客户服务团队将随时为您提供支持。感谢您的理解与合作。
+ *  诚挚问候，
+ *  【重庆胖头网络技术有限公司】
+ *  ============================================================================
+ *  Author:    Zane
+ *  Homepage:  https://www.pangtou.com
+ *  Email:     vip@pangtou.com
+ */
+
+namespace PTAdmin\Admin\Controllers;
+
+use Illuminate\Validation\Rule;
+use PTAdmin\Admin\Models\SystemConfigGroup;
+use PTAdmin\Admin\Services\SystemConfigGroupService;
+use PTAdmin\Foundation\Response\AdminResponse;
+
+class SystemConfigGroupController extends AbstractBackgroundController
+{
+    protected $systemConfigGroupService;
+
+    public function __construct(SystemConfigGroupService $systemConfigGroupService)
+    {
+        $this->systemConfigGroupService = $systemConfigGroupService;
+    }
+
+    public function index(): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success(['results' => $this->systemConfigGroupService->tree()]);
+    }
+
+    /**
+     * 新增系统配置分组。
+     */
+    public function store(): \Illuminate\Http\JsonResponse
+    {
+        $data = request()->validate($this->rules(), $this->messages());
+
+        return AdminResponse::success($this->systemConfigGroupService->store($data)->toArray());
+    }
+
+    /**
+     * 编辑系统配置分组。
+     */
+    public function edit(int $id): \Illuminate\Http\JsonResponse
+    {
+        $data = request()->validate($this->rules(), $this->messages());
+
+        return AdminResponse::success($this->systemConfigGroupService->edit($id, $data)->toArray());
+    }
+
+    public function byConfigureCategoryId($id): \Illuminate\Http\JsonResponse
+    {
+        $data = $this->systemConfigGroupService->byParentId($id);
+
+        return AdminResponse::success($data);
+    }
+
+    /**
+     * 通过根节点ID获取当前节点下的分类信息和分类字段信息.
+     *
+     * @param $id
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getRootConfigureCategoryId($id): \Illuminate\Http\JsonResponse
+    {
+        $results = $this->systemConfigGroupService->getRootConfigureCategoryId($id);
+
+        return AdminResponse::success($results);
+    }
+
+    public function delete(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $ids = $this->getIds();
+            $this->systemConfigGroupService->del(reset($ids));
+        } catch (\Throwable $e) {
+            return AdminResponse::fail($e->getMessage(), 10000);
+        }
+
+        return AdminResponse::success();
+    }
+
+    protected function rules(): array
+    {
+        $id = (int) request()->route('id');
+        $parentId = (int) request()->get('parent_id');
+
+        return [
+            'title' => ['required', 'max:255', Rule::unique(SystemConfigGroup::class)->whereNull('deleted_at')->ignore($id)],
+            'name' => [
+                'required', 'max:32', 'regex:/^[a-zA-Z][a-zA-Z0-9_]*$/',
+                Rule::unique(SystemConfigGroup::class)->whereNull('deleted_at')->ignore($id),
+            ],
+            'weight' => 'integer|min:0|max:255',
+            'parent_id' => 0 !== $parentId ? [
+                Rule::exists(SystemConfigGroup::class, 'id')->whereNull('deleted_at'),
+                function ($attribute, $value, $fail) use ($id): void {
+                    if ((int) $value === $id) {
+                        $fail('上级分组不能为自身');
+                    }
+                },
+            ] : [],
+            'intro' => 'max:255',
+            'status' => 'in:0,1',
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'title.required' => '请输入配置名称',
+            'title.max' => '配置名称最多不能超过255个字符',
+            'title.unique' => '配置名称已存在',
+            'name.required' => '请输入配置标识',
+            'name.max' => '配置标识最多不能超过32个字符',
+            'name.regex' => '配置标识只能以字母开头，且只能包含字母、数字和下划线',
+            'name.unique' => '配置标识已存在',
+            'weight.integer' => '权重必须为整数',
+            'weight.min' => '权重不能小于0',
+            'weight.max' => '权重不能大于255',
+            'intro.max' => '分组描述最多不能超过255个字符',
+            'status.in' => '分组状态值错误',
+        ];
+    }
+}

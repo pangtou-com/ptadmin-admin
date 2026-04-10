@@ -1,0 +1,39 @@
+name: Full Sync to Gitee
+
+on:
+    push:
+        branches:
+            - '**'
+        tags:
+            - '*'
+    workflow_dispatch:
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Sync to Gitee
+              env:
+                  GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+                  GITEE_USER: ${{ secrets.GITEE_USER }}
+              run: |
+                  if [ -z "${GITEE_TOKEN}" ] || [ -z "${GITEE_USER}" ]; then
+                    echo "Missing GITEE_TOKEN or GITEE_USER secret"
+                    exit 1
+                  fi
+
+                  REPO_NAME=${GITHUB_REPOSITORY#*/}
+                  REMOTE_URL="https://${GITEE_USER}:${GITEE_TOKEN}@gitee.com/${GITEE_USER}/${REPO_NAME}.git"
+
+                  git remote add gitee "${REMOTE_URL}" 2>/dev/null || git remote set-url gitee "${REMOTE_URL}"
+
+                  # 同步所有分支
+                  git push gitee --all
+
+                  # 同步所有标签
+                  git push gitee --tags
