@@ -2,6 +2,4 @@
 
 declare(strict_types=1);
 
-return [
-    'success' => '操作成功',
-];
+return require __DIR__.'/../zh_CN/common.php';

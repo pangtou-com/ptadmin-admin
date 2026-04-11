@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  *  PTAdmin
  *  ============================================================================
- *  版权所有 2022-2026 重庆胖头网络技术有限公司，并保留所有权利。
+ *  版权所有 2022-2024 重庆胖头网络技术有限公司，并保留所有权利。
  *  网站地址: https://www.pangtou.com
  *  ----------------------------------------------------------------------------
  *  尊敬的用户，
@@ -21,30 +21,33 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
-namespace PTAdmin\Admin\Requests;
+namespace PTAdmin\Admin\Models;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-use PTAdmin\Admin\Models\System;
-
-class SystemRequest extends FormRequest
+/**
+ * @property int $id
+ * @property int $admin_id
+ * @property int $login_at
+ * @property int $login_ip
+ * @property int $status
+ */
+class AdminLoginLog extends \PTAdmin\Foundation\Database\Models\AbstractModel
 {
-    public function rules(): array
-    {
-        $id = (int) $this->route('id');
+    protected $table = 'admin_login_logs';
 
-        return [
-            'username' => ['required', 'max:255', Rule::unique(System::class)->ignore($id)],
-            'nickname' => ['required', 'max:255'],
-            'role_id' => ['integer'],
-            'password' => [
-                Rule::requiredIf(function () use ($id) {
-                    return 0 === $id;
-                }),
-                'max: 255',
-            ],
-            'mobile' => 'max:20',
-            'avatar' => 'max:255',
-        ];
+    protected $fillable = ['admin_id', 'login_at', 'login_ip', 'status'];
+
+    public function getLoginAtAttribute()
+    {
+        return date('Y-m-d H:i:s', (int) $this->attributes['login_at']);
+    }
+
+    public function getLoginIpAttribute(): string
+    {
+        return long2ip((int) $this->attributes['login_ip']);
+    }
+
+    public function admin(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'admin_id', 'id');
     }
 }

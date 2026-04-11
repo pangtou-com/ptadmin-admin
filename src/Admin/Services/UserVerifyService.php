@@ -115,17 +115,17 @@ class UserVerifyService
             ->where('scene', $scene)
             ->orderBy('id', 'desc')->first();
         if (!$model) {
-            throw new BackgroundException('验证码错误');
+            throw new BackgroundException(__('ptadmin::background.verify_code_invalid'));
         }
         $model->increment('verify_num');
         if ($model->verify_num > $obj->verifyNum || $model->status > 0) {
-            throw new BackgroundException('验证码已失效');
+            throw new BackgroundException(__('ptadmin::background.verify_code_disabled'));
         }
         if ($model->send_at < $time) {
-            throw new BackgroundException('验证码已过期');
+            throw new BackgroundException(__('ptadmin::background.verify_code_expired'));
         }
         if (data_get($model->send_param, 'code') !== $code) {
-            throw new BackgroundException('验证码错误');
+            throw new BackgroundException(__('ptadmin::background.verify_code_invalid'));
         }
 
         $model->status = 1;
@@ -148,7 +148,7 @@ class UserVerifyService
             ->where('scene', $scene)
             ->where('created_at', '>=', $time)->exists();
         if ($exists) {
-            throw new BackgroundException('请不要频繁操作');
+            throw new BackgroundException(__('ptadmin::background.too_many_requests'));
         }
     }
 
@@ -168,7 +168,7 @@ class UserVerifyService
             ->where('ip', $ip)
             ->where('created_at', '>=', $time)->count();
         if ($count >= $this->verifyNum * 2) {
-            throw new BackgroundException('请不要频繁操作');
+            throw new BackgroundException(__('ptadmin::background.too_many_requests'));
         }
     }
 

@@ -27,26 +27,26 @@ class PTAdminAuthorizationApiTest extends TestCase
 
     public function test_status_endpoint_requires_admin_login(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->migratePackageTables();
 
         $this->withHeaders($this->jsonApiHeaders())
             ->getJson('/system/auth/status')
             ->assertOk()
             ->assertJson([
-                'code' => 10001,
+                'code' => 419,
                 'message' => '未登录',
             ]);
     }
 
     public function test_login_and_authenticated_authorization_endpoints_return_expected_payloads(): void
     {
-        $this->createSystemsTable();
-        $this->createSystemLogsTable();
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder',
             'nickname' => 'Founder',
             'password' => 'secret123',
@@ -71,14 +71,14 @@ class PTAdminAuthorizationApiTest extends TestCase
             ->assertJson([
                 'code' => 0,
                 'data' => [
-                    'systems' => 1,
+                    'admins' => 1,
                     'founders' => 1,
                     'admin_resources' => AdminResource::query()->count(),
                 ],
             ]);
 
         $resourceResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/user/resources');
+            ->getJson('/system/admin/resources');
 
         $resourceResponse->assertOk()->assertJson([
             'code' => 0,
@@ -88,8 +88,8 @@ class PTAdminAuthorizationApiTest extends TestCase
         ]);
 
         self::assertGreaterThan(0, count((array) $resourceResponse->json('data.resources')));
-        self::assertDatabaseHas('system_logs', [
-            'system_id' => $founder->id,
+        self::assertDatabaseHas('admin_login_logs', [
+            'admin_id' => $founder->id,
             'status' => 1,
         ]);
     }

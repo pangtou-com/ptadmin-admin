@@ -46,20 +46,20 @@ class DatabaseInitialize
     private function migrate(): bool
     {
         try {
-            $this->process('正在执行数据库迁移命令...');
+            $this->process(__('ptadmin::install.logs.migrate_running'));
 
             $status = Artisan::call('migrate', ['--force' => true]);
             if (0 !== $status) {
                 $message = trim(Artisan::output());
                 if ('' === $message) {
-                    $message = sprintf('迁移命令返回非零状态码: %d', $status);
+                    $message = __('ptadmin::install.logs.migrate_non_zero', ['status' => $status]);
                 }
 
                 Log::error('PTAdmin install migrate failed', [
                     'status' => $status,
                     'output' => $message,
                 ]);
-                $this->error('迁移命令执行失败:'.$message);
+                $this->error(__('ptadmin::install.logs.migrate_failed', ['message' => $message]));
 
                 return false;
             }
@@ -67,7 +67,7 @@ class DatabaseInitialize
             Log::error('PTAdmin install migrate threw exception', [
                 'message' => $exception->getMessage(),
             ]);
-            $this->error('迁移命令执行失败:'.$exception->getMessage());
+            $this->error(__('ptadmin::install.logs.migrate_failed', ['message' => $exception->getMessage()]));
 
             return false;
         }

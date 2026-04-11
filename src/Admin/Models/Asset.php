@@ -70,9 +70,11 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
                 : (string) config('constant.file_image', '');
         }
 
+        $disk = $this->resolveLocalDisk();
+
         if (Str::startsWith($this->attributes['mime'], 'image')) {
-            if (file_exists(Storage::path($this->attributes['path']))) {
-                return url(Storage::url(ThumbService::save($this->attributes['path'])));
+            if (file_exists(Storage::disk($disk)->path($this->attributes['path']))) {
+                return url(Storage::disk($disk)->url(ThumbService::save($this->attributes['path'])));
             }
 
             return (string) config('constant.empty_image', '');
@@ -101,7 +103,7 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
             }
         }
 
-        return url(Storage::url($this->attributes['path']));
+        return url(Storage::disk($this->resolveLocalDisk())->url($this->attributes['path']));
     }
 
     public function getSizeAttribute(): string
@@ -133,5 +135,12 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
             'code' => $segments[1],
             'disk' => $segments[2],
         ];
+    }
+
+    private function resolveLocalDisk(): string
+    {
+        $driver = trim((string) ($this->attributes['driver'] ?? ''));
+
+        return '' === $driver ? (string) config('filesystems.default', 'public') : $driver;
     }
 }

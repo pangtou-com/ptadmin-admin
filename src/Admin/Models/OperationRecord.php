@@ -26,7 +26,7 @@ namespace PTAdmin\Admin\Models;
 /**
  * 操作日志记录表.
  *
- * @property int    $system_id
+ * @property int    $admin_id
  * @property string $nickname
  * @property string $ip
  * @property string $url

@@ -135,10 +135,10 @@ class SystemConfigGroupService
     {
         $dao = SystemConfigGroup::query()->findOrFail($id);
         if (SystemConfigGroup::query()->where('parent_id', $id)->exists()) {
-            throw new BackgroundException('请先删除子级配置');
+            throw new BackgroundException(__('ptadmin::background.delete_child_group_first'));
         }
         if (SystemConfig::query()->where('system_config_group_id', $id)->exists()) {
-            throw new BackgroundException('请删除配置项后再删除分类');
+            throw new BackgroundException(__('ptadmin::background.delete_config_items_first'));
         }
         $dao->delete();
     }

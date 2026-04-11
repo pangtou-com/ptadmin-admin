@@ -1,6 +1,6 @@
 <div id="install-dialog-mask" class="install-dialog-mask" aria-hidden="true">
     <div class="install-dialog">
-        <div class="install-dialog-header">正在执行安装程序</div>
+        <div class="install-dialog-header">{{ __('ptadmin::install.stream.processing') }}</div>
         <div id="install-console" class="install-console"></div>
         <div id="install-dialog-actions" class="install-dialog-actions" style="display: none;"></div>
     </div>
@@ -14,6 +14,18 @@
         const dialogMask = document.getElementById('install-dialog-mask');
         const consoleBox = document.getElementById('install-console');
         const dialogActions = document.getElementById('install-dialog-actions');
+        const i18n = {
+            requestSent: @json(__('ptadmin::install.stream.request_sent')),
+            parseFailed: @json(__('ptadmin::install.stream.parse_failed', ['message' => '__MESSAGE__'])),
+            generalFailed: @json(__('ptadmin::install.stream.general_failed')),
+            completed: @json(__('ptadmin::install.stream.completed')),
+            close: @json(__('ptadmin::install.stream.close')),
+            home: @json(__('ptadmin::install.stream.home')),
+            admin: @json(__('ptadmin::install.stream.admin')),
+            requestFailed: @json(__('ptadmin::install.stream.request_failed', ['status' => '__STATUS__'])),
+            streamUnsupported: @json(__('ptadmin::install.stream.stream_unsupported')),
+            sendFailed: @json(__('ptadmin::install.stream.send_failed'))
+        };
 
         if (!form || !submitButton || !dialogMask || !consoleBox || !dialogActions) {
             return;
@@ -64,7 +76,7 @@
                     } catch (error) {
                         data = {
                             type: 'error',
-                            message: '解析失败: ' + error.toString()
+                            message: i18n.parseFailed.replace('__MESSAGE__', error.toString())
                         };
                     }
                 }
@@ -79,11 +91,11 @@
                 this.append(data.type || 'info', data.message || '');
             },
             fail: function () {
-                this.append('error', '安装失败，请检查上方日志后重试。');
+                this.append('error', i18n.generalFailed);
                 this.renderActions(false);
             },
             success: function () {
-                const row = this.append('success', '安装完成，准备跳转。');
+                const row = this.append('success', i18n.completed);
                 this.renderActions(true);
 
                 let timer = 8;
@@ -108,7 +120,7 @@
                 const closeButton = document.createElement('button');
                 closeButton.type = 'button';
                 closeButton.className = 'install-button install-button-secondary';
-                closeButton.textContent = isSuccess ? '返回首页' : '关闭窗口';
+                closeButton.textContent = isSuccess ? i18n.home : i18n.close;
                 closeButton.addEventListener('click', this.reset.bind(this));
                 dialogActions.appendChild(closeButton);
 
@@ -119,7 +131,7 @@
                 const adminButton = document.createElement('button');
                 adminButton.type = 'button';
                 adminButton.className = 'install-button install-button-primary';
-                adminButton.textContent = '进入管理后台';
+                adminButton.textContent = i18n.admin;
                 adminButton.addEventListener('click', function () {
                     const prefix = form.querySelector('input[name="ptadmin_web_prefix"]');
                     window.location.href = '/' + (prefix && prefix.value ? prefix.value : '');
@@ -133,7 +145,7 @@
             eventAction.open();
             eventAction.state = 1;
             eventAction.sendData = new FormData(form);
-            eventAction.process({type: 'info', message: '发送安装请求'});
+            eventAction.process({type: 'info', message: i18n.requestSent});
             eventAction.send(eventAction.sendData);
         });
 
@@ -150,11 +162,11 @@
             fetch(url, {method: 'POST', body: formData})
                 .then(function (response) {
                     if (!response.ok) {
-                        throw new Error('安装请求失败，状态码: ' + response.status);
+                        throw new Error(i18n.requestFailed.replace('__STATUS__', String(response.status)));
                     }
 
                     if (!response.body) {
-                        throw new Error('浏览器不支持流式响应');
+                        throw new Error(i18n.streamUnsupported);
                     }
 
                     const reader = response.body.getReader();
@@ -219,13 +231,13 @@
                 flushBuffer();
                 flushRemainingBuffer();
                 if (xhr.status < 200 || xhr.status >= 300) {
-                    eventAction.process({type: 'error', message: '安装请求失败，状态码: ' + xhr.status});
+                    eventAction.process({type: 'error', message: i18n.requestFailed.replace('__STATUS__', String(xhr.status))});
                 }
                 complete();
             };
 
             xhr.onerror = function () {
-                eventAction.process({type: 'error', message: '安装请求发送失败'});
+                eventAction.process({type: 'error', message: i18n.sendFailed});
                 eventAction.fail();
             };
 

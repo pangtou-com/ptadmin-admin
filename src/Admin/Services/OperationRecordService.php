@@ -75,7 +75,7 @@ class OperationRecordService
             $data['action'] = $route->getActionMethod();
         }
         if (AdminAuth::check()) {
-            $data['system_id'] = AdminAuth::user()->id;
+            $data['admin_id'] = AdminAuth::user()->id;
             $data['nickname'] = AdminAuth::user()->nickname;
         }
         $data['ip'] = (int) ip2long($request->getClientIp());

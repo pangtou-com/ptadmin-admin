@@ -11,7 +11,7 @@ class PTAdminOperationRecordApiTest extends TestCase
 {
     public function test_operation_endpoints_require_admin_login(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
@@ -19,19 +19,19 @@ class PTAdminOperationRecordApiTest extends TestCase
             ->getJson('/system/operations')
             ->assertOk()
             ->assertJson([
-                'code' => 10001,
+                'code' => 419,
                 'message' => '未登录',
             ]);
     }
 
     public function test_operation_list_endpoint_returns_paginated_results(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_operation_list',
             'nickname' => 'Founder Operation',
             'is_founder' => 1,
@@ -39,7 +39,7 @@ class PTAdminOperationRecordApiTest extends TestCase
         $token = $this->issueAdminToken($founder);
 
         OperationRecord::query()->create([
-            'system_id' => $founder->id,
+            'admin_id' => $founder->id,
             'nickname' => $founder->nickname,
             'ip' => (int) ip2long('127.0.0.1'),
             'url' => '/system/roles',
@@ -55,7 +55,7 @@ class PTAdminOperationRecordApiTest extends TestCase
         ]);
 
         OperationRecord::query()->create([
-            'system_id' => $founder->id,
+            'admin_id' => $founder->id,
             'nickname' => $founder->nickname,
             'ip' => (int) ip2long('127.0.0.2'),
             'url' => '/system/resources',
@@ -87,12 +87,12 @@ class PTAdminOperationRecordApiTest extends TestCase
 
     public function test_operation_details_endpoint_returns_decoded_payloads(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_operation_details',
             'nickname' => 'Founder Operation Details',
             'is_founder' => 1,
@@ -100,18 +100,18 @@ class PTAdminOperationRecordApiTest extends TestCase
         $token = $this->issueAdminToken($founder);
 
         $record = OperationRecord::query()->create([
-            'system_id' => $founder->id,
+            'admin_id' => $founder->id,
             'nickname' => $founder->nickname,
             'ip' => (int) ip2long('127.0.0.10'),
-            'url' => '/system/systems/10',
+            'url' => '/system/admins/10',
             'title' => '账号详情',
             'method' => 'PUT',
-            'controller' => 'PTAdmin\\Admin\\Controllers\\SystemController',
+            'controller' => 'PTAdmin\\Admin\\Controllers\\AdminController',
             'action' => 'update',
             'request' => json_encode(['nickname' => '新昵称', 'status' => 1], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'response' => json_encode(['code' => 0, 'message' => '操作成功'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'sql_param' => json_encode([
-                ['sql' => 'update systems set nickname = ? where id = ?', 'bindings' => ['新昵称', 10]],
+                ['sql' => 'update admins set nickname = ? where id = ?', 'bindings' => ['新昵称', 10]],
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'response_code' => 200,
             'response_time' => 30.21,
@@ -124,9 +124,9 @@ class PTAdminOperationRecordApiTest extends TestCase
             'code' => 0,
             'data' => [
                 'id' => $record->id,
-                'system_id' => $founder->id,
+                'admin_id' => $founder->id,
                 'nickname' => $founder->nickname,
-                'url' => '/system/systems/10',
+                'url' => '/system/admins/10',
                 'title' => '账号详情',
                 'method' => 'PUT',
                 'response_code' => 200,
@@ -136,7 +136,7 @@ class PTAdminOperationRecordApiTest extends TestCase
         self::assertSame('新昵称', $response->json('data.request.nickname'));
         self::assertSame(1, $response->json('data.request.status'));
         self::assertSame('操作成功', $response->json('data.response.message'));
-        self::assertSame('update systems set nickname = ? where id = ?', $response->json('data.sql_param.0.sql'));
+        self::assertSame('update admins set nickname = ? where id = ?', $response->json('data.sql_param.0.sql'));
         self::assertSame(['新昵称', 10], $response->json('data.sql_param.0.bindings'));
     }
 }

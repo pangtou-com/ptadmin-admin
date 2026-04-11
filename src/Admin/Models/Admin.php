@@ -44,7 +44,7 @@ use PTAdmin\Foundation\Auth\AdminAuth;
  * @property int    $is_founder
  * @property int    $status
  */
-class System extends Authenticate
+class Admin extends Authenticate
 {
     use HasApiTokens;
     use SoftDeletes;
@@ -133,15 +133,15 @@ class System extends Authenticate
 
     protected static function booted(): void
     {
-        static::deleted(function (self $system): void {
+        static::deleted(function (self $admin): void {
             if (Schema::hasTable('admin_user_roles')) {
-                app(AdminRoleServiceInterface::class)->deleteUserRoles((int) $system->id);
+                app(AdminRoleServiceInterface::class)->deleteUserRoles((int) $admin->id);
             }
 
             if (Schema::hasTable('admin_grants')) {
                 AdminGrant::query()
                     ->where('subject_type', 'user')
-                    ->where('subject_id', (int) $system->id)
+                    ->where('subject_id', (int) $admin->id)
                     ->delete();
             }
         });

@@ -39,13 +39,7 @@ class InstallController
     private const AGREEMENT_TTL_SECONDS = 300;
 
     private RequirementService $requirementService;
-
-    private array $tabs = [
-        ['title' => '使用协议', 'icon' => 'layui-icon-read'],
-        ['title' => '环境检查', 'icon' => 'layui-icon-survey'],
-        ['title' => '参数配置', 'icon' => 'layui-icon-set'],
-        ['title' => '完成安装', 'icon' => 'layui-icon-template-1'],
-    ];
+    private array $tabs = [];
 
     public function __construct(RequirementService $requirementService)
     {
@@ -54,6 +48,12 @@ class InstallController
         }
 
         $this->requirementService = $requirementService;
+        $this->tabs = [
+            ['title' => __('ptadmin::install.steps.protocol'), 'icon' => 'layui-icon-read'],
+            ['title' => __('ptadmin::install.steps.requirements'), 'icon' => 'layui-icon-survey'],
+            ['title' => __('ptadmin::install.steps.environment'), 'icon' => 'layui-icon-set'],
+            ['title' => __('ptadmin::install.steps.finish'), 'icon' => 'layui-icon-template-1'],
+        ];
         view()->share(['tabs' => $this->tabs]);
     }
 
@@ -132,7 +132,7 @@ class InstallController
                 if (!$this->hasAcceptedAgreementRecently()) {
                     $this->sendStreamMessage([
                         'type' => 'error',
-                        'message' => '请先阅读并同意使用协议后再继续安装。',
+                        'message' => __('ptadmin::install.stream.agreement_required'),
                         'data' => [],
                     ]);
 
@@ -142,7 +142,7 @@ class InstallController
                 if ($this->requirementService->hasFailures()) {
                     $this->sendStreamMessage([
                         'type' => 'error',
-                        'message' => '环境检查未通过，请先修复失败项后再继续安装。',
+                        'message' => __('ptadmin::install.stream.requirements_failed'),
                         'data' => [
                             'failed_items' => $this->requirementService->getFailedItems(),
                         ],
@@ -165,7 +165,7 @@ class InstallController
                 ]);
                 $this->sendStreamMessage([
                     'type' => 'error',
-                    'message' => '安装执行失败: '.$throwable->getMessage(),
+                    'message' => __('ptadmin::install.stream.install_failed', ['message' => $throwable->getMessage()]),
                     'data' => [],
                 ]);
             }

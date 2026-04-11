@@ -16,7 +16,7 @@
     <div class="install-welcome-content">
         <iframe
             id="protocol-frame"
-            title="安装协议"
+            title="{{ __('ptadmin::install.agreement_title') }}"
             style="width:100%;border:1px solid #dbe4ef;border-radius:16px;background:#fff;"
         ></iframe>
     </div>
@@ -26,9 +26,9 @@
     <div class="button-row">
         <label class="install-checkbox">
             <input type="checkbox" id="accept" value="yes">
-            <span>我已阅读，并同意协议</span>
+            <span>{{ __('ptadmin::install.agreement_accept') }}</span>
         </label>
-        <button type="button" id="next" class="install-button install-button-primary is-disabled" disabled>下一步</button>
+        <button type="button" id="next" class="install-button install-button-primary is-disabled" disabled>{{ __('ptadmin::install.next') }}</button>
     </div>
 @endsection
 
@@ -38,7 +38,8 @@
         const accept = document.getElementById('accept');
         const next = document.getElementById('next');
         const protocolFrame = document.getElementById('protocol-frame');
-        const protocolHtml = @json(view('ptadmin-install::install_protocols')->render());
+        const protocolView = @json(app()->getLocale() === 'en' ? 'ptadmin-install::install_protocols_en' : 'ptadmin-install::install_protocols');
+        const protocolHtml = @json(view(app()->getLocale() === 'en' ? 'ptadmin-install::install_protocols_en' : 'ptadmin-install::install_protocols')->render());
 
         if (protocolFrame) {
             protocolFrame.srcdoc = protocolHtml;

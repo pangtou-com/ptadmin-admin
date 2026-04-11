@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\Schema;
 use PTAdmin\Admin\Models\AdminGrant;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Services\Auth\AdminResourceService;
@@ -16,6 +15,8 @@ return new class extends Migration
             'code' => 'console',
             'name' => '仪表盘',
             'type' => ResourceType::PAGE,
+            'module' => 'dashboard',
+            'page_key' => 'console',
             'route' => 'console',
             'icon' => 'layui-icon layui-icon-console',
             'is_nav' => 1,
@@ -26,6 +27,7 @@ return new class extends Migration
             'code' => 'user',
             'name' => '用户管理',
             'type' => ResourceType::MENU,
+            'module' => 'admin',
             'icon' => 'layui-icon layui-icon-table',
             'is_nav' => 1,
             'status' => 1,
@@ -36,6 +38,8 @@ return new class extends Migration
             'name' => '会员列表',
             'parent' => 'user',
             'type' => ResourceType::PAGE,
+            'module' => 'admin',
+            'page_key' => 'users',
             'route' => 'users',
             'is_nav' => 1,
             'status' => 1,
@@ -45,6 +49,7 @@ return new class extends Migration
             'code' => 'system',
             'name' => '系统管理',
             'type' => ResourceType::MENU,
+            'module' => 'admin',
             'icon' => 'layui-icon layui-icon-engine',
             'is_nav' => 1,
             'status' => 1,
@@ -55,17 +60,21 @@ return new class extends Migration
             'name' => '系统角色',
             'parent' => 'system',
             'type' => ResourceType::PAGE,
+            'module' => 'admin',
+            'page_key' => 'roles',
             'route' => 'roles',
             'is_nav' => 1,
             'status' => 1,
             'sort' => 0,
         ],
         [
-            'code' => 'system.system',
-            'name' => '系统管理员',
+            'code' => 'system.admins',
+            'name' => '后台管理员',
             'parent' => 'system',
             'type' => ResourceType::PAGE,
-            'route' => 'systems',
+            'module' => 'admin',
+            'page_key' => 'admins',
+            'route' => 'admins',
             'is_nav' => 1,
             'status' => 1,
             'sort' => 0,
@@ -75,17 +84,21 @@ return new class extends Migration
             'name' => '菜单资源',
             'parent' => 'system',
             'type' => ResourceType::PAGE,
+            'module' => 'admin',
+            'page_key' => 'resources',
             'route' => 'resources',
             'is_nav' => 1,
             'status' => 1,
             'sort' => 0,
         ],
         [
-            'code' => 'system.login',
+            'code' => 'system.admin_login_logs',
             'name' => '登录日志',
             'parent' => 'system',
             'type' => ResourceType::PAGE,
-            'route' => 'system/login',
+            'module' => 'admin',
+            'page_key' => 'admin_login_logs',
+            'route' => 'admins/login-logs',
             'is_nav' => 1,
             'status' => 1,
             'sort' => 0,
@@ -98,6 +111,8 @@ return new class extends Migration
             'name' => '操作日志',
             'parent' => 'system',
             'type' => ResourceType::PAGE,
+            'module' => 'admin',
+            'page_key' => 'operations',
             'route' => 'operations',
             'is_nav' => 1,
             'status' => 1,
@@ -111,6 +126,8 @@ return new class extends Migration
             'name' => '系统配置',
             'parent' => 'system',
             'type' => ResourceType::PAGE,
+            'module' => 'admin',
+            'page_key' => 'system_configs',
             'route' => 'system-configs',
             'is_nav' => 1,
             'status' => 1,
@@ -121,6 +138,8 @@ return new class extends Migration
             'name' => '资源管理',
             'parent' => 'system',
             'type' => ResourceType::PAGE,
+            'module' => 'admin',
+            'page_key' => 'assets',
             'route' => 'assets',
             'is_nav' => 1,
             'status' => 1,
@@ -130,6 +149,7 @@ return new class extends Migration
             'code' => 'addon',
             'name' => '插件管理',
             'type' => ResourceType::MENU,
+            'module' => 'cloud',
             'icon' => 'layui-icon layui-icon-align-left',
             'is_nav' => 1,
             'status' => 1,
@@ -140,6 +160,8 @@ return new class extends Migration
             'name' => '插件列表',
             'parent' => 'addon',
             'type' => ResourceType::PAGE,
+            'module' => 'cloud',
+            'page_key' => 'addons',
             'route' => 'addons',
             'is_nav' => 1,
             'status' => 1,
@@ -149,20 +171,12 @@ return new class extends Migration
 
     public function up(): void
     {
-        if (!Schema::hasTable('admin_resources')) {
-            return;
-        }
-
         $service = new AdminResourceService();
         $service->registerBatch($this->definitions);
     }
 
     public function down(): void
     {
-        if (!Schema::hasTable('admin_resources')) {
-            return;
-        }
-
         $codes = array_column($this->definitions, 'code');
         $resourceIds = AdminResource::query()->whereIn('code', $codes)->pluck('id')->all();
 

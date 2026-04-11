@@ -37,7 +37,7 @@ use PTAdmin\Admin\Models\UserToken;
 class AddonGuard implements Guard
 {
     use GuardHelpers, Macroable {
-        __call as macroCall;
+        Macroable::__call as macroCall;
     }
     /** @var \Illuminate\Contracts\Auth\Factory 验证实现工厂 */
     protected $auth;
@@ -93,7 +93,7 @@ class AddonGuard implements Guard
             return $user->createToken($this->guard_name)->plainTextToken;
         }
 
-        throw new BackgroundException('用户模型必须使用【HasApiTokens trait】.');
+        throw new BackgroundException(__('ptadmin::background.has_api_tokens_required'));
     }
 
     /**
@@ -115,7 +115,7 @@ class AddonGuard implements Guard
     public function getTokenFromRequest(): ?string
     {
         $token = $this->request ? $this->request->bearerToken() : null;
-
+        
         return $this->isValidBearerToken($token) ? $token : null;
     }
 
@@ -143,10 +143,11 @@ class AddonGuard implements Guard
             return null;
         }
         $accessToken = \PTAdmin\Admin\Models\UserToken::findToken($token);
-
+        
         if (!$this->isValidAccessToken($accessToken) || !$this->supportsTokens($accessToken->target)) {
             return null;
         }
+        
         $accessToken->target->withAccessToken($accessToken);
 
         return $accessToken;
@@ -207,6 +208,7 @@ class AddonGuard implements Guard
 
         // 自定义过期时间
         $expires_at = (int) $accessToken->getRawOriginal('expires_at');
+        
         if (0 !== $expires_at) {
             // 如果为一个有效的时间戳则判断是否大于当前时间
             if (Carbon::make($expires_at)->isValid()) {
@@ -238,6 +240,7 @@ class AddonGuard implements Guard
             return true;
         }
         $provider = config("auth.guards.{$this->guard_name}.provider");
+        
         $model = config("auth.providers.{$provider}.model");
 
         return $token_able instanceof $model;

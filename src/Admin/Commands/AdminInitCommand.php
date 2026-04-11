@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use PTAdmin\Admin\Services\SystemConfigGroupService;
 use PTAdmin\Admin\Services\SystemConfigService;
-use PTAdmin\Admin\Services\SystemService;
+use PTAdmin\Admin\Services\AdminService;
 use PTAdmin\Admin\Support\SystemConfigPreset;
 
 class AdminInitCommand extends Command
@@ -71,7 +71,7 @@ class AdminInitCommand extends Command
         }
 
         try {
-            SystemService::initializeFounder($data);
+            AdminService::initializeFounder($data);
             $this->initializeSystemConfigs();
         } catch (\Exception $e) {
             $this->error($e->getMessage());
@@ -79,11 +79,11 @@ class AdminInitCommand extends Command
             return 1;
         }
 
-        $this->info('管理员账户初始化成功!');
-        $this->info('管理员账户信息:');
-        $this->info('用户账户: '.$data['username']);
-        $this->info('用户密码: '.$data['password']);
-        $this->info('请妥善保管好您的账户信息，不要泄露给其他人');
+        $this->info(__('ptadmin::common.command.admin_init_success'));
+        $this->info(__('ptadmin::common.command.admin_init_summary'));
+        $this->info(__('ptadmin::common.command.admin_init_username', ['username' => $data['username']]));
+        $this->info(__('ptadmin::common.command.admin_init_password', ['password' => $data['password']]));
+        $this->info(__('ptadmin::common.command.admin_init_keep_safe'));
 
         return 0;
     }

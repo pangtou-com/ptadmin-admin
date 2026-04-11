@@ -26,12 +26,14 @@ use PTAdmin\Admin\Controllers as Admin;
 
 // 不登录接口地址
 Route::group(['prefix' => admin_route_prefix()], function (): void {
+    Route::get('login', [Admin\LoginController::class, 'notice'])->name('admin_login_notice');
     Route::match(['post'], 'login', [Admin\LoginController::class, 'login'])->name('admin_login');
+    Route::get('modules', [Admin\AddonController::class, 'moduleManifests']);
 });
 
 Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'.\PTAdmin\Foundation\Auth\AdminAuth::getGuard()]], function (): void {
     // 获取授权菜单树
-    Route::get('/user/resources', [Admin\LoginController::class, 'userResources']);
+    Route::get('admin/resources', [Admin\LoginController::class, 'adminResources']);
     Route::get('auth/status', [Admin\AuthorizationController::class, 'status']);
 
     Route::post('upload', [Admin\UploadController::class, 'upload']);
@@ -49,25 +51,25 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     Route::get('operations', [Admin\OperationRecordController::class, 'index']);
     Route::get('operations/{id}', [Admin\OperationRecordController::class, 'details']);
 
-    // 系统人员登录日志
-    Route::get('system/login', [Admin\SystemController::class, 'loginLog']);
+    // 后台管理员登录日志
+    Route::get('admins/login-logs', [Admin\AdminController::class, 'loginLog']);
 
     // 消息通知
     Route::get('message/unread', [Admin\MessageController::class, 'unread']);
 
-    // 系统人员管理
-    Route::get('systems', [Admin\SystemController::class, 'index']);
-    Route::get('systems/{id}', [Admin\SystemController::class, 'details']);
-    Route::match(['put'], 'systems/{id}', [Admin\SystemController::class, 'edit']);
-    Route::match(['post'], 'systems', [Admin\SystemController::class, 'store']);
-    Route::match(['post'], 'systems/password', [Admin\SystemController::class, 'password']);
-    Route::post('systems-role/{id}', [Admin\SystemController::class, 'setRole']);
-    Route::put('systems-status/{id?}', [Admin\SystemController::class, 'status']);
-    Route::delete('systems/{id?}', [Admin\SystemController::class, 'delete']);
-    Route::get('my-resource', [Admin\SystemController::class, 'myResources']);
-    Route::get('systems-org/{id}', [Admin\AdminOrganizationController::class, 'userRelations']);
-    Route::post('systems-org/{id}', [Admin\AdminOrganizationController::class, 'syncUserRelations']);
-    Route::put('systems-org-primary/{id}', [Admin\AdminOrganizationController::class, 'setPrimaryRelation']);
+    // 后台管理员管理
+    Route::get('admins', [Admin\AdminController::class, 'index']);
+    Route::get('admins/{id}', [Admin\AdminController::class, 'details']);
+    Route::match(['put'], 'admins/{id}', [Admin\AdminController::class, 'edit']);
+    Route::match(['post'], 'admins', [Admin\AdminController::class, 'store']);
+    Route::match(['post'], 'admins/password', [Admin\AdminController::class, 'password']);
+    Route::post('admins-role/{id}', [Admin\AdminController::class, 'setRole']);
+    Route::put('admins-status/{id?}', [Admin\AdminController::class, 'status']);
+    Route::delete('admins/{id?}', [Admin\AdminController::class, 'delete']);
+    Route::get('my-resource', [Admin\AdminController::class, 'myResources']);
+    Route::get('admins-org/{id}', [Admin\AdminOrganizationController::class, 'userRelations']);
+    Route::post('admins-org/{id}', [Admin\AdminOrganizationController::class, 'syncUserRelations']);
+    Route::put('admins-org-primary/{id}', [Admin\AdminOrganizationController::class, 'setPrimaryRelation']);
 
     // 系统角色管理
     Route::get('roles', [Admin\RoleController::class, 'index']);
@@ -89,8 +91,8 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     Route::delete('resources/{id?}', [Admin\AdminResourceController::class, 'delete']);
     Route::get('resources-role/{id}', [Admin\AdminResourceController::class, 'getRoleResources']);
     Route::post('resources-role/{id}', [Admin\AdminResourceController::class, 'syncRoleResources']);
-    Route::get('resources-system/{id}', [Admin\AdminResourceController::class, 'getSystemResources']);
-    Route::post('resources-system/{id}', [Admin\AdminResourceController::class, 'syncSystemResources']);
+    Route::get('resources-admins/{id}', [Admin\AdminResourceController::class, 'getAdminResources']);
+    Route::post('resources-admins/{id}', [Admin\AdminResourceController::class, 'syncAdminResources']);
     Route::get('resources-tree', [Admin\AdminResourceController::class, 'tree']);
     Route::get('resources-lists', [Admin\AdminResourceController::class, 'lists']);
 

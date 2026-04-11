@@ -31,11 +31,14 @@ class AdminBootstrapAuthCommand extends Command
         );
 
         if (null !== $result['assigned_user_id']) {
-            $this->info(sprintf('角色 [%s] 已绑定到后台用户 [%d]。', $result['role']['name'], $result['assigned_user_id']));
+            $this->info(__('ptadmin::common.command.admin_auth_bound', [
+                'role' => $result['role']['name'],
+                'user_id' => $result['assigned_user_id'],
+            ]));
         }
 
-        $this->info(sprintf('默认角色 [%s] 初始化完成。', $result['role']['name']));
-        $this->info(sprintf('已授予资源数量: %d', $result['resource_count']));
+        $this->info(__('ptadmin::common.command.admin_auth_done', ['role' => $result['role']['name']]));
+        $this->info(__('ptadmin::common.command.admin_auth_resource_count', ['count' => $result['resource_count']]));
 
         return 0;
     }

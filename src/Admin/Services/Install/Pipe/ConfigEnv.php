@@ -67,19 +67,19 @@ class ConfigEnv
                     File::ensureDirectoryExists($directory, 0755, true);
                 }
             } catch (\Throwable $throwable) {
-                $this->error('运行目录准备失败: '.$throwable->getMessage());
+                $this->error(__('ptadmin::install.logs.runtime_prepare_failed', ['message' => $throwable->getMessage()]));
 
                 return false;
             }
 
             if (!is_writable($directory)) {
-                $this->error(sprintf('目录不可写: %s', $directory));
+                $this->error(__('ptadmin::install.logs.directory_not_writable', ['path' => $directory]));
 
                 return false;
             }
         }
 
-        $this->process('运行目录检查完成');
+        $this->process(__('ptadmin::install.logs.runtime_check_done'));
 
         return true;
     }
@@ -120,9 +120,9 @@ class ConfigEnv
         try {
             $data['__install_env_path'] = $envPath;
             $data['__install_env_content'] = implode(PHP_EOL, $results).PHP_EOL;
-            $this->process('准备配置文件');
+            $this->process(__('ptadmin::install.logs.prepare_env'));
         } catch (\Throwable $e) {
-            $this->error('准备配置文件失败: '.$e->getMessage());
+            $this->error(__('ptadmin::install.logs.prepare_env_failed', ['message' => $e->getMessage()]));
 
             return null;
         }
@@ -156,13 +156,13 @@ class ConfigEnv
             $connection => $settings,
         ]);
         config(['database' => $database]);
-        $this->process('测试数据库链接');
+        $this->process(__('ptadmin::install.logs.database_connect_test'));
         app('db')->purge();
 
         try {
             app('db')->connection()->getPdo();
         } catch (\Exception $e) {
-            $this->error('数据库链接失败: '.$e->getMessage());
+            $this->error(__('ptadmin::install.logs.database_connect_failed', ['message' => $e->getMessage()]));
 
             return false;
         }
@@ -191,33 +191,33 @@ class ConfigEnv
             $stmt->execute([':dbname' => $data['db_database']]);
             // 校验数据库状态，在进行安装的时候需要的是一个空的数据库
             if (false !== $stmt->fetch()) {
-                $this->info('数据库已存在，正在检测数据表是否有重复...');
+                $this->info(__('ptadmin::install.logs.database_exists_check'));
                 // 增加数据表判断，查看是否存在冲突的数据表
                 $stmt = $pdo->prepare('SELECT table_name from information_schema.tables WHERE  table_schema = :dbname');
                 $stmt->execute([':dbname' => $data['db_database']]);
                 $isAllow = true;
                 while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                     if (\in_array($this->tableName($data['db_prefix'], $row['table_name']), $tables, true)) {
-                        $this->error("数据库中已存在表【{$row['table_name']}】");
+                        $this->error(__('ptadmin::install.logs.database_table_exists', ['table' => $row['table_name']]));
                         $isAllow = false;
                     }
                 }
                 if (!$isAllow) {
-                    $this->error('数据库创建失败,请删除数据库中的数据表或准备空数据库后重新安装');
+                    $this->error(__('ptadmin::install.logs.database_not_empty'));
 
                     return false;
                 }
-                $this->process('数据表检测已完成');
+                $this->process(__('ptadmin::install.logs.database_table_checked'));
 
                 return true;
             }
             $sql = "CREATE DATABASE IF NOT EXISTS `{$data['db_database']}` DEFAULT CHARACTER SET {$character} DEFAULT COLLATE {$collation}";
-            $this->process('创建数据库...');
+            $this->process(__('ptadmin::install.logs.database_creating'));
             $pdo->query($sql);
             $pdo = null;
-            $this->process('数据库创建完成');
+            $this->process(__('ptadmin::install.logs.database_created'));
         } catch (\Exception $exception) {
-            $this->error('数据库链接失败: '.$exception->getMessage());
+            $this->error(__('ptadmin::install.logs.database_connect_failed', ['message' => $exception->getMessage()]));
 
             return false;
         }

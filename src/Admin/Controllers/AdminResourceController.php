@@ -82,7 +82,7 @@ class AdminResourceController extends AbstractBackgroundController
     public function editField(Request $request, $id): \Illuminate\Http\JsonResponse
     {
         if (!app(CapabilityServiceInterface::class)->enabled('field_acl')) {
-            return AdminResponse::fail('字段权限能力尚未启用');
+            return AdminResponse::fail(__('ptadmin::background.field_acl_not_enabled'));
         }
 
         $data = $request->validate([
@@ -114,9 +114,9 @@ class AdminResourceController extends AbstractBackgroundController
         return AdminResponse::success($this->adminResourceService->getRoleResourceAssignment((int) $id));
     }
 
-    public function getSystemResources($id): \Illuminate\Http\JsonResponse
+    public function getAdminResources($id): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::success($this->adminResourceService->getSystemResourceAssignment((int) $id));
+        return AdminResponse::success($this->adminResourceService->getAdminResourceAssignment((int) $id));
     }
 
     public function syncRoleResources($id, Request $request): \Illuminate\Http\JsonResponse
@@ -126,9 +126,9 @@ class AdminResourceController extends AbstractBackgroundController
         return AdminResponse::success();
     }
 
-    public function syncSystemResources($id, Request $request): \Illuminate\Http\JsonResponse
+    public function syncAdminResources($id, Request $request): \Illuminate\Http\JsonResponse
     {
-        $this->adminResourceService->syncSystemResourceAssignment((int) $id, (array) $request->get('resource_ids', []));
+        $this->adminResourceService->syncAdminResourceAssignment((int) $id, (array) $request->get('resource_ids', []));
 
         return AdminResponse::success();
     }

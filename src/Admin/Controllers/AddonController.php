@@ -26,6 +26,7 @@ namespace PTAdmin\Admin\Controllers;
 use Illuminate\Http\Request;
 use PTAdmin\Addon\AddonApi;
 use PTAdmin\Admin\Requests\AddonRequest;
+use PTAdmin\Admin\Services\AddonFrontendService;
 use PTAdmin\Foundation\Response\AdminResponse;
 
 class AddonController extends AbstractBackgroundController
@@ -91,7 +92,7 @@ class AddonController extends AbstractBackgroundController
         $data = $request->only(['code', 'addon_id', 'addon_version_id']);
         $codes = \PTAdmin\Addon\Addon::getInstalledAddonsCode();
         if (\in_array($data['code'], $codes, true)) {
-            return AdminResponse::fail('插件已安装');
+            return AdminResponse::fail(__('ptadmin::background.addon_installed'));
         }
         $result = AddonApi::getAddonDownloadUrl($data);
 
@@ -103,6 +104,19 @@ class AddonController extends AbstractBackgroundController
         $result = AddonApi::getMyAddon($request->all());
 
         return AdminResponse::success($result);
+    }
+
+    /**
+     * 返回后台前端需要的插件模块清单。
+     *
+     * 前端启动后可以通过该接口识别：
+     * - 当前有哪些插件前端模块
+     * - 哪些模块需要预加载
+     * - 哪些模块需要启用前端缓存
+     */
+    public function moduleManifests(AddonFrontendService $service): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success($service->manifests());
     }
 
     /**

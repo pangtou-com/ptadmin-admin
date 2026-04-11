@@ -48,7 +48,7 @@ class PTAdminInstallCompleteTest extends TestCase
         self::assertSame([
             ['admin:init', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
         ], $commands);
-        self::assertStringContainsString('创建管理员失败:Init failed.', $output);
+        self::assertStringContainsString(__('ptadmin::install.logs.admin_create_failed', ['message' => 'Init failed.']), $output);
     }
 
     public function test_complete_writes_installed_marker_after_admin_init_succeeds(): void

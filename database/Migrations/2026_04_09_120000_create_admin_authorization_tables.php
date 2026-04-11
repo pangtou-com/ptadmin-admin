@@ -27,10 +27,6 @@ return new class extends Migration
 
     private function createAdminRolesTable(): void
     {
-        if (Schema::hasTable('admin_roles')) {
-            return;
-        }
-
         Schema::create('admin_roles', function (Blueprint $table): void {
             $table->id();
             $table->string('code', 100)->comment('角色编码');
@@ -56,22 +52,18 @@ return new class extends Migration
 
     private function createAdminResourcesTable(): void
     {
-        if (Schema::hasTable('admin_resources')) {
-            return;
-        }
-
         Schema::create('admin_resources', function (Blueprint $table): void {
             $table->id();
             $table->string('code', 150)->comment('资源编码');
             $table->string('name', 100)->comment('资源名称');
             $table->string('type', 30)->comment('资源类型');
             $table->string('module', 50)->comment('所属模块');
+            $table->string('page_key', 100)->nullable()->comment('页面标识');
             $table->string('addon_code', 50)->nullable()->comment('所属插件编码');
             $table->unsignedBigInteger('parent_id')->default(0)->comment('父资源ID');
             $table->unsignedInteger('level')->default(0)->comment('层级');
             $table->string('path', 255)->nullable()->comment('资源路径');
             $table->string('route', 150)->nullable()->comment('路由标识');
-            $table->string('component', 150)->nullable()->comment('组件标识');
             $table->string('icon', 100)->nullable()->comment('图标');
             $table->json('ability_hint_json')->nullable()->comment('推荐能力');
             $table->json('meta_json')->nullable()->comment('扩展信息');
@@ -85,6 +77,7 @@ return new class extends Migration
             $table->unique('code', 'uniq_admin_resources_code');
             $table->index('type', 'idx_admin_resources_type');
             $table->index('module', 'idx_admin_resources_module');
+            $table->index('page_key', 'idx_admin_resources_page_key');
             $table->index('parent_id', 'idx_admin_resources_parent');
             $table->index('status', 'idx_admin_resources_status');
         });
@@ -94,10 +87,6 @@ return new class extends Migration
 
     private function createAdminUserRolesTable(): void
     {
-        if (Schema::hasTable('admin_user_roles')) {
-            return;
-        }
-
         Schema::create('admin_user_roles', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('user_id')->comment('用户ID');
@@ -115,10 +104,6 @@ return new class extends Migration
 
     private function createAdminGrantsTable(): void
     {
-        if (Schema::hasTable('admin_grants')) {
-            return;
-        }
-
         Schema::create('admin_grants', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('tenant_id')->nullable()->comment('租户ID');

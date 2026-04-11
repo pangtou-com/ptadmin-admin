@@ -30,7 +30,7 @@ class PTAdminInstallDatabaseInitializeTest extends TestCase
         $output = (string) ob_get_clean();
 
         self::assertFalse($nextCalled);
-        self::assertStringContainsString('迁移命令执行失败:Migration failed.', $output);
+        self::assertStringContainsString(__('ptadmin::install.logs.migrate_failed', ['message' => 'Migration failed.']), $output);
     }
 
     public function test_database_initialize_continues_pipeline_when_migrate_command_succeeds(): void
@@ -71,6 +71,11 @@ class PTAdminInstallDatabaseInitializeTest extends TestCase
         });
         $output = (string) ob_get_clean();
 
-        self::assertStringContainsString('迁移命令执行失败:迁移命令返回非零状态码: 1', $output);
+        self::assertStringContainsString(
+            __('ptadmin::install.logs.migrate_failed', [
+                'message' => __('ptadmin::install.logs.migrate_non_zero', ['status' => 1]),
+            ]),
+            $output
+        );
     }
 }

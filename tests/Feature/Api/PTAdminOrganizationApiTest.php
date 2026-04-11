@@ -14,11 +14,11 @@ class PTAdminOrganizationApiTest extends TestCase
 {
     public function test_tenant_organization_and_department_endpoints_can_create_update_and_list_records(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
-        $token = $this->issueAdminToken($this->createAdminSystem([
+        $token = $this->issueAdminToken($this->createAdminAccount([
             'username' => 'founder_org',
             'nickname' => 'Founder',
             'is_founder' => 1,
@@ -143,16 +143,16 @@ class PTAdminOrganizationApiTest extends TestCase
 
     public function test_user_relation_endpoints_can_sync_and_switch_primary_relation(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_relation',
             'nickname' => 'Founder',
             'is_founder' => 1,
         ]);
-        $member = $this->createAdminSystem([
+        $member = $this->createAdminAccount([
             'username' => 'member_relation',
             'nickname' => 'Member',
         ]);
@@ -199,7 +199,7 @@ class PTAdminOrganizationApiTest extends TestCase
             'sort' => 1,
         ]);
 
-        $syncResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/systems-org/'.$member->id, [
+        $syncResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/admins-org/'.$member->id, [
             'tenant_id' => $tenant->id,
             'relations' => [
                 [
@@ -234,7 +234,7 @@ class PTAdminOrganizationApiTest extends TestCase
         ;
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/systems-org-primary/'.$secondaryRelation->id)
+            ->putJson('/system/admins-org-primary/'.$secondaryRelation->id)
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -245,7 +245,7 @@ class PTAdminOrganizationApiTest extends TestCase
             ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/systems-org/'.$member->id.'?tenant_id='.$tenant->id)
+            ->getJson('/system/admins-org/'.$member->id.'?tenant_id='.$tenant->id)
             ->assertOk()
             ->assertJsonCount(2, 'data');
 

@@ -151,7 +151,7 @@ class PTAdminSystemConfigItemApiTest extends TestCase
      */
     private function seedSystemConfigItemFixtures(): array
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createSystemConfigGroupsTable();
         $this->createSystemConfigsTable();
@@ -192,7 +192,7 @@ class PTAdminSystemConfigItemApiTest extends TestCase
 
     private function issueFounderToken(): string
     {
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_system_config_item',
             'nickname' => 'Founder Item',
             'is_founder' => 1,

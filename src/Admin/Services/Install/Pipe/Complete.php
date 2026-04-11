@@ -36,31 +36,31 @@ class Complete
         $installedMarkerWritten = false;
 
         try {
-            $this->process('创建管理员账户');
+            $this->process(__('ptadmin::install.logs.admin_creating'));
             $status = Artisan::call('admin:init', ['-u' => $data['username'], '-p' => $data['password'], '-f' => true]);
             if (0 !== $status) {
-                $this->error('创建管理员失败:'.Artisan::output());
+                $this->error(__('ptadmin::install.logs.admin_create_failed', ['message' => Artisan::output()]));
 
                 return;
             }
 
-            $this->process('写入安装标记');
+            $this->process(__('ptadmin::install.logs.marker_writing'));
             $written = File::put(storage_path('installed'), date('Y-m-d H:i:s', time()));
             if (false === $written || !File::exists(storage_path('installed'))) {
-                throw new \RuntimeException('安装标记写入失败');
+                throw new \RuntimeException(__('ptadmin::background.install_marker_write_failed'));
             }
             $installedMarkerWritten = true;
 
             $this->persistEnvFile($data);
             $this->resetRuntimeCaches();
-            $this->success('安装成功');
+            $this->success(__('ptadmin::install.logs.install_success'));
 
             $next($data);
         } catch (\Throwable $throwable) {
             if ($installedMarkerWritten && File::exists(storage_path('installed'))) {
                 File::delete(storage_path('installed'));
             }
-            $this->error('安装收尾失败: '.$throwable->getMessage());
+            $this->error(__('ptadmin::install.logs.install_finalize_failed', ['message' => $throwable->getMessage()]));
         }
     }
 
@@ -76,10 +76,10 @@ class Complete
         }
 
         $envPath = $data['__install_env_path'] ?? base_path('.env');
-        $this->process('保存配置文件');
+        $this->process(__('ptadmin::install.logs.config_saving'));
         $saved = File::put($envPath, $envContent);
         if (false === $saved || !File::exists($envPath)) {
-            throw new \RuntimeException(sprintf('无法写入环境文件：%s', $envPath));
+            throw new \RuntimeException(__('ptadmin::background.env_write_failed', ['path' => $envPath]));
         }
     }
 

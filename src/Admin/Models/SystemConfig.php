@@ -92,7 +92,7 @@ class SystemConfig extends \PTAdmin\Foundation\Database\Models\AbstractModel
             }
 
             if (isset($extraOptions[$normalizedKey])) {
-                throw new ServiceException('配置项键名重复，请规范填写');
+                throw new ServiceException(__('ptadmin::background.config_option_duplicate'));
             }
 
             $extraOptions[$normalizedKey] = $normalizedValue;

@@ -47,12 +47,12 @@ class UploadService
     {
         $fieldName = $this->getFilename($request);
         if (!$request->hasFile($fieldName)) {
-            throw new BackgroundException('无效的文件');
+            throw new BackgroundException(__('ptadmin::background.invalid_file'));
         }
 
         $file = $request->file($fieldName);
         if (null === $file || !$file->isValid()) {
-            throw new BackgroundException('无效的文件');
+            throw new BackgroundException(__('ptadmin::background.invalid_file'));
         }
 
         $data = [
@@ -232,7 +232,7 @@ class UploadService
 
         $code = trim((string) $this->systemConfig('upload.storage_code', $driver));
         if ('' === $code) {
-            throw new BackgroundException('上传存储插件未配置');
+            throw new BackgroundException(__('ptadmin::background.upload_storage_not_configured'));
         }
 
         return [
@@ -259,15 +259,16 @@ class UploadService
      */
     private function storeLocalFile(UploadedFile $file, string $objectPath): array
     {
-        $path = Storage::putFileAs(\dirname($objectPath), $file, basename($objectPath));
+        $disk = $this->getDriver();
+        $path = Storage::disk($disk)->putFileAs(\dirname($objectPath), $file, basename($objectPath));
         if (false === $path) {
-            throw new BackgroundException('文件保存失败');
+            throw new BackgroundException(__('ptadmin::background.file_save_failed'));
         }
 
         return [
-            'driver' => $this->getDriver(),
+            'driver' => $disk,
             'path' => $path,
-            'url' => Storage::url($path),
+            'url' => Storage::disk($disk)->url($path),
         ];
     }
 
@@ -326,7 +327,7 @@ class UploadService
     {
         $addonDriver = $this->parseAddonDriver((string) $asset->driver);
         if (null === $addonDriver) {
-            return Storage::exists((string) $asset->path);
+            return Storage::disk($this->resolveLocalDisk((string) $asset->driver))->exists((string) $asset->path);
         }
 
         return $this->executeAddonStorageExists($addonDriver, [
@@ -398,5 +399,12 @@ class UploadService
         } catch (\Throwable $e) {
             return $default;
         }
+    }
+
+    private function resolveLocalDisk(string $driver): string
+    {
+        $driver = trim($driver);
+
+        return '' === $driver ? $this->getDriver() : $driver;
     }
 }

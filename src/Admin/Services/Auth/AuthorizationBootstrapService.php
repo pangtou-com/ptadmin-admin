@@ -30,7 +30,7 @@ use PTAdmin\Admin\Models\AdminGrant;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Models\AdminRole;
 use PTAdmin\Admin\Models\AdminUserRole;
-use PTAdmin\Admin\Models\System;
+use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Contracts\Auth\AdminGrantServiceInterface;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 use PTAdmin\Support\Enums\Ability;
@@ -56,46 +56,56 @@ class AuthorizationBootstrapService
         ?string $mobile = null,
         bool $bootstrapAuthorization = true,
         string $roleCode = 'super_admin',
-        string $roleName = '超级管理员'
+        string $roleName = ''
     ): array {
-        if (System::query()->where('is_founder', 1)->exists()) {
-            throw new BackgroundException('创始人账户已存在，请使用现有账户登录');
+        if ('' === $roleName) {
+            $roleName = __('ptadmin::common.auth.super_admin_role_name');
         }
 
-        if (System::query()->where('username', $username)->exists()) {
-            throw new BackgroundException('管理员账户已存在，请更换用户名');
+        if (Admin::query()->where('is_founder', 1)->exists()) {
+            throw new BackgroundException(__('ptadmin::background.founder_exists'));
+        }
+
+        if (Admin::query()->where('username', $username)->exists()) {
+            throw new BackgroundException(__('ptadmin::background.admin_username_exists'));
         }
 
         return DB::transaction(function () use ($username, $password, $nickname, $email, $mobile, $bootstrapAuthorization, $roleCode, $roleName): array {
-            $system = new System();
-            $system->username = $username;
-            $system->nickname = $nickname;
-            $system->email = $email;
-            $system->mobile = $mobile;
-            $system->status = 1;
-            $system->is_founder = 1;
-            $system->password = Hash::make($password);
-            $system->save();
+            $admin = new Admin();
+            $admin->username = $username;
+            $admin->nickname = $nickname;
+            $admin->email = $email;
+            $admin->mobile = $mobile;
+            $admin->status = 1;
+            $admin->is_founder = 1;
+            $admin->password = Hash::make($password);
+            $admin->save();
 
             $result = [
                 'founder' => [
-                    'id' => $system->id,
-                    'username' => $system->username,
-                    'nickname' => $system->nickname,
+                    'id' => $admin->id,
+                    'username' => $admin->username,
+                    'nickname' => $admin->nickname,
                     'is_founder' => true,
                 ],
             ];
 
             if ($bootstrapAuthorization) {
-                $result['authorization'] = $this->bootstrap($roleCode, $roleName, $system->id);
+                $result['authorization'] = $this->bootstrap($roleCode, $roleName, $admin->id);
             }
 
             return $result;
         });
     }
 
-    public function bootstrap(string $roleCode = 'super_admin', string $roleName = '超级管理员', ?int $assignUserId = null, bool $force = false): array
+    public function bootstrap(string $roleCode = 'super_admin', string $roleName = '', ?int $assignUserId = null, bool $force = false): array
     {
+        if ('' === $roleName) {
+            $roleName = __('ptadmin::common.auth.super_admin_role_name');
+        }
+
+        $roleDescription = __('ptadmin::common.auth.default_role_description');
+
         /** @var null|AdminRole $role */
         $role = AdminRole::query()
             ->where('code', $roleCode)
@@ -106,13 +116,13 @@ class AuthorizationBootstrapService
             $role = $this->adminRoleService->create([
                 'code' => $roleCode,
                 'name' => $roleName,
-                'description' => '默认初始化角色',
+                'description' => $roleDescription,
                 'status' => 1,
             ]);
         } else {
             $role = $this->adminRoleService->update($role->id, [
                 'name' => $roleName,
-                'description' => '默认初始化角色',
+                'description' => $roleDescription,
                 'status' => 1,
             ]);
         }
@@ -134,11 +144,11 @@ class AuthorizationBootstrapService
             $this->adminGrantService->syncRoleGrants((int) $role->id, $payloads);
         }
 
-        $system = null;
+        $admin = null;
         if (null !== $assignUserId) {
-            /** @var System $system */
-            $system = System::query()->findOrFail($assignUserId);
-            $this->adminRoleService->syncUserRoles($system->id, [(int) $role->id]);
+            /** @var Admin $admin */
+            $admin = Admin::query()->findOrFail($assignUserId);
+            $this->adminRoleService->syncUserRoles($admin->id, [(int) $role->id]);
         }
 
         return [
@@ -147,7 +157,7 @@ class AuthorizationBootstrapService
                 'code' => (string) $role->code,
                 'name' => (string) $role->name,
             ],
-            'assigned_user_id' => null !== $system ? $system->id : null,
+            'assigned_user_id' => null !== $admin ? $admin->id : null,
             'resource_count' => \count($resourceCodes),
         ];
     }
@@ -155,8 +165,8 @@ class AuthorizationBootstrapService
     public function status(): array
     {
         return [
-            'systems' => $this->countIfTableExists('systems', System::class),
-            'founders' => $this->countIfTableExists('systems', System::class, ['is_founder' => 1]),
+            'admins' => $this->countIfTableExists('admins', Admin::class),
+            'founders' => $this->countIfTableExists('admins', Admin::class, ['is_founder' => 1]),
             'admin_resources' => $this->countIfTableExists('admin_resources', AdminResource::class),
             'admin_roles' => $this->countIfTableExists('admin_roles', AdminRole::class),
             'admin_user_roles' => $this->countIfTableExists('admin_user_roles', AdminUserRole::class),

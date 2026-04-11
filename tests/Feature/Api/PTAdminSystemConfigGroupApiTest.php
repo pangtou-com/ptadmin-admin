@@ -12,7 +12,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
 {
     public function test_system_config_group_endpoints_require_admin_login(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createSystemConfigGroupsTable();
         $this->migratePackageTables();
 
@@ -20,7 +20,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
             ->getJson('/system/system-config-groups')
             ->assertOk()
             ->assertJson([
-                'code' => 10001,
+                'code' => 419,
                 'message' => '未登录',
             ]);
     }
@@ -172,7 +172,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
      */
     private function seedSystemConfigGroupFixtures(): array
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createSystemConfigGroupsTable();
         $this->createSystemConfigsTable();
@@ -218,7 +218,7 @@ class PTAdminSystemConfigGroupApiTest extends TestCase
 
     private function issueFounderToken(): string
     {
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_system_config_group',
             'nickname' => 'Founder Group',
             'is_founder' => 1,

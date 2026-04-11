@@ -6,7 +6,7 @@ namespace PTAdmin\Foundation\Auth;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
-use PTAdmin\Admin\Models\System;
+use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Services\AdminResourceService;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 
@@ -14,7 +14,7 @@ class AdminAuth
 {
     public static function isFounder(): bool
     {
-        /** @var System $user */
+        /** @var Admin $user */
         $user = self::user();
 
         return (bool) $user->is_founder;
@@ -37,7 +37,7 @@ class AdminAuth
     public static function adminResourceNav($user = null): string
     {
         if (!$user) {
-            /** @var System $user */
+            /** @var Admin $user */
             $user = self::user();
         }
 

@@ -178,24 +178,28 @@ class AdminResourceService implements AdminResourceServiceInterface
             $abilities = $this->resolveAbilities($type);
         }
 
-        return [
+        $payload = [
             'code' => (string) ($definition['code'] ?? ''),
             'name' => (string) ($definition['name'] ?? ''),
             'type' => $type,
-            'module' => (string) ($definition['module'] ?? 'system'),
+            'module' => $this->normalizeModuleValue($definition['module'] ?? $this->resolveModule((string) ($definition['code'] ?? ''))),
+            'page_key' => $this->normalizePageKeyValue($definition['page_key'] ?? null, $type),
             'addon_code' => $definition['addon_code'] ?? null,
             'parent_id' => $parentId,
             'level' => (int) ($definition['level'] ?? 0),
             'path' => $definition['path'] ?? null,
-            'route' => $definition['route'] ?? null,
-            'component' => $definition['component'] ?? null,
+            'route' => $this->normalizeRouteValue($definition['route'] ?? null),
             'icon' => $definition['icon'] ?? null,
             'ability_hint_json' => $abilities,
-            'meta_json' => (array) ($definition['meta'] ?? $definition['meta_json'] ?? []),
+            'meta_json' => $this->normalizeMetaJson((array) ($definition['meta'] ?? $definition['meta_json'] ?? array())),
             'is_nav' => (int) ($definition['is_nav'] ?? 0),
             'status' => (int) ($definition['status'] ?? 1),
             'sort' => (int) ($definition['sort'] ?? 0),
         ];
+
+        $this->assertResourceProtocol($payload);
+
+        return $payload;
     }
 
     private function normalizePayload(array $data, bool $withDefaults = true, ?AdminResource $resource = null): array
@@ -217,10 +221,15 @@ class AdminResourceService implements AdminResourceServiceInterface
         }
 
         if (array_key_exists('module', $data)) {
-            $payload['module'] = (string) $data['module'];
+            $payload['module'] = $this->normalizeModuleValue($data['module']);
         } elseif ($withDefaults || isset($payload['code'])) {
             $resourceCode = null !== $resource ? $resource->code : '';
             $payload['module'] = $this->resolveModule((string) ($payload['code'] ?? $resourceCode ?? ''));
+        }
+
+        if ($withDefaults || array_key_exists('page_key', $data)) {
+            $resolvedType = null !== $type ? $type : (null !== $resource ? (string) $resource->type : ResourceType::PAGE);
+            $payload['page_key'] = $this->normalizePageKeyValue($data['page_key'] ?? null, $resolvedType);
         }
 
         if ($withDefaults || array_key_exists('addon_code', $data)) {
@@ -232,10 +241,12 @@ class AdminResourceService implements AdminResourceServiceInterface
             $payload['parent_id'] = $parentId;
         }
 
-        foreach (['route', 'component', 'icon'] as $field) {
-            if ($withDefaults || array_key_exists($field, $data)) {
-                $payload[$field] = $data[$field] ?? null;
-            }
+        if ($withDefaults || array_key_exists('route', $data)) {
+            $payload['route'] = $this->normalizeRouteValue($data['route'] ?? null);
+        }
+
+        if ($withDefaults || array_key_exists('icon', $data)) {
+            $payload['icon'] = $data['icon'] ?? null;
         }
 
         if (array_key_exists('ability_hint_json', $data) || array_key_exists('abilities', $data)) {
@@ -264,10 +275,24 @@ class AdminResourceService implements AdminResourceServiceInterface
         }
 
         if (!$withDefaults) {
-            return array_filter($payload, static function ($value): bool {
+            $payload = array_filter($payload, static function ($value): bool {
                 return null !== $value;
             });
+
+            $this->assertResourceProtocol(array_merge(
+                [
+                    'type' => null !== $resource ? (string) $resource->type : ResourceType::PAGE,
+                    'module' => null !== $resource ? (string) $resource->module : '',
+                    'page_key' => null !== $resource ? $resource->page_key : null,
+                    'route' => null !== $resource ? $resource->route : null,
+                ],
+                $payload
+            ));
+
+            return $payload;
         }
+
+        $this->assertResourceProtocol($payload);
 
         return $payload;
     }
@@ -306,6 +331,9 @@ class AdminResourceService implements AdminResourceServiceInterface
             !$withDefaults
             && !array_key_exists('note', $data)
             && !array_key_exists('controller', $data)
+            && !array_key_exists('redirect', $data)
+            && !array_key_exists('hidden', $data)
+            && !array_key_exists('keep_alive', $data)
             && null === $type
         ) {
             return null;
@@ -321,7 +349,19 @@ class AdminResourceService implements AdminResourceServiceInterface
             $metaJson['controller'] = $data['controller'] ?? '';
         }
 
-        return $metaJson;
+        if ($withDefaults || array_key_exists('redirect', $data)) {
+            $metaJson['redirect'] = $this->normalizeRouteValue($data['redirect'] ?? null);
+        }
+
+        if ($withDefaults || array_key_exists('hidden', $data)) {
+            $metaJson['hidden'] = isset($data['hidden']) ? (int) $data['hidden'] : 0;
+        }
+
+        if ($withDefaults || array_key_exists('keep_alive', $data)) {
+            $metaJson['keep_alive'] = isset($data['keep_alive']) ? (int) $data['keep_alive'] : 0;
+        }
+
+        return $this->normalizeMetaJson($metaJson);
     }
 
     private function mapResourceType(string $type): string
@@ -362,6 +402,84 @@ class AdminResourceService implements AdminResourceServiceInterface
         $segments = explode('.', $code);
 
         return $segments[0] ?? 'system';
+    }
+
+    private function normalizeModuleValue($module): string
+    {
+        return trim((string) $module);
+    }
+
+    private function normalizePageKeyValue($pageKey, string $type): ?string
+    {
+        if (!\in_array($type, [ResourceType::PAGE, ResourceType::ROUTE], true)) {
+            return null;
+        }
+
+        $pageKey = trim((string) $pageKey);
+
+        return '' === $pageKey ? null : $pageKey;
+    }
+
+    private function normalizeRouteValue($route): ?string
+    {
+        $route = trim((string) $route);
+
+        return '' === $route ? null : $route;
+    }
+
+    /**
+     * @param array<string, mixed> $metaJson
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeMetaJson(array $metaJson): array
+    {
+        if (array_key_exists('redirect', $metaJson)) {
+            $metaJson['redirect'] = $this->normalizeRouteValue($metaJson['redirect']);
+        }
+
+        if (array_key_exists('hidden', $metaJson)) {
+            $metaJson['hidden'] = (int) $metaJson['hidden'];
+        }
+
+        if (array_key_exists('keep_alive', $metaJson)) {
+            $metaJson['keep_alive'] = (int) $metaJson['keep_alive'];
+        }
+
+        return $metaJson;
+    }
+
+    /**
+     * 统一校验资源树协议的最小约束，避免前端需要兜底推断。
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function assertResourceProtocol(array $payload): void
+    {
+        $type = (string) ($payload['type'] ?? '');
+        $code = trim((string) ($payload['code'] ?? ''));
+        $title = trim((string) ($payload['name'] ?? ''));
+        $module = trim((string) ($payload['module'] ?? ''));
+        $pageKey = isset($payload['page_key']) ? trim((string) $payload['page_key']) : '';
+        $route = isset($payload['route']) && null !== $payload['route'] ? trim((string) $payload['route']) : '';
+
+        if ('' === $code) {
+            throw new BackgroundException(__('ptadmin::background.resource_code_required'));
+        }
+
+        if ('' === $title) {
+            throw new BackgroundException(__('ptadmin::background.resource_title_required'));
+        }
+
+        if (\in_array($type, [ResourceType::PAGE, ResourceType::ROUTE], true)) {
+            if ('' === $module || '' === $pageKey || '' === $route) {
+                throw new BackgroundException(__('ptadmin::background.resource_nav_invalid'));
+            }
+        }
+
+        if (\in_array($type, [ResourceType::BUTTON, ResourceType::FIELD], true) && '' === $module) {
+            throw new BackgroundException(__('ptadmin::background.resource_button_invalid'));
+        }
     }
 
     private function refreshHierarchy(AdminResource $resource): AdminResource
@@ -412,7 +530,7 @@ class AdminResourceService implements AdminResourceServiceInterface
     private function assertParentValid(int $id, int $parentId): void
     {
         if ($parentId === $id) {
-            throw new BackgroundException('父级菜单不能为自身');
+            throw new BackgroundException(__('ptadmin::background.parent_menu_self'));
         }
 
         if ($parentId <= 0) {
@@ -422,7 +540,7 @@ class AdminResourceService implements AdminResourceServiceInterface
         AdminResource::query()->whereNull('deleted_at')->findOrFail($parentId);
 
         if (\in_array($parentId, $this->collectDescendantIds($id), true)) {
-            throw new BackgroundException('父级菜单不能为自身子级');
+            throw new BackgroundException(__('ptadmin::background.parent_menu_child'));
         }
     }
 

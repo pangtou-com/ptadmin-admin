@@ -26,11 +26,11 @@ namespace PTAdmin\Admin\Services;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use PTAdmin\Support\Enums\StatusEnum;
-use PTAdmin\Foundation\Exceptions\BackgroundException;
-use PTAdmin\Admin\Models\System;
-use PTAdmin\Admin\Models\SystemLog;
+use PTAdmin\Admin\Models\Admin;
+use PTAdmin\Admin\Models\AdminLoginLog;
 use PTAdmin\Foundation\Auth\AdminAuth;
+use PTAdmin\Foundation\Exceptions\BackgroundException;
+use PTAdmin\Support\Enums\StatusEnum;
 
 class LoginService
 {
@@ -44,41 +44,41 @@ class LoginService
     public function login(array $data): array
     {
         $this->checkCode();
-        /** @var System $system */
-        $system = System::query()->where('username', $data['username'])->first();
+        /** @var Admin|null $admin */
+        $admin = Admin::query()->where('username', $data['username'])->first();
         $this->attempt();
-        if (!$system || !Hash::check($data['password'], $system->password)) {
+        if (!$admin || !Hash::check($data['password'], $admin->password)) {
             $this->addAttempt();
-            $this->log($system);
+            $this->log($admin);
 
             throw new BackgroundException(__('ptadmin::background.login.fail'));
         }
 
         // 登录锁定验证
-        if (StatusEnum::ENABLE !== $system->status) {
+        if (StatusEnum::ENABLE !== $admin->status) {
             $this->addAttempt();
-            $this->log($system);
+            $this->log($admin);
 
             throw new BackgroundException(__('ptadmin::background.login.limit'));
         }
 
-        $token = Auth::guard(AdminAuth::getGuard())->login($system);
-        $system->login_ip = request()->getClientIp();
-        $system->login_at = time();
-        $system->save();
-        $this->log($system, StatusEnum::ENABLE);
+        $token = Auth::guard(AdminAuth::getGuard())->login($admin);
+        $admin->login_ip = request()->getClientIp();
+        $admin->login_at = time();
+        $admin->save();
+        $this->log($admin, StatusEnum::ENABLE);
 
         return [
             'token' => $token,
             'user' => [
-                'id' => $system->id,
-                'nickname' => $system->nickname,
-                'username' => $system->username,
-                'mobile' => $system->mobile,
-                'avatar' => $system->avatar,
-                'email' => $system->email,
-                'login_at' => $system->login_at,
-                'login_ip' => $system->login_ip,
+                'id' => $admin->id,
+                'nickname' => $admin->nickname,
+                'username' => $admin->username,
+                'mobile' => $admin->mobile,
+                'avatar' => $admin->avatar,
+                'email' => $admin->email,
+                'login_at' => $admin->login_at,
+                'login_ip' => $admin->login_ip,
             ],
         ];
     }
@@ -109,16 +109,16 @@ class LoginService
     /**
      * 记录登录日志.
      *
-     * @param $system
+     * @param Admin|null $admin
      * @param int $status
      */
-    private function log($system, int $status = StatusEnum::DISABLE): void
+    private function log(?Admin $admin, int $status = StatusEnum::DISABLE): void
     {
-        if (!$system) {
+        if (!$admin) {
             return;
         }
-        $log = new SystemLog();
-        $log->system_id = $system->id;
+        $log = new AdminLoginLog();
+        $log->admin_id = $admin->id;
         $log->login_at = time();
         $log->login_ip = (int) ip2long(request()->getClientIp());
         $log->status = $status;

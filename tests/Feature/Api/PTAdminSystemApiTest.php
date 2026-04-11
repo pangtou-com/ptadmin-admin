@@ -6,19 +6,19 @@ namespace PTAdmin\Admin\Tests\Feature\Api;
 
 use PTAdmin\Admin\Models\AdminRole;
 use PTAdmin\Admin\Models\AdminUserRole;
-use PTAdmin\Admin\Models\System;
+use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminSystemApiTest extends TestCase
 {
     public function test_system_endpoints_can_create_update_assign_status_and_delete_users(): void
     {
-        $this->createSystemsTable();
-        $this->createSystemLogsTable();
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_system',
             'nickname' => 'Founder',
             'is_founder' => 1,
@@ -38,7 +38,7 @@ class PTAdminSystemApiTest extends TestCase
             'sort' => 2,
         ]);
 
-        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/systems', [
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/admins', [
             'username' => 'operator',
             'nickname' => 'Operator',
             'password' => 'secret123',
@@ -49,28 +49,28 @@ class PTAdminSystemApiTest extends TestCase
             'message' => '操作成功',
         ]);
 
-        $system = System::query()->where('username', 'operator')->firstOrFail();
+        $admin = Admin::query()->where('username', 'operator')->firstOrFail();
 
-        self::assertSame('Operator', $system->nickname);
+        self::assertSame('Operator', $admin->nickname);
         self::assertDatabaseHas('admin_user_roles', [
-            'user_id' => $system->id,
+            'user_id' => $admin->id,
             'role_id' => $roleA->id,
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/systems')
+            ->getJson('/system/admins')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
             ]);
 
         $detailResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/systems/'.$system->id);
+            ->getJson('/system/admins/'.$admin->id);
 
         $detailResponse->assertOk()->assertJson([
             'code' => 0,
             'data' => [
-                'id' => $system->id,
+                'id' => $admin->id,
                 'username' => 'operator',
                 'nickname' => 'Operator',
                 'role_id' => $roleA->id,
@@ -78,7 +78,7 @@ class PTAdminSystemApiTest extends TestCase
         ]);
         self::assertContains($roleA->id, (array) $detailResponse->json('data.role_ids'));
 
-        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/systems/'.$system->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/admins/'.$admin->id, [
             'username' => 'operator',
             'nickname' => 'Operator Updated',
             'role_id' => $roleB->id,
@@ -87,14 +87,14 @@ class PTAdminSystemApiTest extends TestCase
             'code' => 0,
         ]);
 
-        $system = $system->refresh();
-        self::assertSame('Operator Updated', $system->nickname);
+        $admin = $admin->refresh();
+        self::assertSame('Operator Updated', $admin->nickname);
 
         $updatedDetailResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/systems/'.$system->id);
+            ->getJson('/system/admins/'.$admin->id);
         self::assertSame([$roleB->id], array_values((array) $updatedDetailResponse->json('data.role_ids')));
 
-        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/systems-role/'.$system->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/admins-role/'.$admin->id, [
             'role_id' => [$roleA->id, $roleB->id],
         ])->assertOk()->assertJson([
             'code' => 0,
@@ -102,25 +102,25 @@ class PTAdminSystemApiTest extends TestCase
 
         self::assertSame(
             2,
-            AdminUserRole::query()->where('user_id', $system->id)->count()
+            AdminUserRole::query()->where('user_id', $admin->id)->count()
         );
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/systems-status/'.$system->id.'?value=0')
+            ->putJson('/system/admins-status/'.$admin->id.'?value=0')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
             ]);
 
-        self::assertSame(0, (int) $system->fresh()->status);
+        self::assertSame(0, (int) $admin->fresh()->status);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/systems/'.$system->id)
+            ->deleteJson('/system/admins/'.$admin->id)
             ->assertOk()
             ->assertJson([
                 'code' => 0,
             ]);
 
-        self::assertNotNull(System::withTrashed()->findOrFail($system->id)->deleted_at);
+        self::assertNotNull(Admin::withTrashed()->findOrFail($admin->id)->deleted_at);
     }
 }

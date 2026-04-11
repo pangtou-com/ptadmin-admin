@@ -126,8 +126,8 @@ return [
     'tables' => [
         'assets',
         'addons',
-        'systems',
-        'system_logs',
+        'admins',
+        'admin_login_logs',
         'operation_records',
         'system_config_groups',
         'system_configs',

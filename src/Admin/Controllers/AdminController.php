@@ -25,27 +25,27 @@ namespace PTAdmin\Admin\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use PTAdmin\Admin\Requests\SystemRequest;
+use PTAdmin\Admin\Requests\AdminRequest;
 use PTAdmin\Admin\Services\AdminResourceService;
-use PTAdmin\Admin\Services\SystemService;
-use PTAdmin\Foundation\Response\AdminResponse;
+use PTAdmin\Admin\Services\AdminService;
 use PTAdmin\Foundation\Auth\AdminAuth;
+use PTAdmin\Foundation\Response\AdminResponse;
 
-class SystemController extends AbstractBackgroundController
+class AdminController extends AbstractBackgroundController
 {
     protected $adminResourceService;
-    protected $systemService;
+    protected $adminService;
 
-    public function __construct(AdminResourceService $adminResourceService, SystemService $systemService)
+    public function __construct(AdminResourceService $adminResourceService, AdminService $adminService)
     {
         parent::__construct();
         $this->adminResourceService = $adminResourceService;
-        $this->systemService = $systemService;
+        $this->adminService = $adminService;
     }
 
     public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        $data = $this->systemService->page($request->all());
+        $data = $this->adminService->page($request->all());
 
         return AdminResponse::pages($data);
     }
@@ -53,23 +53,23 @@ class SystemController extends AbstractBackgroundController
     /**
      * @throws \Exception
      */
-    public function store(SystemRequest $request): \Illuminate\Http\JsonResponse
+    public function store(AdminRequest $request): \Illuminate\Http\JsonResponse
     {
-        $this->systemService->create($request->all());
+        $this->adminService->create($request->all());
 
         return AdminResponse::success();
     }
 
-    public function edit(SystemRequest $request, $id): \Illuminate\Http\JsonResponse
+    public function edit(AdminRequest $request, $id): \Illuminate\Http\JsonResponse
     {
-        $this->systemService->update((int) $id, $request->all());
+        $this->adminService->update((int) $id, $request->all());
 
         return AdminResponse::success();
     }
 
     public function details($id): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::success($this->systemService->details((int) $id));
+        return AdminResponse::success($this->adminService->details((int) $id));
     }
 
     /**
@@ -82,7 +82,7 @@ class SystemController extends AbstractBackgroundController
      */
     public function setRole($id, Request $request): \Illuminate\Http\JsonResponse
     {
-        $this->systemService->syncRoles((int) $id, (array) $request->get('role_id', []));
+        $this->adminService->syncRoles((int) $id, (array) $request->get('role_id', []));
 
         return AdminResponse::success();
     }
@@ -101,7 +101,7 @@ class SystemController extends AbstractBackgroundController
             'old_password' => 'required',
         ]);
 
-        $this->systemService->updatePassword(AdminAuth::user(), (string) $data['old_password'], (string) $data['password']);
+        $this->adminService->updatePassword(AdminAuth::user(), (string) $data['old_password'], (string) $data['password']);
 
         Auth::guard(AdminAuth::getGuard())->logout();
 
@@ -115,7 +115,7 @@ class SystemController extends AbstractBackgroundController
      */
     public function delete(): \Illuminate\Http\JsonResponse
     {
-        $this->systemService->deleteSystems($this->getIds());
+        $this->adminService->deleteAdmins($this->getIds());
 
         return AdminResponse::success();
     }
@@ -125,12 +125,12 @@ class SystemController extends AbstractBackgroundController
      */
     public function loginLog(): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::pages($this->systemService->loginLogs((int) AdminAuth::user()->id));
+        return AdminResponse::pages($this->adminService->loginLogs((int) AdminAuth::user()->id));
     }
 
     public function status(): \Illuminate\Http\JsonResponse
     {
-        $this->systemService->updateStatus($this->getIds(), (int) request()->get('value'));
+        $this->adminService->updateStatus($this->getIds(), (int) request()->get('value'));
 
         return AdminResponse::success();
     }

@@ -70,7 +70,7 @@ class AdminDashboardService
         $definition = $this->findDefinition($code);
 
         if (!$this->canViewWidget($user, $definition)) {
-            throw new BackgroundException('暂无权限访问该仪表盘组件');
+            throw new BackgroundException(__('ptadmin::background.dashboard_forbidden'));
         }
 
         $payload = array_merge((array) ($definition['default_query'] ?? array()), $query);
@@ -96,7 +96,7 @@ class AdminDashboardService
         $definition = $this->findDefinition($code);
 
         if (!$this->canViewWidget($user, $definition)) {
-            throw new BackgroundException('暂无权限访问该仪表盘组件');
+            throw new BackgroundException(__('ptadmin::background.dashboard_forbidden'));
         }
 
         $actionDefinition = $this->findActionDefinition($definition, $actionCode);
@@ -290,7 +290,7 @@ class AdminDashboardService
         $handler = app($handlerClass);
 
         if (!$handler instanceof AdminDashboardWidgetActionHandlerInterface) {
-            throw new BackgroundException('仪表盘组件未实现动作处理接口');
+            throw new BackgroundException(__('ptadmin::background.dashboard_action_interface_missing'));
         }
 
         return $handler->executeAction(
@@ -329,7 +329,7 @@ class AdminDashboardService
         $handler = app($handlerClass);
 
         if (!$handler instanceof AdminDashboardWidgetHandlerInterface) {
-            throw new BackgroundException('仪表盘组件处理器未实现标准接口');
+            throw new BackgroundException(__('ptadmin::background.dashboard_handler_interface_missing'));
         }
 
         return $handler->query($payload, $definition, $context);
@@ -346,7 +346,7 @@ class AdminDashboardService
             }
         }
 
-        throw new BackgroundException('仪表盘组件不存在');
+        throw new BackgroundException(__('ptadmin::background.dashboard_widget_not_exists'));
     }
 
     /**
@@ -378,7 +378,7 @@ class AdminDashboardService
             }
         }
 
-        throw new BackgroundException('仪表盘动作不存在');
+        throw new BackgroundException(__('ptadmin::background.dashboard_action_not_exists'));
     }
 
     /**

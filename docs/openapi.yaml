@@ -23,7 +23,7 @@ tags:
   - name: Upload
   - name: Asset
   - name: Operation
-  - name: System
+  - name: Admin
   - name: Role
   - name: Resource
   - name: Tenant
@@ -208,9 +208,9 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /system/login:
+  /admins/login-logs:
     get:
-      tags: [System]
+      tags: [Admin]
       summary: 当前管理员登录日志
       parameters:
         - $ref: '#/components/parameters/Page'
@@ -231,10 +231,10 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /systems:
+  /admins:
     get:
-      tags: [System]
-      summary: 系统管理员分页列表
+      tags: [Admin]
+      summary: 后台管理员分页列表
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
@@ -246,22 +246,22 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
     post:
-      tags: [System]
-      summary: 新增系统管理员
+      tags: [Admin]
+      summary: 新增后台管理员
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SystemRequest'
+              $ref: '#/components/schemas/AdminRequest'
       responses:
         '200':
           $ref: '#/components/responses/SuccessResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
     delete:
-      tags: [System]
-      summary: 删除系统管理员
+      tags: [Admin]
+      summary: 删除后台管理员
       parameters:
         - $ref: '#/components/parameters/Ids'
       responses:
@@ -270,10 +270,10 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /systems/{id}:
+  /admins/{id}:
     get:
-      tags: [System]
-      summary: 系统管理员详情
+      tags: [Admin]
+      summary: 后台管理员详情
       parameters:
         - $ref: '#/components/parameters/IdPath'
       responses:
@@ -282,8 +282,8 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
     put:
-      tags: [System]
-      summary: 编辑系统管理员
+      tags: [Admin]
+      summary: 编辑后台管理员
       parameters:
         - $ref: '#/components/parameters/IdPath'
       requestBody:
@@ -291,16 +291,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SystemRequest'
+              $ref: '#/components/schemas/AdminRequest'
       responses:
         '200':
           $ref: '#/components/responses/SuccessResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /systems/password:
+  /admins/password:
     post:
-      tags: [System]
+      tags: [Admin]
       summary: 当前管理员修改密码
       requestBody:
         required: true
@@ -314,10 +314,10 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /systems-role/{id}:
+  /admins-role/{id}:
     post:
-      tags: [System]
-      summary: 设置系统管理员角色
+      tags: [Admin]
+      summary: 设置后台管理员角色
       parameters:
         - $ref: '#/components/parameters/IdPath'
       requestBody:
@@ -332,10 +332,10 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /systems-status:
+  /admins-status:
     put:
-      tags: [System]
-      summary: 批量修改系统管理员状态
+      tags: [Admin]
+      summary: 批量修改后台管理员状态
       parameters:
         - $ref: '#/components/parameters/Ids'
       requestBody:
@@ -352,7 +352,7 @@ paths:
 
   /my-resource:
     get:
-      tags: [System]
+      tags: [Admin]
       summary: 当前登录用户权限资源
       responses:
         '200':
@@ -360,10 +360,10 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /systems-org/{id}:
+  /admins-org/{id}:
     get:
       tags: [Organization]
-      summary: 获取系统管理员组织关系
+      summary: 获取后台管理员组织关系
       parameters:
         - $ref: '#/components/parameters/IdPath'
         - $ref: '#/components/parameters/TenantId'
@@ -374,7 +374,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Organization]
-      summary: 同步系统管理员组织关系
+      summary: 同步后台管理员组织关系
       parameters:
         - $ref: '#/components/parameters/IdPath'
       requestBody:
@@ -389,7 +389,7 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /systems-org-primary/{id}:
+  /admins-org-primary/{id}:
     put:
       tags: [Organization]
       summary: 设置主组织关系
@@ -607,10 +607,10 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /resources-system/{id}:
+  /resources-admins/{id}:
     get:
       tags: [Resource]
-      summary: 获取资源的系统用户授权分配
+      summary: 获取资源的后台管理员授权分配
       parameters:
         - $ref: '#/components/parameters/IdPath'
       responses:
@@ -620,7 +620,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
     post:
       tags: [Resource]
-      summary: 设置资源的系统用户授权分配
+      summary: 设置资源的后台管理员授权分配
       parameters:
         - $ref: '#/components/parameters/IdPath'
       requestBody:
@@ -801,7 +801,7 @@ paths:
 
   /users:
     get:
-      tags: [System]
+      tags: [Admin]
       summary: 业务用户分页列表
       parameters:
         - $ref: '#/components/parameters/Page'
@@ -815,7 +815,7 @@ paths:
 
   /user:
     post:
-      tags: [System]
+      tags: [Admin]
       summary: 新增业务用户
       requestBody:
         required: true
@@ -831,7 +831,7 @@ paths:
 
   /user/{id}:
     put:
-      tags: [System]
+      tags: [Admin]
       summary: 编辑业务用户
       parameters:
         - $ref: '#/components/parameters/IdPath'
@@ -1065,6 +1065,23 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SuccessResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /addons/modules:
+    get:
+      tags: [Addon]
+      summary: 获取后台前端插件模块清单
+      description: |
+        用于前后端分离后台启动阶段拉取插件前端模块信息，
+        返回哪些插件需要预加载、哪些插件启用前端缓存，以及各插件入口模块地址。
+      responses:
+        '200':
+          description: 插件前端模块清单
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddonFrontendModulesResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1355,7 +1372,7 @@ components:
         value:
           type: integer
           enum: [0, 1]
-    SystemRequest:
+    AdminRequest:
       type: object
       required: [username, nickname]
       properties:
@@ -1365,7 +1382,7 @@ components:
           type: string
         role_id:
           type: integer
-          description: 历史单角色字段；多角色设置建议调用 `systems-role/{id}`
+          description: 历史单角色字段；多角色设置建议调用 `admins-role/{id}`
         password:
           type: string
         mobile:
@@ -1635,6 +1652,112 @@ components:
           type: integer
         addon_version_id:
           type: integer
+    AddonFrontendModulesResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: 操作成功
+        data:
+          type: object
+          properties:
+            preload:
+              type: array
+              items:
+                type: string
+              example: [cms]
+            cache:
+              type: array
+              items:
+                type: string
+              example: [cms]
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    example: cms
+                  title:
+                    type: string
+                    example: 内容管理
+                  version:
+                    type: string
+                    example: 1.2.0
+                  module:
+                    type: string
+                    example: cms
+                  sort:
+                    type: integer
+                    example: 20
+                  preload:
+                    type: boolean
+                    example: true
+                  keep_alive:
+                    type: boolean
+                    example: false
+                  entry:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        example: module
+                      name:
+                        type: string
+                        example: cms
+                      scope:
+                        type: string
+                        example: cms
+                      url:
+                        type: string
+                        example: /addons/cms/dist/admin/index.js
+                  assets:
+                    type: object
+                    properties:
+                      base_url:
+                        type: string
+                        example: /addons/cms
+                      styles:
+                        type: array
+                        items:
+                          type: string
+                      scripts:
+                        type: array
+                        items:
+                          type: string
+                  cache:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                        example: true
+                      version:
+                        type: string
+                        example: 1.2.0
+                      strategy:
+                        type: string
+                        example: persistent
+                  routes:
+                    type: array
+                    items:
+                      type: string
+                  resources:
+                    type: array
+                    items:
+                      type: string
+                  meta:
+                    type: object
+                    properties:
+                      icon:
+                        type: string
+                        example: icon-cms
+                      description:
+                        type: string
+                        example: CMS 插件
     CloudLoginRequest:
       type: object
       required: [username, password]

@@ -114,7 +114,7 @@ abstract class AbstractEnum
                 $reflect = new \ReflectionClass($calledClass);
                 self::$constCacheArray[$calledClass] = $reflect->getConstants();
             } catch (\ReflectionException $e) {
-                throw new BackgroundException('方法生成错误');
+                throw new BackgroundException(__('ptadmin::background.method_generate_error'));
             }
         }
 

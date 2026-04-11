@@ -29,6 +29,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use ReflectionClass;
 use PTAdmin\Admin\Commands\AdminBootstrapAuthCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
 use PTAdmin\Admin\Commands\AdminInitCommand;
@@ -92,7 +93,10 @@ class PTAdminServiceProvider extends ServiceProvider
                 __DIR__.'/../../../database/Migrations/2026_04_09_120000_create_admin_authorization_tables.php' => database_path('migrations/2026_04_09_120000_create_admin_authorization_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php' => database_path('migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_140000_seed_admin_default_resources.php' => database_path('migrations/2026_04_09_140000_seed_admin_default_resources.php'),
-                __DIR__.'/../../../database/Migrations/2026_04_10_120000_rename_attachments_to_assets.php' => database_path('migrations/2026_04_10_120000_rename_attachments_to_assets.php'),
+                __DIR__.'/../../../database/Migrations/2026_04_10_120000_create_assets_table.php' => database_path('migrations/2026_04_10_120000_create_assets_table.php'),
+                $this->easyMigrationPath('2024_06_13_154934_mod_init.php') => database_path('migrations/2024_06_13_154934_mod_init.php'),
+                $this->easyMigrationPath('2026_04_06_000000_create_model_versions_table.php') => database_path('migrations/2026_04_06_000000_create_model_versions_table.php'),
+                $this->easyMigrationPath('2026_04_06_000001_create_audit_logs_table.php') => database_path('migrations/2026_04_06_000001_create_audit_logs_table.php'),
             ], 'ptadmin-migrations');
 
             $this->publishes([
@@ -105,6 +109,7 @@ class PTAdminServiceProvider extends ServiceProvider
         }
 
         $this->loadMigrationsFrom(__DIR__.'/../../../database/Migrations');
+        $this->loadMigrationsFrom($this->easyMigrationsDirectory());
         $this->loadTranslationsFrom(__DIR__.'/../../../lang', 'ptadmin');
         $this->loadViewsFrom(__DIR__.'/../../../resources/views/install', 'ptadmin-install');
         $this->registerRouteMiddleware();
@@ -179,5 +184,20 @@ class PTAdminServiceProvider extends ServiceProvider
         $router->aliasMiddleware('ptadmin.response', ExceptionResponseMiddleware::class);
         $router->aliasMiddleware('ptadmin.resource', AuthorizationMiddleware::class);
         $router->aliasMiddleware('ptadmin.operation.record', OperationRecordMiddleware::class);
+    }
+
+    private function easyMigrationsDirectory(): string
+    {
+        $providerFile = (new ReflectionClass(EasyServiceProviders::class))->getFileName();
+        if (false === $providerFile) {
+            throw new \RuntimeException('Unable to locate PTAdmin Easy service provider.');
+        }
+
+        return dirname($providerFile, 3).'/database/migrations';
+    }
+
+    private function easyMigrationPath(string $filename): string
+    {
+        return $this->easyMigrationsDirectory().'/'.$filename;
     }
 }

@@ -38,6 +38,12 @@ class AdminResourceRequest extends FormRequest
         return [
             'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:150', Rule::unique(AdminResource::class, 'code')->whereNull('deleted_at')->ignore($id)],
             'title' => ['required', 'max:100', Rule::unique(AdminResource::class, 'name')->whereNull('deleted_at')->ignore($id)],
+            'module' => [Rule::requiredIf(function (): bool {
+                return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::BTN, MenuTypeEnum::LINK], true);
+            }), 'max:50'],
+            'page_key' => [Rule::requiredIf(function (): bool {
+                return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::LINK], true);
+            }), 'max:100'],
             'route' => [Rule::requiredIf(function (): bool {
                 return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::LINK], true);
             }), 'max:150', function ($attribute, $value, $fail): void {
@@ -46,7 +52,6 @@ class AdminResourceRequest extends FormRequest
                     $fail('路由不能为空, 且必须以 http:// 或 https:// 开头');
                 }
             }],
-            'component' => 'max:150',
             'icon' => 'max:100',
             'weight' => 'integer|min:0|max:255',
             'note' => 'max:500',
@@ -54,6 +59,9 @@ class AdminResourceRequest extends FormRequest
             'status' => 'integer|in:0,1',
             'is_nav' => 'required|integer|in:0,1',
             'controller' => 'max:255',
+            'redirect' => 'max:150',
+            'hidden' => 'integer|in:0,1',
+            'keep_alive' => 'integer|in:0,1',
         ];
     }
 

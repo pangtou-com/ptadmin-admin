@@ -3,9 +3,9 @@
 @section('content')
     @if(isset($allPassed) && !$allPassed)
         <div class="install-alert install-alert-warning">
-            环境检查未通过，请先修复失败项后再继续下一步。
+            {{ __('ptadmin::install.requirements_failed') }}
             @if(!empty($failedItems))
-                当前失败项：
+                {{ __('ptadmin::install.requirements_failed_items') }}
                 @foreach($failedItems as $index => $item)
                     {{ $item['group'] }} / {{ $item['title'] }}@if($index + 1 < count($failedItems))；@endif
                 @endforeach
@@ -18,9 +18,9 @@
             <h2 class="install-section-title">{{ $result['title'] }}</h2>
             <div class="install-table">
                 <div class="install-table-head">
-                    <div>检测项</div>
-                    <div>推荐配置</div>
-                    <div>状态</div>
+                    <div>{{ __('ptadmin::install.table.item') }}</div>
+                    <div>{{ __('ptadmin::install.table.config') }}</div>
+                    <div>{{ __('ptadmin::install.table.status') }}</div>
                 </div>
                 @if(isset($result['results']) && $result['results'])
                     @foreach($result['results'] as $item)
@@ -29,9 +29,9 @@
                             <div>{{ $item['config'] }}</div>
                             <div>
                                 @if($item['state'])
-                                    <span class="install-status install-status-success">通过</span>
+                                    <span class="install-status install-status-success">{{ __('ptadmin::install.table.passed') }}</span>
                                 @else
-                                    <span class="install-status install-status-error">失败</span>
+                                    <span class="install-status install-status-error">{{ __('ptadmin::install.table.failed') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -44,14 +44,14 @@
 
 @section('button')
     <div class="button-row">
-        <button type="button" id="pre" class="install-button install-button-secondary">上一步</button>
-        <button type="button" id="reload" class="install-button install-button-warning">重新检测</button>
+        <button type="button" id="pre" class="install-button install-button-secondary">{{ __('ptadmin::install.prev') }}</button>
+        <button type="button" id="reload" class="install-button install-button-warning">{{ __('ptadmin::install.reload') }}</button>
         <button
             type="button"
             id="next"
             class="install-button install-button-primary @if(isset($allPassed) && !$allPassed) is-disabled @endif"
             @if(isset($allPassed) && !$allPassed) disabled @endif
-        >下一步</button>
+        >{{ __('ptadmin::install.next') }}</button>
     </div>
 @endsection
 

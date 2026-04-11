@@ -41,6 +41,7 @@ class FrontendController
             'logoutPath' => admin_api_url('logout'),
             'uploadPath' => admin_api_url('upload'),
             'userResourcesPath' => admin_api_url('user/resources'),
+            'moduleManifestPath' => admin_api_url('modules'),
         ];
 
         $script = 'window.__PTADMIN__ = '.json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).';';

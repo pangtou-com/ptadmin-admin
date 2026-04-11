@@ -15,8 +15,8 @@ class PTAdminDatabaseMigrationTest extends TestCase
         $this->migratePackageTables();
 
         foreach ([
-            'systems',
-            'system_logs',
+            'admins',
+            'admin_login_logs',
             'user_tokens',
             'operation_records',
             'system_config_groups',
@@ -30,6 +30,10 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'admin_departments',
             'admin_user_org_relations',
             'assets',
+            'mods',
+            'mod_fields',
+            'mod_versions',
+            'audit_logs',
         ] as $table) {
             self::assertTrue(Schema::hasTable($table), sprintf('Missing table [%s].', $table));
         }
@@ -39,6 +43,7 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'name',
             'type',
             'module',
+            'page_key',
             'parent_id',
             'route',
             'ability_hint_json',
@@ -56,9 +61,9 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'user.users',
             'system',
             'system.role',
-            'system.system',
+            'system.admins',
             'system.resources',
-            'system.login',
+            'system.admin_login_logs',
             'system.operate',
             'system.config',
             'system.assets',

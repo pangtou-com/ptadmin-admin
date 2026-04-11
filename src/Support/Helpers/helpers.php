@@ -347,7 +347,7 @@ if (!function_exists('model_build')) {
             return \PTAdmin\Admin\Models\BuildModel::build($model, $connection);
         }
 
-        throw new \PTAdmin\Foundation\Exceptions\BackgroundException('模型不存在');
+        throw new \PTAdmin\Foundation\Exceptions\BackgroundException(__('ptadmin::background.model_not_exists'));
     }
 }
 
@@ -514,7 +514,7 @@ if (!function_exists('addon_asset')) {
         // 判断应用目录下是否存在资源信息
         $addon_path = addon_path($addon_code, 'Assets'.\DIRECTORY_SEPARATOR.$path);
         if (!file_exists($addon_path)) {
-            throw new \PTAdmin\Foundation\Exceptions\BackgroundException("【{$path}】不存在");
+            throw new \PTAdmin\Foundation\Exceptions\BackgroundException(__('ptadmin::background.path_not_exists', ['path' => $path]));
         }
         // 拷贝资源至访问目录
         $addon_storage_path = addon_storage_path($addon_code, $path);

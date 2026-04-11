@@ -21,7 +21,7 @@ class PTAdminDashboardApiTest extends TestCase
 
     public function test_dashboard_endpoints_require_admin_login(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
@@ -29,19 +29,19 @@ class PTAdminDashboardApiTest extends TestCase
             ->getJson('/system/dashboard/widgets')
             ->assertOk()
             ->assertJson(array(
-                'code' => 10001,
+                'code' => 419,
                 'message' => '未登录',
             ));
     }
 
     public function test_dashboard_widget_endpoints_return_registered_addon_widgets(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem(array(
+        $founder = $this->createAdminAccount(array(
             'username' => 'founder_dashboard',
             'nickname' => 'Founder Dashboard',
             'is_founder' => 1,
@@ -118,12 +118,12 @@ class PTAdminDashboardApiTest extends TestCase
 
     public function test_dashboard_query_returns_error_when_widget_does_not_exist(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem(array(
+        $founder = $this->createAdminAccount(array(
             'username' => 'founder_dashboard_missing',
             'nickname' => 'Founder Dashboard Missing',
             'is_founder' => 1,
@@ -156,12 +156,12 @@ class PTAdminDashboardApiTest extends TestCase
 
     public function test_dashboard_action_endpoint_executes_registered_widget_action(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem(array(
+        $founder = $this->createAdminAccount(array(
             'username' => 'founder_dashboard_action',
             'nickname' => 'Founder Dashboard Action',
             'is_founder' => 1,
@@ -212,12 +212,12 @@ class PTAdminDashboardApiTest extends TestCase
 
     public function test_dashboard_action_returns_error_when_action_does_not_exist(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem(array(
+        $founder = $this->createAdminAccount(array(
             'username' => 'founder_dashboard_action_missing',
             'nickname' => 'Founder Dashboard Action Missing',
             'is_founder' => 1,

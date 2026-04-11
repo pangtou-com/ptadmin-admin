@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use PTAdmin\Admin\Models\AdminGrant;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Models\AdminRole;
-use PTAdmin\Admin\Models\System;
+use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Tests\TestCase;
@@ -17,38 +17,38 @@ class PTAdminConsoleCommandTest extends TestCase
 {
     public function test_admin_auth_bootstrap_command_initializes_role_and_assigns_resources(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->migratePackageTables();
 
-        $system = new System();
-        $system->username = 'console-user';
-        $system->nickname = 'Console User';
-        $system->status = 1;
-        $system->password = Hash::make('secret123');
-        $system->save();
+        $admin = new Admin();
+        $admin->username = 'console-user';
+        $admin->nickname = 'Console User';
+        $admin->status = 1;
+        $admin->password = Hash::make('secret123');
+        $admin->save();
 
         $this->artisan('admin:auth-bootstrap', [
             '--role-code' => 'ops_admin',
             '--role-name' => '运维管理员',
-            '--assign-user-id' => (string) $system->id,
+            '--assign-user-id' => (string) $admin->id,
             '--force' => true,
         ])
-            ->expectsOutput(sprintf('角色 [运维管理员] 已绑定到后台用户 [%d]。', $system->id))
-            ->expectsOutput('默认角色 [运维管理员] 初始化完成。')
-            ->expectsOutput(sprintf('已授予资源数量: %d', AdminResource::query()->count()))
+            ->expectsOutput(__('ptadmin::common.command.admin_auth_bound', ['role' => '运维管理员', 'user_id' => $admin->id]))
+            ->expectsOutput(__('ptadmin::common.command.admin_auth_done', ['role' => '运维管理员']))
+            ->expectsOutput(__('ptadmin::common.command.admin_auth_resource_count', ['count' => AdminResource::query()->count()]))
             ->assertExitCode(0);
 
         $role = AdminRole::query()->where('code', 'ops_admin')->firstOrFail();
         self::assertSame(AdminResource::query()->count(), AdminGrant::query()->where('subject_id', $role->id)->count());
         self::assertDatabaseHas('admin_user_roles', [
-            'user_id' => $system->id,
+            'user_id' => $admin->id,
             'role_id' => $role->id,
         ]);
     }
 
     public function test_admin_init_command_creates_founder_account(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createSystemConfigGroupsTable();
         $this->createSystemConfigsTable();
 
@@ -59,13 +59,13 @@ class PTAdminConsoleCommandTest extends TestCase
             '--email' => 'root@example.com',
             '--mobile' => '13800138000',
         ])
-            ->expectsOutput('管理员账户初始化成功!')
-            ->expectsOutput('管理员账户信息:')
-            ->expectsOutput('用户账户: root')
-            ->expectsOutput('用户密码: secret123')
+            ->expectsOutput(__('ptadmin::common.command.admin_init_success'))
+            ->expectsOutput(__('ptadmin::common.command.admin_init_summary'))
+            ->expectsOutput(__('ptadmin::common.command.admin_init_username', ['username' => 'root']))
+            ->expectsOutput(__('ptadmin::common.command.admin_init_password', ['password' => 'secret123']))
             ->assertExitCode(0);
 
-        $founder = System::query()->where('username', 'root')->firstOrFail();
+        $founder = Admin::query()->where('username', 'root')->firstOrFail();
 
         self::assertSame(1, (int) $founder->is_founder);
         self::assertSame('Root', $founder->nickname);
@@ -76,7 +76,7 @@ class PTAdminConsoleCommandTest extends TestCase
 
     public function test_admin_init_command_rejects_invalid_mobile_number(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
 
         $this->artisan('admin:init', [
             '--username' => 'root',
@@ -85,6 +85,6 @@ class PTAdminConsoleCommandTest extends TestCase
             '--mobile' => '123',
         ])->assertExitCode(1);
 
-        self::assertSame(0, System::query()->count());
+        self::assertSame(0, Admin::query()->count());
     }
 }

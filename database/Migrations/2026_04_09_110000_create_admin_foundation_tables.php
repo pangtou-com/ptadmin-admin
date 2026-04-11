@@ -11,8 +11,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $this->createSystemsTable();
-        $this->createSystemLogsTable();
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
         $this->createSystemConfigGroupsTable();
@@ -25,17 +25,13 @@ return new class extends Migration
         Schema::dropIfExists('system_config_groups');
         Schema::dropIfExists('operation_records');
         Schema::dropIfExists('user_tokens');
-        Schema::dropIfExists('system_logs');
-        Schema::dropIfExists('systems');
+        Schema::dropIfExists('admin_login_logs');
+        Schema::dropIfExists('admins');
     }
 
-    private function createSystemsTable(): void
+    private function createAdminsTable(): void
     {
-        if (Schema::hasTable('systems')) {
-            return;
-        }
-
-        Schema::create('systems', function (Blueprint $table): void {
+        Schema::create('admins', function (Blueprint $table): void {
             $table->id();
             $table->string('username', 20)->nullable();
             $table->string('nickname', 20)->default('');
@@ -51,41 +47,33 @@ return new class extends Migration
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();
 
-            $table->index('username', 'idx_systems_username');
-            $table->index('is_founder', 'idx_systems_is_founder');
-            $table->index('status', 'idx_systems_status');
+            $table->index('username', 'idx_admins_username');
+            $table->index('is_founder', 'idx_admins_is_founder');
+            $table->index('status', 'idx_admins_status');
         });
 
-        $this->commentTable('systems', '后台管理员表');
+        $this->commentTable('admins', '后台管理员表');
     }
 
-    private function createSystemLogsTable(): void
+    private function createAdminLoginLogsTable(): void
     {
-        if (Schema::hasTable('system_logs')) {
-            return;
-        }
-
-        Schema::create('system_logs', function (Blueprint $table): void {
+        Schema::create('admin_login_logs', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('system_id');
+            $table->unsignedBigInteger('admin_id');
             $table->unsignedInteger('login_at')->default(0);
             $table->unsignedInteger('login_ip')->default(0);
             $table->unsignedTinyInteger('status')->default(0);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
 
-            $table->index('system_id', 'idx_system_logs_system_id');
+            $table->index('admin_id', 'idx_admin_login_logs_admin_id');
         });
 
-        $this->commentTable('system_logs', '后台管理员登录日志表');
+        $this->commentTable('admin_login_logs', '后台管理员登录日志表');
     }
 
     private function createUserTokensTable(): void
     {
-        if (Schema::hasTable('user_tokens')) {
-            return;
-        }
-
         Schema::create('user_tokens', function (Blueprint $table): void {
             $table->id();
             $table->string('target_type');
@@ -107,13 +95,9 @@ return new class extends Migration
 
     private function createOperationRecordsTable(): void
     {
-        if (Schema::hasTable('operation_records')) {
-            return;
-        }
-
         Schema::create('operation_records', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('system_id')->default(0);
+            $table->unsignedBigInteger('admin_id')->default(0);
             $table->string('nickname', 50)->default('');
             $table->unsignedInteger('ip')->default(0);
             $table->string('url', 255)->default('');
@@ -129,7 +113,7 @@ return new class extends Migration
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
 
-            $table->index('system_id', 'idx_operation_records_system_id');
+            $table->index('admin_id', 'idx_operation_records_admin_id');
             $table->index('created_at', 'idx_operation_records_created_at');
         });
 
@@ -138,10 +122,6 @@ return new class extends Migration
 
     private function createSystemConfigGroupsTable(): void
     {
-        if (Schema::hasTable('system_config_groups')) {
-            return;
-        }
-
         Schema::create('system_config_groups', function (Blueprint $table): void {
             $table->id();
             $table->string('title', 255);
@@ -164,10 +144,6 @@ return new class extends Migration
 
     private function createSystemConfigsTable(): void
     {
-        if (Schema::hasTable('system_configs')) {
-            return;
-        }
-
         Schema::create('system_configs', function (Blueprint $table): void {
             $table->id();
             $table->string('title', 255);

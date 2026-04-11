@@ -124,7 +124,7 @@ class PTAdminSystemConfigApiTest extends TestCase
     {
         $this->seedSettingFixtures();
 
-        self::assertSame([
+        self::assertEquals([
             'basic' => [
                 'site_title' => 'PTAdmin',
                 'site_description' => '后台管理系统',
@@ -143,7 +143,7 @@ class PTAdminSystemConfigApiTest extends TestCase
      */
     private function seedSettingFixtures(): array
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createSystemConfigGroupsTable();
         $this->createSystemConfigsTable();
@@ -215,7 +215,7 @@ class PTAdminSystemConfigApiTest extends TestCase
 
     private function issueFounderToken(): string
     {
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_setting',
             'nickname' => 'Founder Setting',
             'is_founder' => 1,

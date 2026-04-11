@@ -18,7 +18,7 @@ class AuthorizationMiddleware
         $guard = $guard ?: config('auth.defaults.guard');
 
         if (!Auth::guard($guard)->check()) {
-            throw new AccessDeniedHttpException('无权限访问');
+            throw new AccessDeniedHttpException(__('ptadmin::background.access_denied'));
         }
 
         if ($guard === AdminAuth::getGuard() && AdminAuth::isFounder()) {
@@ -31,6 +31,6 @@ class AuthorizationMiddleware
             return $next($request);
         }
 
-        throw new AccessDeniedHttpException('无权限访问');
+        throw new AccessDeniedHttpException(__('ptadmin::background.access_denied'));
     }
 }

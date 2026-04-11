@@ -33,7 +33,7 @@ abstract class BaseStatusHandle
     public function store(array $data): void
     {
         if (!$this->model) {
-            throw new ServiceException(['message' => '模型未定义']);
+            throw new ServiceException(['message' => __('ptadmin::background.model_not_defined')]);
         }
         $user_id = Auth::guard('web')->id();
         $dao = $this->model::query()->where('user_id', $user_id)->where($data)->first();

@@ -71,27 +71,27 @@ class RequirementService
     {
         $results = [];
         $results[] = [
-            'title' => 'PHP版本',
+            'title' => __('ptadmin::install.sections.php_version'),
             'results' => $this->checkPhpVersion((string) config('ptadmin-install.core.min_php_version', '7.4.0')),
         ];
 
         $results[] = [
-            'title' => '环境检测',
+            'title' => __('ptadmin::install.sections.extensions'),
             'results' => $this->checkExtend(config('ptadmin-install.extend', [])),
         ];
 
         $results[] = [
-            'title' => '函数检测',
+            'title' => __('ptadmin::install.sections.functions'),
             'results' => $this->checkFunc(config('ptadmin-install.func', [])),
         ];
 
         $results[] = [
-            'title' => '目录权限',
+            'title' => __('ptadmin::install.sections.folders'),
             'results' => $this->checkFolders(config('ptadmin-install.folders', [])),
         ];
 
         $results[] = [
-            'title' => '文件权限',
+            'title' => __('ptadmin::install.sections.files'),
             'results' => $this->checkFiles(config('ptadmin-install.files', [])),
         ];
 
@@ -105,7 +105,7 @@ class RequirementService
     {
         return [[
             'title' => 'PHP',
-            'config' => sprintf('>= %s，当前 %s', $minVersion, PHP_VERSION),
+            'config' => sprintf('>= %s, %s %s', $minVersion, __('ptadmin::install.current_version'), PHP_VERSION),
             'state' => version_compare(PHP_VERSION, $minVersion, '>='),
         ]];
     }
@@ -182,7 +182,7 @@ class RequirementService
             if ('read' === $mode) {
                 $results[] = [
                     'title' => $file,
-                    'config' => '可读取',
+                    'config' => __('ptadmin::install.readable'),
                     'state' => $exists && is_readable($path),
                 ];
 
@@ -192,7 +192,7 @@ class RequirementService
             $state = $exists ? is_writable($path) : is_writable(dirname($path));
             $results[] = [
                 'title' => $file,
-                'config' => $exists ? '可写入' : '可创建',
+                'config' => $exists ? __('ptadmin::install.writable') : __('ptadmin::install.creatable'),
                 'state' => $state,
             ];
         }

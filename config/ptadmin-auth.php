@@ -14,6 +14,7 @@ return [
     'api_prefix' => env('PTADMIN_API_PREFIX', env('PTADMIN_ROUTE_PREFIX', config('app.prefix', 'system'))),
     'web_prefix' => env('PTADMIN_WEB_PREFIX', 'admin'),
     'web_asset_path' => env('PTADMIN_WEB_ASSET_PATH', 'vendor/ptadmin/admin'),
+    'module_manifest_cache_ttl' => (int) env('PTADMIN_MODULE_MANIFEST_CACHE_TTL', 300),
     // 兼容旧代码读取 route_prefix，内部统一以 api_prefix 为准。
     'route_prefix' => env('PTADMIN_API_PREFIX', env('PTADMIN_ROUTE_PREFIX', config('app.prefix', 'system'))),
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),

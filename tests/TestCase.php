@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Orchestra\Testbench\TestCase as Orchestra;
-use PTAdmin\Admin\Models\System;
+use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Providers\PTAdminServiceProvider;
 
 abstract class TestCase extends Orchestra
@@ -31,10 +31,10 @@ abstract class TestCase extends Orchestra
         $app['config']->set('auth.defaults.guard', 'api');
         $app['config']->set('auth.app_guard_name', 'admin');
         $app['config']->set('auth.guards.api.driver', 'ptadmin');
-        $app['config']->set('auth.guards.api.provider', 'systems');
+        $app['config']->set('auth.guards.api.provider', 'admins');
         $app['config']->set('auth.guards.api.expires_at', 24 * 60 * 60);
-        $app['config']->set('auth.providers.systems.driver', 'eloquent');
-        $app['config']->set('auth.providers.systems.model', System::class);
+        $app['config']->set('auth.providers.admins.driver', 'eloquent');
+        $app['config']->set('auth.providers.admins.model', Admin::class);
         $app['config']->set('database.default', 'sqlite');
         $app['config']->set('database.connections.sqlite.database', ':memory:');
         $app['config']->set('filesystems.default', 'public');
@@ -50,21 +50,48 @@ abstract class TestCase extends Orchestra
 
     protected function migratePackageTables(): void
     {
+        $this->dropPackageTables();
+
         Artisan::call('migrate', [
             '--database' => 'sqlite',
-            '--path' => realpath(__DIR__.'/../database/Migrations'),
-            '--realpath' => true,
             '--force' => true,
         ]);
     }
 
-    protected function createSystemsTable(): void
+    protected function dropPackageTables(): void
     {
-        if (Schema::hasTable('systems')) {
+        foreach ([
+            'assets',
+            'audit_logs',
+            'mod_versions',
+            'mod_fields',
+            'mods',
+            'admin_user_org_relations',
+            'admin_departments',
+            'admin_organizations',
+            'admin_tenants',
+            'admin_grants',
+            'admin_user_roles',
+            'admin_resources',
+            'admin_roles',
+            'system_configs',
+            'system_config_groups',
+            'operation_records',
+            'user_tokens',
+            'admin_login_logs',
+            'admins',
+        ] as $table) {
+            Schema::dropIfExists($table);
+        }
+    }
+
+    protected function createAdminsTable(): void
+    {
+        if (Schema::hasTable('admins')) {
             return;
         }
 
-        Schema::create('systems', function (Blueprint $table): void {
+        Schema::create('admins', function (Blueprint $table): void {
             $table->id();
             $table->string('username', 20)->nullable();
             $table->string('nickname', 20)->default('');
@@ -82,15 +109,15 @@ abstract class TestCase extends Orchestra
         });
     }
 
-    protected function createSystemLogsTable(): void
+    protected function createAdminLoginLogsTable(): void
     {
-        if (Schema::hasTable('system_logs')) {
+        if (Schema::hasTable('admin_login_logs')) {
             return;
         }
 
-        Schema::create('system_logs', function (Blueprint $table): void {
+        Schema::create('admin_login_logs', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('system_id');
+            $table->unsignedBigInteger('admin_id');
             $table->unsignedInteger('login_at')->default(0);
             $table->unsignedInteger('login_ip')->default(0);
             $table->unsignedTinyInteger('status')->default(0);
@@ -128,7 +155,7 @@ abstract class TestCase extends Orchestra
 
         Schema::create('operation_records', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('system_id')->default(0);
+            $table->unsignedBigInteger('admin_id')->default(0);
             $table->string('nickname', 50)->default('');
             $table->unsignedInteger('ip')->default(0);
             $table->string('url', 255)->default('');
@@ -213,26 +240,26 @@ abstract class TestCase extends Orchestra
         });
     }
 
-    protected function createAdminSystem(array $overrides = []): System
+    protected function createAdminAccount(array $overrides = []): Admin
     {
-        $system = new System();
-        $system->username = $overrides['username'] ?? 'admin_'.uniqid();
-        $system->nickname = $overrides['nickname'] ?? 'Admin';
-        $system->status = $overrides['status'] ?? 1;
-        $system->is_founder = $overrides['is_founder'] ?? 0;
-        $system->email = $overrides['email'] ?? null;
-        $system->mobile = $overrides['mobile'] ?? null;
-        $system->password = Hash::make($overrides['password'] ?? 'secret123');
-        $system->save();
+        $admin = new Admin();
+        $admin->username = $overrides['username'] ?? 'admin_'.uniqid();
+        $admin->nickname = $overrides['nickname'] ?? 'Admin';
+        $admin->status = $overrides['status'] ?? 1;
+        $admin->is_founder = $overrides['is_founder'] ?? 0;
+        $admin->email = $overrides['email'] ?? null;
+        $admin->mobile = $overrides['mobile'] ?? null;
+        $admin->password = Hash::make($overrides['password'] ?? 'secret123');
+        $admin->save();
 
-        return $system->refresh();
+        return $admin->refresh();
     }
 
-    protected function issueAdminToken(System $system): string
+    protected function issueAdminToken(Admin $admin): string
     {
         $this->createUserTokensTable();
 
-        return app('auth')->guard(config('ptadmin-auth.guard'))->login($system);
+        return app('auth')->guard(config('ptadmin-auth.guard'))->login($admin);
     }
 
     protected function jsonApiHeaders(?string $token = null): array

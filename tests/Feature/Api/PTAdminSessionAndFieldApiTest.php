@@ -6,7 +6,7 @@ namespace PTAdmin\Admin\Tests\Feature\Api;
 
 use Illuminate\Support\Facades\Hash;
 use PTAdmin\Admin\Models\AdminResource;
-use PTAdmin\Admin\Models\SystemLog;
+use PTAdmin\Admin\Models\AdminLoginLog;
 use PTAdmin\Admin\Models\UserToken;
 use PTAdmin\Admin\Tests\TestCase;
 use PTAdmin\Contracts\Auth\CapabilityServiceInterface;
@@ -15,11 +15,11 @@ class PTAdminSessionAndFieldApiTest extends TestCase
 {
     public function test_logout_endpoint_returns_login_url_and_revokes_current_token(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_logout',
             'nickname' => 'Founder',
             'is_founder' => 1,
@@ -43,12 +43,12 @@ class PTAdminSessionAndFieldApiTest extends TestCase
 
     public function test_password_endpoint_updates_password_and_invalidates_current_token(): void
     {
-        $this->createSystemsTable();
-        $this->createSystemLogsTable();
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_password',
             'nickname' => 'Founder',
             'password' => 'secret123',
@@ -56,7 +56,7 @@ class PTAdminSessionAndFieldApiTest extends TestCase
         ]);
         $token = $this->issueAdminToken($founder);
 
-        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/systems/password', [
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/admins/password', [
             'old_password' => 'secret123',
             'password' => 'newSecret123',
             'password_confirmation' => 'newSecret123',
@@ -87,19 +87,19 @@ class PTAdminSessionAndFieldApiTest extends TestCase
 
     public function test_login_log_and_my_resource_endpoints_return_founder_runtime_data(): void
     {
-        $this->createSystemsTable();
-        $this->createSystemLogsTable();
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_runtime',
             'nickname' => 'Founder Runtime',
             'is_founder' => 1,
         ]);
 
-        SystemLog::query()->create([
-            'system_id' => $founder->id,
+        AdminLoginLog::query()->create([
+            'admin_id' => $founder->id,
             'login_at' => time(),
             'login_ip' => (int) ip2long('127.0.0.1'),
             'status' => 1,
@@ -108,7 +108,7 @@ class PTAdminSessionAndFieldApiTest extends TestCase
         $token = $this->issueAdminToken($founder);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/system/login')
+            ->getJson('/system/admins/login-logs')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -132,11 +132,11 @@ class PTAdminSessionAndFieldApiTest extends TestCase
 
     public function test_edit_field_endpoint_returns_fail_when_field_acl_is_disabled(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_field_disabled',
             'nickname' => 'Founder',
             'is_founder' => 1,
@@ -159,14 +159,14 @@ class PTAdminSessionAndFieldApiTest extends TestCase
 
     public function test_edit_field_endpoint_can_sync_page_field_resources_when_capability_is_enabled(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
         config()->set('ptadmin-auth.capabilities.field_acl', true);
         $this->app->forgetInstance(CapabilityServiceInterface::class);
 
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_field_enabled',
             'nickname' => 'Founder',
             'is_founder' => 1,

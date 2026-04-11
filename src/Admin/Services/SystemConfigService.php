@@ -167,7 +167,7 @@ class SystemConfigService
         /** @var mixed $payload */
         $payload = Arr::get($data, 'values', $data);
         if (!\is_array($payload)) {
-            throw new ServiceException('配置值格式错误');
+            throw new ServiceException(__('ptadmin::background.config_value_invalid'));
         }
 
         DB::transaction(function () use ($configs, $payload): void {
@@ -399,11 +399,11 @@ class SystemConfigService
             ->find($id);
 
         if (null === $section) {
-            throw new ServiceException('配置分组不存在');
+            throw new ServiceException(__('ptadmin::background.config_group_not_exists'));
         }
 
         if (0 === (int) $section->parent_id) {
-            throw new ServiceException('请通过二级分组读取配置项');
+            throw new ServiceException(__('ptadmin::background.config_section_required'));
         }
 
         /** @var SystemConfigGroup|null $group */
@@ -412,7 +412,7 @@ class SystemConfigService
             ->find((int) $section->parent_id);
 
         if (null === $group) {
-            throw new ServiceException('上级配置分组不存在');
+            throw new ServiceException(__('ptadmin::background.config_parent_group_not_exists'));
         }
 
         return [$group, $section];

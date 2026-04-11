@@ -115,7 +115,7 @@ class UserService
     {
         $config = SystemConfigService::byGroupName('oauth');
         if (!isset($config[$tag])) {
-            throw new BackgroundException('请先配置第三方登录信息');
+            throw new BackgroundException(__('ptadmin::background.oauth_config_required'));
         }
 //        $oauth = Oauth::make($tag, $config[$tag]);
 //        if (Auth::guard('web')->check()) {
@@ -143,7 +143,7 @@ class UserService
     {
         $config = SystemConfigService::byGroupName('oauth');
         if (!isset($config[$tag])) {
-            throw new BackgroundException('请先配置第三方登录信息');
+            throw new BackgroundException(__('ptadmin::background.oauth_config_required'));
         }
         // $oauth = Oauth::make($tag, $config[$tag])->setCallbackParams($data);
         $oauth = app('oauth');
@@ -230,7 +230,7 @@ class UserService
     {
         $config = SystemConfigService::byGroupName('oauth');
         if (!isset($config[$source])) {
-            throw new BackgroundException('第三方登录配置信息错误');
+            throw new BackgroundException(__('ptadmin::background.oauth_config_invalid'));
         }
         /** @var UserBindPlatform $dao */
         $dao = UserBindPlatform::query()
@@ -275,12 +275,12 @@ class UserService
         if (1 === (int) $data['type']) {
             $user = User::query()->where('mobile', $data['mobile'])->first();
             if (!$user) {
-                throw new BackgroundException('手机号未注册');
+                throw new BackgroundException(__('ptadmin::background.mobile_not_registered'));
             }
         } else {
             $user = User::query()->where('email', $data['email'])->first();
             if (!$user) {
-                throw new RuntimeException('邮箱未注册');
+                throw new RuntimeException(__('ptadmin::background.email_not_registered'));
             }
         }
         $user->salt = Str::random(4);
@@ -299,7 +299,7 @@ class UserService
     public function login(array $data, string $guard = 'web'): array
     {
         if (Auth::guard($guard)->check()) {
-            throw new BackgroundException('用户已登录');
+            throw new BackgroundException(__('ptadmin::background.user_logged_in'));
         }
         // 当存在type时认为是手机或者邮箱验证码登录
         $user = (isset($data['type']) && 1 === (int) $data['type']) ? $this->attemptCode($data) : $this->attempt($data);
@@ -446,7 +446,7 @@ class UserService
     private function attemptCode($data): User
     {
         if (!isset($data['code'])) {
-            throw new BackgroundException('请输入验证码');
+            throw new BackgroundException(__('ptadmin::background.verify_code_required'));
         }
         $field = 'mobile';
         $type = UserVerifyService::TYPE_SMS;
@@ -472,7 +472,7 @@ class UserService
                 return $this->register($data);
             }
 
-            throw new BackgroundException('用户信息未注册');
+            throw new BackgroundException(__('ptadmin::background.user_not_registered'));
         }
 
         return $user;

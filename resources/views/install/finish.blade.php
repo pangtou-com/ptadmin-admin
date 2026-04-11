@@ -2,15 +2,15 @@
 
 @section('content')
     <div class="pre-content">
-        <pre><code>安装完成请登录后台使用</code></pre>
+        <pre><code>{{ __('ptadmin::install.finish_message') }}</code></pre>
     </div>
 @endsection
 
 @section('button')
     <div style="text-align: center">
         <div class="layui-btn-group">
-            <a href="{{route('admin_login')}}" id="reload" class="layui-btn layui-bg-orange layui-btn-sm">登录后台</a>
-            <a href="/" id="next" class="layui-btn layui-bg-blue layui-btn-sm">返回首页</a>
+            <a href="{{route('admin_login')}}" id="reload" class="layui-btn layui-bg-orange layui-btn-sm">{{ __('ptadmin::install.login_admin') }}</a>
+            <a href="/" id="next" class="layui-btn layui-bg-blue layui-btn-sm">{{ __('ptadmin::install.back_home') }}</a>
         </div>
     </div>
 @endsection

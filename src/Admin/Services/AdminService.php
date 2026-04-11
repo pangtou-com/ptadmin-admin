@@ -26,14 +26,14 @@ namespace PTAdmin\Admin\Services;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use PTAdmin\Support\Enums\StatusEnum;
-use PTAdmin\Foundation\Exceptions\BackgroundException;
+use PTAdmin\Admin\Models\Admin;
+use PTAdmin\Admin\Models\AdminLoginLog;
 use PTAdmin\Admin\Models\AdminRole;
-use PTAdmin\Admin\Models\System;
-use PTAdmin\Admin\Models\SystemLog;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
+use PTAdmin\Foundation\Exceptions\BackgroundException;
+use PTAdmin\Support\Enums\StatusEnum;
 
-class SystemService
+class AdminService
 {
     private AdminRoleServiceInterface $adminRoleService;
 
@@ -44,57 +44,57 @@ class SystemService
 
     public function page($search = []): array
     {
-        $model = System::query();
+        $model = Admin::query();
 
         return $model->orderBy('id', 'desc')->paginate()->toArray();
     }
 
-    public function create(array $data): System
+    public function create(array $data): Admin
     {
-        return DB::transaction(function () use ($data): System {
-            $system = new System();
-            $system->password = Hash::make(trim((string) $data['password']));
-            $system->fill($data);
-            $system->save();
+        return DB::transaction(function () use ($data): Admin {
+            $admin = new Admin();
+            $admin->password = Hash::make(trim((string) $data['password']));
+            $admin->fill($data);
+            $admin->save();
 
             $roleIds = $this->normalizeRoleIds((array) ($data['role_id'] ?? []));
             if ([] !== $roleIds) {
-                $this->adminRoleService->syncUserRoles((int) $system->id, $roleIds);
+                $this->adminRoleService->syncUserRoles((int) $admin->id, $roleIds);
             }
 
-            return $system;
+            return $admin;
         });
     }
 
-    public function update(int $id, array $data): System
+    public function update(int $id, array $data): Admin
     {
-        return DB::transaction(function () use ($id, $data): System {
-            /** @var System $system */
-            $system = System::query()->findOrFail($id);
+        return DB::transaction(function () use ($id, $data): Admin {
+            /** @var Admin $admin */
+            $admin = Admin::query()->findOrFail($id);
             if (isset($data['password']) && '' !== trim((string) $data['password'])) {
-                $system->password = Hash::make((string) $data['password']);
+                $admin->password = Hash::make((string) $data['password']);
             }
 
             if (array_key_exists('role_id', $data)) {
-                $this->adminRoleService->syncUserRoles((int) $system->id, $this->normalizeRoleIds((array) $data['role_id']));
+                $this->adminRoleService->syncUserRoles((int) $admin->id, $this->normalizeRoleIds((array) $data['role_id']));
             }
 
-            $system->update($data);
+            $admin->update($data);
 
-            return $system;
+            return $admin;
         });
     }
 
     public function details(int $id): array
     {
-        /** @var System $system */
-        $system = System::query()->select(['id', 'nickname', 'username'])->findOrFail($id);
-        $roleIds = array_column($this->adminRoleService->getUserRoles((int) $system->id), 'id');
+        /** @var Admin $admin */
+        $admin = Admin::query()->select(['id', 'nickname', 'username'])->findOrFail($id);
+        $roleIds = array_column($this->adminRoleService->getUserRoles((int) $admin->id), 'id');
 
         return [
-            'id' => $system->id,
-            'nickname' => $system->nickname,
-            'username' => $system->username,
+            'id' => $admin->id,
+            'nickname' => $admin->nickname,
+            'username' => $admin->username,
             'role_ids' => $roleIds,
             'role_id' => $roleIds[0] ?? null,
             'role' => AdminRole::query()
@@ -117,43 +117,43 @@ class SystemService
 
     public function syncRoles(int $id, array $roleIds): void
     {
-        /** @var System $system */
-        $system = System::query()->select(['id'])->findOrFail($id);
-        $this->adminRoleService->syncUserRoles((int) $system->id, $this->normalizeRoleIds($roleIds));
+        /** @var Admin $admin */
+        $admin = Admin::query()->select(['id'])->findOrFail($id);
+        $this->adminRoleService->syncUserRoles((int) $admin->id, $this->normalizeRoleIds($roleIds));
     }
 
-    public function deleteSystems(array $ids): void
+    public function deleteAdmins(array $ids): void
     {
-        System::query()->where('is_founder', 0)->whereIn('id', array_values(array_unique(array_map('intval', $ids))))->get()->each(function (System $system): void {
-            $system->delete();
+        Admin::query()->where('is_founder', 0)->whereIn('id', array_values(array_unique(array_map('intval', $ids))))->get()->each(function (Admin $admin): void {
+            $admin->delete();
         });
     }
 
     public function updateStatus(array $ids, int $status): void
     {
-        System::query()->where('is_founder', 0)->whereIn('id', array_values(array_unique(array_map('intval', $ids))))->update([
+        Admin::query()->where('is_founder', 0)->whereIn('id', array_values(array_unique(array_map('intval', $ids))))->update([
             'status' => $status,
         ]);
     }
 
-    public function loginLogs(int $systemId): LengthAwarePaginator
+    public function loginLogs(int $adminId): LengthAwarePaginator
     {
-        return SystemLog::query()
-            ->select(['id', 'system_id', 'login_at', 'login_ip', 'status'])
-            ->where('system_id', $systemId)
-            ->with('system:id,nickname')
+        return AdminLoginLog::query()
+            ->select(['id', 'admin_id', 'login_at', 'login_ip', 'status'])
+            ->where('admin_id', $adminId)
+            ->with('admin:id,nickname')
             ->orderBy('id', 'desc')
             ->paginate();
     }
 
-    public function updatePassword(System $system, string $oldPassword, string $newPassword): void
+    public function updatePassword(Admin $admin, string $oldPassword, string $newPassword): void
     {
-        if (!Hash::check($oldPassword, $system->password)) {
-            throw new BackgroundException('原密码错误');
+        if (!Hash::check($oldPassword, $admin->password)) {
+            throw new BackgroundException(__('ptadmin::background.old_password_invalid'));
         }
 
-        $system->password = Hash::make($newPassword);
-        $system->update();
+        $admin->password = Hash::make($newPassword);
+        $admin->update();
     }
 
     /**
@@ -164,14 +164,14 @@ class SystemService
     public static function initializeFounder($data): void
     {
         if (!app()->runningInConsole() && (!isset($data['force']) || true !== $data['force'])) {
-            throw new BackgroundException('请在命令行模式下运行');
+            throw new BackgroundException(__('ptadmin::background.command_only'));
         }
-        $model = System::query()->where('is_founder', 1)->first();
+        $model = Admin::query()->where('is_founder', 1)->first();
         if ($model && (!isset($data['force']) || false === $data['force'])) {
-            throw new BackgroundException('已有创始人账户，如需重新初始化请使用 --force|-f 参数');
+            throw new BackgroundException(__('ptadmin::background.founder_reinit_required'));
         }
         if (!$model) {
-            $model = new System();
+            $model = new Admin();
             $model->is_founder = 1;
         }
         $model->fill($data);

@@ -22,7 +22,7 @@ class PTAdminUploadApiTest extends TestCase
 
     public function test_upload_endpoints_can_store_files_deduplicate_and_return_tiny_response(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createAssetsTable();
         $token = $this->issueFounderToken();
@@ -73,7 +73,7 @@ class PTAdminUploadApiTest extends TestCase
 
     public function test_upload_endpoint_returns_validation_error_for_missing_file(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createAssetsTable();
         $token = $this->issueFounderToken();
@@ -90,7 +90,7 @@ class PTAdminUploadApiTest extends TestCase
 
     public function test_upload_endpoint_requires_login(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createAssetsTable();
 
@@ -101,14 +101,14 @@ class PTAdminUploadApiTest extends TestCase
             ])
             ->assertOk()
             ->assertJson([
-                'code' => 10001,
+                'code' => 419,
                 'message' => '未登录',
             ]);
     }
 
     public function test_upload_endpoint_can_switch_to_addon_storage_by_system_config(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createAssetsTable();
         $token = $this->issueFounderToken();
@@ -160,7 +160,7 @@ class PTAdminUploadApiTest extends TestCase
 
     public function test_asset_endpoints_require_login_and_can_list_picker_and_delete(): void
     {
-        $this->createSystemsTable();
+        $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createAssetsTable();
 
@@ -168,7 +168,7 @@ class PTAdminUploadApiTest extends TestCase
             ->getJson('/system/assets')
             ->assertOk()
             ->assertJson([
-                'code' => 10001,
+                'code' => 419,
                 'message' => '未登录',
             ]);
 
@@ -235,7 +235,7 @@ class PTAdminUploadApiTest extends TestCase
 
     private function issueFounderToken(): string
     {
-        $founder = $this->createAdminSystem([
+        $founder = $this->createAdminAccount([
             'username' => 'founder_upload',
             'nickname' => 'Founder Upload',
             'is_founder' => 1,

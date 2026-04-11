@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-cn">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PTAdmin 安装向导</title>
+    <title>{{ __('ptadmin::install.title') }}</title>
     <style>
         :root {
             --install-bg-start: #0f4c81;
@@ -497,8 +497,8 @@
     <div class="install-shell">
         <div class="install-card">
             <div class="install-header">
-                <h1 class="install-title">欢迎使用PTAdmin</h1>
-                <p class="install-subtitle">按照步骤完成环境检查、配置写入与管理员初始化。</p>
+                <h1 class="install-title">{{ __('ptadmin::install.heading') }}</h1>
+                <p class="install-subtitle">{{ __('ptadmin::install.subtitle') }}</p>
             </div>
             <div class="install-steps">
                 @foreach($tabs as $key => $val)

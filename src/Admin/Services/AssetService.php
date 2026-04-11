@@ -87,7 +87,7 @@ class AssetService
             if ($this->isAddonDriver((string) $asset->driver)) {
                 $addonDriver = $this->parseAddonDriver((string) $asset->driver);
                 if (null === $addonDriver) {
-                    throw new BackgroundException('远程存储驱动配置错误');
+                    throw new BackgroundException(__('ptadmin::background.remote_driver_invalid'));
                 }
 
                 $deleted = $this->executeAddonStorageDelete($addonDriver, [
@@ -98,10 +98,13 @@ class AssetService
                 ]);
 
                 if (!$deleted) {
-                    throw new BackgroundException('远程文件删除失败');
+                    throw new BackgroundException(__('ptadmin::background.remote_delete_failed'));
                 }
-            } elseif (!blank($asset->path) && Storage::exists((string) $asset->path)) {
-                Storage::delete((string) $asset->path);
+            } else {
+                $disk = $this->resolveLocalDisk((string) $asset->driver);
+                if (!blank($asset->path) && Storage::disk($disk)->exists((string) $asset->path)) {
+                    Storage::disk($disk)->delete((string) $asset->path);
+                }
             }
 
             $asset->delete();
@@ -136,5 +139,12 @@ class AssetService
             'code' => $segments[1],
             'disk' => $segments[2],
         ];
+    }
+
+    private function resolveLocalDisk(string $driver): string
+    {
+        $driver = trim($driver);
+
+        return '' === $driver ? (string) config('filesystems.default', 'public') : $driver;
     }
 }
