@@ -128,7 +128,7 @@ class InstallController
                 ob_end_flush();
             }
 
-            ob_implicit_flush(true);
+            ob_implicit_flush(1);
 
             try {
                 if (!$this->hasAcceptedAgreementRecently()) {
@@ -171,7 +171,7 @@ class InstallController
                     'data' => [],
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
             } finally {
-                ob_implicit_flush(false);
+                ob_implicit_flush(0);
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',
