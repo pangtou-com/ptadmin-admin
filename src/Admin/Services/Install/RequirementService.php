@@ -25,6 +25,48 @@ namespace PTAdmin\Admin\Services\Install;
 
 class RequirementService
 {
+    /**
+     * 判断当前环境检测是否存在失败项。
+     */
+    public function hasFailures(): bool
+    {
+        foreach ($this->getCheckResults() as $group) {
+            foreach ((array) ($group['results'] ?? []) as $item) {
+                if (empty($item['state'])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 返回环境检测失败项。
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getFailedItems(): array
+    {
+        $results = [];
+
+        foreach ($this->getCheckResults() as $group) {
+            foreach ((array) ($group['results'] ?? []) as $item) {
+                if (!empty($item['state'])) {
+                    continue;
+                }
+
+                $results[] = [
+                    'group' => (string) ($group['title'] ?? ''),
+                    'title' => (string) ($item['title'] ?? ''),
+                    'config' => (string) ($item['config'] ?? ''),
+                ];
+            }
+        }
+
+        return $results;
+    }
+
     public function getCheckResults(): array
     {
         $results = [];

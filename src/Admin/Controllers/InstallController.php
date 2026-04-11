@@ -23,7 +23,9 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Pipeline\Pipeline;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use PTAdmin\Admin\Services\Install\Pipe\Complete;
 use PTAdmin\Admin\Services\Install\Pipe\ConfigEnv;
@@ -34,6 +36,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InstallController
 {
+    private const AGREEMENT_TTL_SECONDS = 300;
+
     private RequirementService $requirementService;
 
     private array $tabs = [
@@ -53,26 +57,59 @@ class InstallController
         view()->share(['tabs' => $this->tabs]);
     }
 
-    public function welcome(): \Illuminate\Contracts\View\View
+    public function welcome()
     {
         $step = 0;
+        $installErrorMessage = $this->resolveInstallErrorMessage((string) request()->query('error', ''));
+        $redirect = $this->normalizeInstallRedirect((string) request()->query('redirect', ''));
 
-        return view('ptadmin-install::welcome', compact('step'));
+        return view('ptadmin-install::welcome', compact('step', 'installErrorMessage', 'redirect'));
     }
 
-    public function requirements(): \Illuminate\Contracts\View\View
+    public function accept(): RedirectResponse
     {
+        File::ensureDirectoryExists(dirname($this->agreementMarkerPath()));
+        File::put($this->agreementMarkerPath(), (string) time());
+
+        $redirectTo = $this->normalizeInstallRedirect((string) request()->input('redirect', ''));
+        if ('' === $redirectTo) {
+            $redirectTo = route('ptadmin.install.requirements');
+        }
+
+        return redirect()->to($redirectTo);
+    }
+
+    public function requirements()
+    {
+        $redirect = $this->redirectIfAgreementNotAccepted(route('ptadmin.install.requirements'));
+        if (null !== $redirect) {
+            return $redirect;
+        }
+
         $step = 1;
         $results = $this->requirementService->getCheckResults();
+        $allPassed = !$this->requirementService->hasFailures();
+        $failedItems = $this->requirementService->getFailedItems();
+        $installErrorMessage = $this->resolveInstallErrorMessage((string) request()->query('error', ''));
 
-        return view('ptadmin-install::requirements', compact('step', 'results'));
+        return view('ptadmin-install::requirements', compact('step', 'results', 'allPassed', 'failedItems', 'installErrorMessage'));
     }
 
     /**
      * @throws \Exception
      */
-    public function environment(): \Illuminate\Contracts\View\View
+    public function environment()
     {
+        $redirect = $this->redirectIfAgreementNotAccepted(route('ptadmin.install.environment'));
+        if (null !== $redirect) {
+            return $redirect;
+        }
+
+        $redirect = $this->redirectIfRequirementCheckFailed();
+        if (null !== $redirect) {
+            return $redirect;
+        }
+
         $step = 2;
         $url = request()->getSchemeAndHttpHost();
 
@@ -94,6 +131,28 @@ class InstallController
             ob_implicit_flush(true);
 
             try {
+                if (!$this->hasAcceptedAgreementRecently()) {
+                    echo json_encode([
+                        'type' => 'error',
+                        'message' => '请先阅读并同意使用协议后再继续安装。',
+                        'data' => [],
+                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
+
+                    return;
+                }
+
+                if ($this->requirementService->hasFailures()) {
+                    echo json_encode([
+                        'type' => 'error',
+                        'message' => '环境检查未通过，请先修复失败项后再继续安装。',
+                        'data' => [
+                            'failed_items' => $this->requirementService->getFailedItems(),
+                        ],
+                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
+
+                    return;
+                }
+
                 app(Pipeline::class)
                     ->send($data)
                     ->through([
@@ -120,5 +179,97 @@ class InstallController
             'Cache-Control' => 'no-cache',
             'X-Accel-Buffering' => 'no',
         ]);
+    }
+
+    private function hasAcceptedAgreementRecently(): bool
+    {
+        if (!File::exists($this->agreementMarkerPath())) {
+            return false;
+        }
+
+        $acceptedAt = (int) trim((string) File::get($this->agreementMarkerPath()));
+        if ($acceptedAt <= 0) {
+            File::delete($this->agreementMarkerPath());
+            return false;
+        }
+
+        if ($acceptedAt + self::AGREEMENT_TTL_SECONDS < time()) {
+            File::delete($this->agreementMarkerPath());
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function redirectIfAgreementNotAccepted(string $intendedUrl): ?RedirectResponse
+    {
+        if ($this->hasAcceptedAgreementRecently()) {
+            return null;
+        }
+
+        return redirect()
+            ->route('ptadmin.install.welcome', [
+                'redirect' => $this->normalizeInstallRedirect($intendedUrl),
+                'error' => 'protocol',
+            ]);
+    }
+
+    private function redirectIfRequirementCheckFailed(): ?RedirectResponse
+    {
+        if (!$this->requirementService->hasFailures()) {
+            return null;
+        }
+
+        return redirect()
+            ->route('ptadmin.install.requirements', [
+                'error' => 'requirements',
+            ]);
+    }
+
+    private function agreementMarkerPath(): string
+    {
+        return storage_path('framework/ptadmin-install-agreement.lock');
+    }
+
+    private function normalizeInstallRedirect(string $target): string
+    {
+        $target = trim($target);
+        if ('' === $target) {
+            return '';
+        }
+
+        if (0 === strpos($target, '/install')) {
+            return $target;
+        }
+
+        $parts = parse_url($target);
+        if (!\is_array($parts)) {
+            return '';
+        }
+
+        $path = (string) ($parts['path'] ?? '');
+        if (0 !== strpos($path, '/install')) {
+            return '';
+        }
+
+        $query = isset($parts['query']) && '' !== (string) $parts['query']
+            ? '?'.(string) $parts['query']
+            : '';
+
+        return $path.$query;
+    }
+
+    private function resolveInstallErrorMessage(string $errorCode): string
+    {
+        if ('protocol' === $errorCode) {
+            return '请先阅读并同意使用协议后再继续安装。';
+        }
+
+        if ('requirements' === $errorCode) {
+            return '环境检查未通过，请先修复失败项后再继续下一步。';
+        }
+
+        return '';
     }
 }

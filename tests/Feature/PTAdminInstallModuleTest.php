@@ -7,6 +7,7 @@ namespace PTAdmin\Admin\Tests\Feature;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use PTAdmin\Admin\Http\Middleware\CanInstallMiddleware;
+use PTAdmin\Admin\Services\Install\RequirementService;
 use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminInstallModuleTest extends TestCase
@@ -14,6 +15,7 @@ class PTAdminInstallModuleTest extends TestCase
     protected function setUp(): void
     {
         @unlink($this->installedMarkerPath());
+        @unlink($this->agreementMarkerPath());
 
         parent::setUp();
     }
@@ -21,6 +23,7 @@ class PTAdminInstallModuleTest extends TestCase
     protected function tearDown(): void
     {
         @unlink($this->installedMarkerPath());
+        @unlink($this->agreementMarkerPath());
 
         parent::tearDown();
     }
@@ -33,6 +36,7 @@ class PTAdminInstallModuleTest extends TestCase
             app(Router::class)->getMiddleware()['ptadmin.install'] ?? null
         );
         self::assertTrue(Route::has('ptadmin.install.welcome'));
+        self::assertTrue(Route::has('ptadmin.install.accept'));
         self::assertTrue(Route::has('ptadmin.install.requirements'));
         self::assertTrue(Route::has('ptadmin.install.environment'));
         self::assertTrue(Route::has('ptadmin.install.stream'));
@@ -43,18 +47,64 @@ class PTAdminInstallModuleTest extends TestCase
             ->assertDontSee('layui');
 
         $this->get('/install/requirements')
+            ->assertRedirect(route('ptadmin.install.welcome', [
+                'redirect' => '/install/requirements',
+                'error' => 'protocol',
+            ]));
+
+        $this->get('/install/env')
+            ->assertRedirect(route('ptadmin.install.welcome', [
+                'redirect' => '/install/env',
+                'error' => 'protocol',
+            ]));
+
+        $this->post('/install/accept', [
+            'redirect' => '/install/requirements',
+        ])->assertRedirect('/install/requirements');
+
+        file_put_contents($this->agreementMarkerPath(), (string) time());
+
+        $this->get('/install/requirements')
             ->assertOk()
             ->assertSee('环境检测')
             ->assertSee('PHP版本')
             ->assertSee('.env');
+    }
+
+    public function test_environment_step_redirects_back_to_requirements_when_requirement_check_has_failures(): void
+    {
+        $this->app->instance(RequirementService::class, new class() extends RequirementService {
+            public function getCheckResults(): array
+            {
+                return [[
+                    'title' => 'PHP版本',
+                    'results' => [[
+                        'title' => 'PHP',
+                        'config' => '>= 8.0',
+                        'state' => false,
+                    ]],
+                ]];
+            }
+        });
+
+        file_put_contents($this->agreementMarkerPath(), (string) time());
 
         $this->get('/install/env')
+            ->assertRedirect(route('ptadmin.install.requirements', [
+                'error' => 'requirements',
+            ]));
+
+        $this->get('/install/requirements')
             ->assertOk()
-            ->assertSee('基础信息')
-            ->assertSee('后台页面路径')
-            ->assertSee('后台接口路径')
-            ->assertSee('install-dialog-mask')
-            ->assertSee('fetch(url, {method: \'POST\', body: formData})', false);
+            ->assertSee('环境检查未通过')
+            ->assertSee('disabled');
+    }
+
+    public function test_accepting_protocol_can_continue_to_original_target_step(): void
+    {
+        $this->post('/install/accept', [
+            'redirect' => route('ptadmin.install.environment'),
+        ])->assertRedirect('/install/env');
     }
 
     public function test_install_routes_are_not_registered_after_system_is_installed(): void
@@ -64,6 +114,7 @@ class PTAdminInstallModuleTest extends TestCase
         $this->refreshApplication();
 
         self::assertFalse(Route::has('ptadmin.install.welcome'));
+        self::assertFalse(Route::has('ptadmin.install.accept'));
         self::assertFalse(Route::has('ptadmin.install.requirements'));
         self::assertFalse(Route::has('ptadmin.install.environment'));
         self::assertFalse(Route::has('ptadmin.install.stream'));
@@ -83,5 +134,17 @@ class PTAdminInstallModuleTest extends TestCase
         $packageRoot = dirname(__DIR__, 2);
 
         return $packageRoot.'/storage/installed';
+    }
+
+    private function agreementMarkerPath(): string
+    {
+        if (!app()->bound('path.storage')) {
+            /** @var string $packageRoot */
+            $packageRoot = dirname(__DIR__, 2);
+
+            return $packageRoot.'/storage/framework/ptadmin-install-agreement.lock';
+        }
+
+        return storage_path('framework/ptadmin-install-agreement.lock');
     }
 }

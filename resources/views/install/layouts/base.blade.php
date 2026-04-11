@@ -28,7 +28,8 @@
 
         html, body {
             margin: 0;
-            min-height: 100%;
+            height: 100%;
+            overflow: hidden;
             font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
             color: var(--install-text);
             background:
@@ -42,8 +43,9 @@
         }
 
         .install-shell {
-            min-height: 100vh;
-            padding: 48px 16px;
+            height: 100vh;
+            height: 100dvh;
+            padding: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -51,16 +53,21 @@
 
         .install-card {
             width: min(1080px, 100%);
+            height: calc(100vh - 32px);
+            height: calc(100dvh - 32px);
+            max-height: calc(100vh - 32px);
+            max-height: calc(100dvh - 32px);
             border-radius: 24px;
             background: var(--install-card-bg);
             box-shadow: var(--install-shadow);
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .install-header {
             padding: 36px 40px 24px;
             background: linear-gradient(135deg, rgba(29, 111, 220, 0.12), rgba(255, 255, 255, 0.5));
-            border-bottom: 1px solid rgba(219, 228, 239, 0.8);
         }
 
         .install-title {
@@ -80,7 +87,7 @@
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 12px;
-            padding: 0 40px 24px;
+            padding: 10px 40px 24px;
             background: linear-gradient(135deg, rgba(29, 111, 220, 0.12), rgba(255, 255, 255, 0.2));
         }
 
@@ -132,15 +139,24 @@
         }
 
         .install-content {
-            min-height: 520px;
-            padding: 32px 40px 24px;
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 32px 40px 20px;
+            overflow-y: auto;
         }
 
         .install-footer {
-            padding: 0 40px 32px;
+            flex: 0 0 auto;
+            min-height: 96px;
+            padding: 16px 40px 24px;
+            border-top: 1px solid rgba(219, 228, 239, 0.85);
+            background: rgba(255, 255, 255, 0.68);
+            display: flex;
+            align-items: center;
         }
 
         .button-row {
+            width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -149,11 +165,17 @@
         }
 
         .install-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border: 0;
             border-radius: 12px;
             padding: 11px 18px;
             min-width: 112px;
+            min-height: 44px;
             font-size: 14px;
+            line-height: 1;
+            text-align: center;
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
@@ -215,6 +237,26 @@
             border-radius: 18px;
             padding: 22px 24px;
             background: rgba(255, 255, 255, 0.82);
+        }
+
+        .install-alert {
+            margin-bottom: 20px;
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .install-alert-error {
+            border: 1px solid rgba(192, 57, 43, 0.28);
+            background: rgba(192, 57, 43, 0.08);
+            color: var(--install-error);
+        }
+
+        .install-alert-warning {
+            border: 1px solid rgba(217, 119, 6, 0.28);
+            background: rgba(245, 158, 11, 0.1);
+            color: #b45309;
         }
 
         .install-section + .install-section {
@@ -409,6 +451,18 @@
         }
 
         @media (max-width: 900px) {
+            .install-shell {
+                padding: 10px;
+            }
+
+            .install-card {
+                height: calc(100vh - 20px);
+                height: calc(100dvh - 20px);
+                max-height: calc(100vh - 20px);
+                max-height: calc(100dvh - 20px);
+                border-radius: 18px;
+            }
+
             .install-steps,
             .install-form-grid {
                 grid-template-columns: 1fr;
@@ -418,8 +472,18 @@
             .install-steps,
             .install-content,
             .install-footer {
-                padding-left: 20px;
-                padding-right: 20px;
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .install-content {
+                padding-bottom: 16px;
+            }
+
+            .install-footer {
+                min-height: 88px;
+                padding-top: 14px;
+                padding-bottom: 18px;
             }
 
             .install-table-head,
@@ -445,6 +509,9 @@
                 @endforeach
             </div>
             <div class="install-content">
+                @if(isset($installErrorMessage) && '' !== $installErrorMessage)
+                    <div class="install-alert install-alert-error">{{ $installErrorMessage }}</div>
+                @endif
                 @yield('content')
             </div>
             <div class="install-footer">

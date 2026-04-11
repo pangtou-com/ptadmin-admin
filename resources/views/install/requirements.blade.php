@@ -1,6 +1,18 @@
 @extends("ptadmin-install::layouts.base")
 
 @section('content')
+    @if(isset($allPassed) && !$allPassed)
+        <div class="install-alert install-alert-warning">
+            环境检查未通过，请先修复失败项后再继续下一步。
+            @if(!empty($failedItems))
+                当前失败项：
+                @foreach($failedItems as $index => $item)
+                    {{ $item['group'] }} / {{ $item['title'] }}@if($index + 1 < count($failedItems))；@endif
+                @endforeach
+            @endif
+        </div>
+    @endif
+
     @foreach($results as $result)
         <div class="install-section">
             <h2 class="install-section-title">{{ $result['title'] }}</h2>
@@ -34,13 +46,20 @@
     <div class="button-row">
         <button type="button" id="pre" class="install-button install-button-secondary">上一步</button>
         <button type="button" id="reload" class="install-button install-button-warning">重新检测</button>
-        <button type="button" id="next" class="install-button install-button-primary">下一步</button>
+        <button
+            type="button"
+            id="next"
+            class="install-button install-button-primary @if(isset($allPassed) && !$allPassed) is-disabled @endif"
+            @if(isset($allPassed) && !$allPassed) disabled @endif
+        >下一步</button>
     </div>
 @endsection
 
 @section('script')
 <script>
     (function () {
+        const allPassed = @json($allPassed ?? false);
+
         document.getElementById('pre').addEventListener('click', function () {
             window.location.href = @json(route('ptadmin.install.welcome'));
         });
@@ -50,6 +69,10 @@
         });
 
         document.getElementById('next').addEventListener('click', function () {
+            if (!allPassed) {
+                return;
+            }
+
             window.location.href = @json(route('ptadmin.install.environment'));
         });
     })();
