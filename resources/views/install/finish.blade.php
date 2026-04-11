@@ -17,9 +17,6 @@
 
 @section('script')
 <script>
-    layui.use('form', function() {
-        const $ = layui.$
 
-    })
 </script>
 @endsection

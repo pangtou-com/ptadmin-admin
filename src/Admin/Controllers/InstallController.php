@@ -128,27 +128,25 @@ class InstallController
                 ob_end_flush();
             }
 
-            ob_implicit_flush(1);
-
             try {
                 if (!$this->hasAcceptedAgreementRecently()) {
-                    echo json_encode([
+                    $this->sendStreamMessage([
                         'type' => 'error',
                         'message' => '请先阅读并同意使用协议后再继续安装。',
                         'data' => [],
-                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
+                    ]);
 
                     return;
                 }
 
                 if ($this->requirementService->hasFailures()) {
-                    echo json_encode([
+                    $this->sendStreamMessage([
                         'type' => 'error',
                         'message' => '环境检查未通过，请先修复失败项后再继续安装。',
                         'data' => [
                             'failed_items' => $this->requirementService->getFailedItems(),
                         ],
-                    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
+                    ]);
 
                     return;
                 }
@@ -165,13 +163,11 @@ class InstallController
                 Log::error('PTAdmin install stream failed', [
                     'message' => $throwable->getMessage(),
                 ]);
-                echo json_encode([
+                $this->sendStreamMessage([
                     'type' => 'error',
                     'message' => '安装执行失败: '.$throwable->getMessage(),
                     'data' => [],
-                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
-            } finally {
-                ob_implicit_flush(0);
+                ]);
             }
         }, 200, [
             'Content-Type' => 'text/event-stream',
@@ -179,6 +175,20 @@ class InstallController
             'Cache-Control' => 'no-cache',
             'X-Accel-Buffering' => 'no',
         ]);
+    }
+
+    /**
+     * 输出安装流消息并立即刷新到客户端.
+     */
+    private function sendStreamMessage(array $payload): void
+    {
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
+
+        if (ob_get_level() > 0) {
+            ob_flush();
+        }
+
+        flush();
     }
 
     private function hasAcceptedAgreementRecently(): bool
