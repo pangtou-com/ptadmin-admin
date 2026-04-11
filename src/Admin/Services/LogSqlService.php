@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services;
 
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +62,7 @@ class LogSqlService
         if (true !== Config::get('logging.custom.sql.locality')) {
             $location = collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS))->filter(function ($trace) {
                 if (isset($trace['file'])) {
-                    return !str_contains($trace['file'], 'vendor/');
+                    return !Str::contains($trace['file'], 'vendor/');
                 }
 
                 return false;

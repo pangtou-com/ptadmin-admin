@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services\Auth;
 
 use Illuminate\Container\Container;
+use Illuminate\Support\Str;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Services\Auth\Resolvers\BasicGrantResolver;
 use PTAdmin\Contracts\Auth\AuthorizationResolverInterface;
@@ -202,7 +203,7 @@ class AuthorizationService implements AuthorizationServiceInterface
             }
         }
 
-        if (str_ends_with($resourceCode, '.page')) {
+        if (Str::endsWith($resourceCode, '.page')) {
             return substr($resourceCode, 0, -5).'.field.'.$fieldName;
         }
 

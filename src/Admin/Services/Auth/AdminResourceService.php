@@ -219,7 +219,8 @@ class AdminResourceService implements AdminResourceServiceInterface
         if (array_key_exists('module', $data)) {
             $payload['module'] = (string) $data['module'];
         } elseif ($withDefaults || isset($payload['code'])) {
-            $payload['module'] = $this->resolveModule((string) ($payload['code'] ?? $resource?->code ?? ''));
+            $resourceCode = null !== $resource ? $resource->code : '';
+            $payload['module'] = $this->resolveModule((string) ($payload['code'] ?? $resourceCode ?? ''));
         }
 
         if ($withDefaults || array_key_exists('addon_code', $data)) {
