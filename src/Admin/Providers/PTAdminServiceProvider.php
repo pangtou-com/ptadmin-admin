@@ -84,11 +84,10 @@ class PTAdminServiceProvider extends ServiceProvider
         ]);
 
         if ($this->app->runningInConsole()) {
-            $this->publishes([
+            $configPaths = [
                 __DIR__.'/../../../config/ptadmin-auth.php' => config_path('ptadmin-auth.php'),
-            ], 'ptadmin-config');
-
-            $this->publishes([
+            ];
+            $migrationPaths = [
                 __DIR__.'/../../../database/Migrations/2026_04_09_110000_create_admin_foundation_tables.php' => database_path('migrations/2026_04_09_110000_create_admin_foundation_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_120000_create_admin_authorization_tables.php' => database_path('migrations/2026_04_09_120000_create_admin_authorization_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php' => database_path('migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php'),
@@ -97,15 +96,25 @@ class PTAdminServiceProvider extends ServiceProvider
                 $this->easyMigrationPath('2024_06_13_154934_mod_init.php') => database_path('migrations/2024_06_13_154934_mod_init.php'),
                 $this->easyMigrationPath('2026_04_06_000000_create_model_versions_table.php') => database_path('migrations/2026_04_06_000000_create_model_versions_table.php'),
                 $this->easyMigrationPath('2026_04_06_000001_create_audit_logs_table.php') => database_path('migrations/2026_04_06_000001_create_audit_logs_table.php'),
-            ], 'ptadmin-migrations');
-
-            $this->publishes([
+            ];
+            $langPaths = [
                 __DIR__.'/../../../lang' => resource_path('lang/vendor/ptadmin'),
-            ], 'ptadmin-lang');
-
-            $this->publishes([
+            ];
+            $assetPaths = [
                 __DIR__.'/../../../resources/dist' => public_path(admin_web_asset_path()),
-            ], 'ptadmin-assets');
+            ];
+
+            $this->publishes($configPaths, 'ptadmin');
+            $this->publishes($configPaths, 'ptadmin-config');
+
+            $this->publishes($migrationPaths, 'ptadmin');
+            $this->publishes($migrationPaths, 'ptadmin-migrations');
+
+            $this->publishes($langPaths, 'ptadmin');
+            $this->publishes($langPaths, 'ptadmin-lang');
+
+            $this->publishes($assetPaths, 'ptadmin');
+            $this->publishes($assetPaths, 'ptadmin-assets');
         }
 
         $this->loadMigrationsFrom(__DIR__.'/../../../database/Migrations');

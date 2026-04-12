@@ -34,11 +34,13 @@ class PTAdminServiceProviderTest extends TestCase
 
     public function test_provider_registers_publishable_assets(): void
     {
+        $allPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin');
         $configPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-config');
         $migrationPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-migrations');
         $langPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-lang');
         $assetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-assets');
 
+        self::assertCount(11, $allPublishes);
         self::assertCount(1, $configPublishes);
         self::assertSame('ptadmin-auth.php', basename((string) array_key_first($configPublishes)));
         self::assertSame('ptadmin-auth.php', basename((string) current($configPublishes)));
@@ -62,5 +64,6 @@ class PTAdminServiceProviderTest extends TestCase
         self::assertCount(1, $assetPublishes);
         self::assertSame('dist', basename((string) array_key_first($assetPublishes)));
         self::assertSame('admin', basename((string) current($assetPublishes)));
+        self::assertSame($configPublishes + $migrationPublishes + $langPublishes + $assetPublishes, $allPublishes);
     }
 }

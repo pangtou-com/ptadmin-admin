@@ -22,22 +22,28 @@ composer require ptadmin/admin
 
 ## 发布与迁移
 
+发布全部 PTAdmin 资源：
+
+```bash
+php artisan vendor:publish --tag=ptadmin --force
+```
+
 发布配置：
 
 ```bash
-php artisan vendor:publish --provider="PTAdmin\\Admin\\Providers\\PTAdminServiceProvider" --tag=ptadmin-config
+php artisan vendor:publish --tag=ptadmin-config --force
 ```
 
 发布迁移：
 
 ```bash
-php artisan vendor:publish --provider="PTAdmin\\Admin\\Providers\\PTAdminServiceProvider" --tag=ptadmin-migrations
+php artisan vendor:publish --tag=ptadmin-migrations --force
 ```
 
 发布后台前端静态资源：
 
 ```bash
-php artisan vendor:publish --provider="PTAdmin\\Admin\\Providers\\PTAdminServiceProvider" --tag=ptadmin-assets
+php artisan vendor:publish --tag=ptadmin-assets --force
 ```
 
 执行迁移：
