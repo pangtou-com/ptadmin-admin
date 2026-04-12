@@ -13,8 +13,8 @@
         "php": "^7.4 || ^8.0",
         "ext-json": "*",
         "laravel/framework": "^8.75",
-        "ptadmin/addon": "^1.0",
-        "ptadmin/easy": "^1.0"
+        "ptadmin/addon": "^1.0.4",
+        "ptadmin/easy": "^1.0.4"
     },
     "require-dev": {
         "orchestra/testbench": "^6.44",
