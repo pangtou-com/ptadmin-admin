@@ -8,24 +8,34 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use PTAdmin\Admin\Models\AdminGrant;
 use PTAdmin\Admin\Models\AdminRole;
 use PTAdmin\Admin\Models\AdminUserRole;
+use PTAdmin\Admin\Support\Query\BuilderQueryApplier;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 use PTAdmin\Support\Enums\SubjectType;
 
 class AdminRoleService implements AdminRoleServiceInterface
 {
-    public function page(): LengthAwarePaginator
+    public function page(array $query = []): LengthAwarePaginator
     {
-        $roles = AdminRole::query()
-            ->whereNull('deleted_at')
-            ->orderBy('id', 'desc')
-            ->paginate();
+        /** @var LengthAwarePaginator $roles */
+        $roles = (new BuilderQueryApplier())->fetch(
+            AdminRole::query()->whereNull('deleted_at'),
+            $query,
+            [
+                'allowed_filters' => ['id', 'code', 'name', 'status', 'sort'],
+                'allowed_sorts' => ['id', 'code', 'name', 'status', 'sort'],
+                'allowed_keyword_fields' => ['code', 'name', 'description'],
+                'keyword_fields' => ['code', 'name', 'description'],
+                'default_order' => ['id' => 'desc'],
+                'default_limit' => 15,
+            ]
+        );
 
         $roles->getCollection()->transform(static function (AdminRole $role): array {
             return [
-                'id' => (int) $role->id,
-                'name' => (string) $role->code,
-                'title' => (string) $role->name,
-                'note' => $role->description,
+                'id' =>  $role->id,
+                'code' => (string) $role->code,
+                'name' => (string) $role->name,
+                'description' => $role->description,
                 'status' => (int) $role->status,
             ];
         });
@@ -33,20 +43,10 @@ class AdminRoleService implements AdminRoleServiceInterface
         return $roles;
     }
 
-    public function create(array $data)
+    public function create(array $data): AdminRole
     {
         $role = new AdminRole();
-        $role->fill([
-            'code' => (string) ($data['code'] ?? ''),
-            'name' => (string) ($data['name'] ?? ''),
-            'description' => $data['description'] ?? null,
-            'tenant_id' => $data['tenant_id'] ?? null,
-            'scope_mode' => $data['scope_mode'] ?? null,
-            'scope_value_json' => $data['scope_value_json'] ?? null,
-            'is_system' => (int) ($data['is_system'] ?? 0),
-            'status' => (int) ($data['status'] ?? 1),
-            'sort' => (int) ($data['sort'] ?? 0),
-        ]);
+        $role->fill($data);
         $role->save();
 
         return $role->refresh();
@@ -54,17 +54,7 @@ class AdminRoleService implements AdminRoleServiceInterface
 
     public function update(int $id, array $data)
     {
-        $payload = array_filter([
-            'code' => $data['code'] ?? null,
-            'name' => $data['name'] ?? null,
-            'description' => $data['description'] ?? null,
-            'tenant_id' => $data['tenant_id'] ?? null,
-            'scope_mode' => $data['scope_mode'] ?? null,
-            'scope_value_json' => $data['scope_value_json'] ?? null,
-            'is_system' => isset($data['is_system']) ? (int) $data['is_system'] : null,
-            'status' => isset($data['status']) ? (int) $data['status'] : null,
-            'sort' => isset($data['sort']) ? (int) $data['sort'] : null,
-        ], static function ($value): bool {
+        $payload = array_filter($data, static function ($value): bool {
             return null !== $value;
         });
 
@@ -96,7 +86,7 @@ class AdminRoleService implements AdminRoleServiceInterface
     public function assignUsers(int $roleId, array $userIds, ?int $tenantId = null): void
     {
         $time = time();
-        foreach (array_values(array_unique(array_map('intval', $userIds))) as $userId) {
+        foreach (array_unique(array_map('intval', $userIds)) as $userId) {
             AdminUserRole::query()->updateOrCreate(
                 [
                     'tenant_id' => $tenantId,
@@ -125,7 +115,13 @@ class AdminRoleService implements AdminRoleServiceInterface
             ]);
         }
     }
-
+    
+    /**
+     * 删除用户角色信息
+     * @param int $userId
+     * @param int|null $tenantId
+     * @return void
+     */
     public function deleteUserRoles(int $userId, ?int $tenantId = null): void
     {
         AdminUserRole::query()
@@ -137,7 +133,13 @@ class AdminRoleService implements AdminRoleServiceInterface
             })
             ->delete();
     }
-
+    
+    /**
+     * 根据用户ID获取用户角色
+     * @param int $userId
+     * @param int|null $tenantId
+     * @return array
+     */
     public function getUserRoles(int $userId, ?int $tenantId = null): array
     {
         return AdminUserRole::query()

@@ -19,6 +19,7 @@ return [
     'route_prefix' => env('PTADMIN_API_PREFIX', env('PTADMIN_ROUTE_PREFIX', config('app.prefix', 'system'))),
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),
     'addons_storage_path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/addons')),
+    'upload_local_disk' => env('PTADMIN_UPLOAD_LOCAL_DISK', 'public'),
 
     'capabilities' => [
         'rbac' => true,

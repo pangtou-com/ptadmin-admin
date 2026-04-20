@@ -22,13 +22,13 @@ jobs:
                   GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
                   GITEE_USER: ${{ secrets.GITEE_USER }}
               run: |
-                  if [ -z "${GITEE_TOKEN}" ] || [ -z "${GITEE_USER}" ]; then
+                  if [ -z "${GITEE_TOKEN}" ]; then
                     echo "Missing GITEE_TOKEN or GITEE_USER secret"
                     exit 1
                   fi
 
                   REPO_NAME=${GITHUB_REPOSITORY#*/}
-                  REMOTE_URL="https://${GITEE_USER}:${GITEE_TOKEN}@gitee.com/${GITEE_USER}/${REPO_NAME}.git"
+                  REMOTE_URL="https://oauth2:${GITEE_TOKEN}@gitee.com/ptadmin/ptadmin-admin.git"
 
                   git remote add gitee "${REMOTE_URL}" 2>/dev/null || git remote set-url gitee "${REMOTE_URL}"
 

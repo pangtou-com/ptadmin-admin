@@ -18,7 +18,7 @@ interface AdminResourceServiceInterface
 
     public function registerBatch(array $definitions): void;
 
-    public function findByCode(string $code);
+    public function findByName(string $name);
 
     public function tree(array $filters = []): array;
 

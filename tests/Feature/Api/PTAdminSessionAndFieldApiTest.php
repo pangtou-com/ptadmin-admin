@@ -142,7 +142,7 @@ class PTAdminSessionAndFieldApiTest extends TestCase
             'is_founder' => 1,
         ]);
         $token = $this->issueAdminToken($founder);
-        $pageResource = AdminResource::query()->where('code', 'system.resources')->firstOrFail();
+        $pageResource = AdminResource::query()->where('name', 'system.resources')->firstOrFail();
 
         $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/resource-field/'.$pageResource->id, [
             'fields' => [
@@ -172,7 +172,7 @@ class PTAdminSessionAndFieldApiTest extends TestCase
             'is_founder' => 1,
         ]);
         $token = $this->issueAdminToken($founder);
-        $pageResource = AdminResource::query()->where('code', 'system.resources')->firstOrFail();
+        $pageResource = AdminResource::query()->where('name', 'system.resources')->firstOrFail();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/resource-field/'.$pageResource->id, [
             'fields' => [
@@ -199,15 +199,15 @@ class PTAdminSessionAndFieldApiTest extends TestCase
 
         self::assertDatabaseHas('admin_resources', [
             'parent_id' => $pageResource->id,
-            'code' => 'system.resources.field.status',
-            'name' => '状态',
+            'name' => 'system.resources.field.status',
+            'title' => '状态',
             'type' => 'field',
             'status' => 1,
         ]);
         self::assertDatabaseHas('admin_resources', [
             'parent_id' => $pageResource->id,
-            'code' => 'system.resources.field.icon',
-            'name' => '图标',
+            'name' => 'system.resources.field.icon',
+            'title' => '图标',
             'type' => 'field',
             'status' => 1,
         ]);

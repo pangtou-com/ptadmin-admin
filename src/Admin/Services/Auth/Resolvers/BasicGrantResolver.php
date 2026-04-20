@@ -43,7 +43,7 @@ class BasicGrantResolver implements AuthorizationResolverInterface
 
     public function resolve($subject, string $ability, string $resourceCode, AuthorizationContext $context, AuthorizationDecision $decision): AuthorizationDecision
     {
-        $resource = AdminResource::findByCode($resourceCode);
+        $resource = AdminResource::findByName($resourceCode);
         if (null === $resource) {
             $decision->reason = sprintf('Resource [%s] was not found.', $resourceCode);
 
@@ -58,7 +58,7 @@ class BasicGrantResolver implements AuthorizationResolverInterface
         }
 
         $tenantId = $context->tenantId;
-        $decision->resourceCode = $resource->code;
+        $decision->resourceCode = $resource->name;
         $directGrant = $this->findMatchedGrant($resolvedSubject['type'], $resolvedSubject['id'], $resource->id, $ability, $tenantId);
 
         if (null !== $directGrant) {

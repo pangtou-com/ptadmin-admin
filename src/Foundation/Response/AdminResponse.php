@@ -9,8 +9,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class AdminResponse
 {
-    private static $code = 0;
-    private static $error_code = 10000;
+    private static int $code = 0;
+    private static int $error_code = 10000;
 
     public static function success($data = null, string $message = ''): JsonResponse
     {

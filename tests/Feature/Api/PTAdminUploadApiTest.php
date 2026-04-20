@@ -41,6 +41,7 @@ class PTAdminUploadApiTest extends TestCase
                 'suffix' => 'txt',
             ],
         ]);
+        self::assertStringStartsWith(url('/storage/'), (string) $uploadResponse->json('data.url'));
 
         $firstId = (int) $uploadResponse->json('data.id');
         $firstPath = (string) Asset::query()->findOrFail($firstId)->path;
@@ -60,6 +61,23 @@ class PTAdminUploadApiTest extends TestCase
         self::assertSame($firstId, (int) $duplicateResponse->json('data.id'));
         self::assertSame(1, Asset::query()->count());
 
+        $imageResponse = $this->withHeaders($this->jsonApiHeaders($token))
+            ->post('/system/upload', [
+                'group' => 'images',
+                'file' => UploadedFile::fake()->image('banner.png'),
+            ]);
+
+        $imageResponse->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'title' => 'banner.png',
+                'groups' => 'images',
+                'suffix' => 'png',
+            ],
+        ]);
+        self::assertStringStartsWith(url('/storage/'), (string) $imageResponse->json('data.url'));
+        self::assertStringStartsWith(url('/storage/'), (string) $imageResponse->json('data.preview'));
+
         $tinyResponse = $this->withHeaders($this->jsonApiHeaders($token))
             ->post('/system/upload/tiny', [
                 'group' => 'editor',
@@ -67,8 +85,8 @@ class PTAdminUploadApiTest extends TestCase
             ]);
 
         $tinyResponse->assertOk();
-        self::assertStringContainsString('/storage/', (string) $tinyResponse->json('location'));
-        self::assertSame(2, Asset::query()->count());
+        self::assertStringStartsWith(url('/storage/'), (string) $tinyResponse->json('location'));
+        self::assertSame(3, Asset::query()->count());
     }
 
     public function test_upload_endpoint_returns_validation_error_for_missing_file(): void
@@ -156,6 +174,76 @@ class PTAdminUploadApiTest extends TestCase
         $asset = Asset::query()->firstOrFail();
         self::assertSame('addon:oss_storage:oss', $asset->driver);
         self::assertStringStartsWith('remote/images/', (string) $asset->path);
+    }
+
+    public function test_upload_endpoint_uses_public_disk_even_when_default_filesystem_is_local(): void
+    {
+        config()->set('filesystems.default', 'local');
+        Storage::fake('local');
+
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createAssetsTable();
+        $token = $this->issueFounderToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->post('/system/upload', [
+                'group' => 'docs',
+                'file' => UploadedFile::fake()->createWithContent('manual.txt', 'public-only-content'),
+            ]);
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'driver' => 'public',
+                'groups' => 'docs',
+                'title' => 'manual.txt',
+            ],
+        ]);
+
+        $asset = Asset::query()->findOrFail((int) $response->json('data.id'));
+
+        Storage::disk('public')->assertExists((string) $asset->path);
+        Storage::disk('local')->assertMissing((string) $asset->path);
+        self::assertStringStartsWith(url('/storage/'), (string) $response->json('data.url'));
+    }
+
+    public function test_image_upload_preview_uses_public_disk_when_default_filesystem_is_local(): void
+    {
+        config()->set('filesystems.default', 'local');
+        Storage::fake('local');
+
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createAssetsTable();
+        $token = $this->issueFounderToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->post('/system/upload', [
+                'group' => 'images',
+                'file' => UploadedFile::fake()->image('banner.png'),
+            ]);
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'driver' => 'public',
+                'groups' => 'images',
+                'title' => 'banner.png',
+                'suffix' => 'png',
+            ],
+        ]);
+
+        $asset = Asset::query()->findOrFail((int) $response->json('data.id'));
+        $thumbPath = preg_replace('#^'.preg_quote(url('/storage/'), '#').'/?#', '', (string) $response->json('data.preview'));
+
+        Storage::disk('public')->assertExists((string) $asset->path);
+        if (null !== $thumbPath && '' !== $thumbPath) {
+            Storage::disk('public')->assertExists($thumbPath);
+            Storage::disk('local')->assertMissing($thumbPath);
+        }
+
+        self::assertStringStartsWith(url('/storage/'), (string) $response->json('data.preview'));
     }
 
     public function test_asset_endpoints_require_login_and_can_list_picker_and_delete(): void

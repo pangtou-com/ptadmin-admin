@@ -145,6 +145,6 @@ class AssetService
     {
         $driver = trim($driver);
 
-        return '' === $driver ? (string) config('filesystems.default', 'public') : $driver;
+        return '' === $driver ? (string) config('ptadmin-auth.upload_local_disk', 'public') : $driver;
     }
 }

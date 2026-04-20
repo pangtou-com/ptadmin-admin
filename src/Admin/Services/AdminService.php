@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Hash;
 use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Models\AdminLoginLog;
 use PTAdmin\Admin\Models\AdminRole;
+use PTAdmin\Admin\Support\Query\BuilderQueryApplier;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 use PTAdmin\Support\Enums\StatusEnum;
@@ -46,7 +47,18 @@ class AdminService
     {
         $model = Admin::query();
 
-        return $model->orderBy('id', 'desc')->paginate()->toArray();
+        return (new BuilderQueryApplier())->fetch(
+            $model,
+            is_array($search) ? $search : [],
+            [
+                'allowed_filters' => ['id', 'username', 'nickname', 'mobile', 'email', 'status', 'is_founder'],
+                'allowed_sorts' => ['id', 'username', 'nickname', 'status', 'created_at'],
+                'allowed_keyword_fields' => ['username', 'nickname', 'mobile', 'email'],
+                'keyword_fields' => ['username', 'nickname', 'mobile', 'email'],
+                'default_order' => ['id' => 'desc'],
+                'default_limit' => 15,
+            ]
+        )->toArray();
     }
 
     public function create(array $data): Admin

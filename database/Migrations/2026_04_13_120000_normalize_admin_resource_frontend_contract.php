@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
-use PTAdmin\Admin\Models\AdminGrant;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Services\Auth\AdminResourceService;
 use PTAdmin\Support\Enums\ResourceType;
@@ -72,23 +71,6 @@ return new class extends Migration
             ],
         ],
         [
-            'name' => 'system.role',
-            'title' => '系统角色',
-            'parent' => 'system',
-            'type' => ResourceType::PAGE,
-            'module' => 'admin',
-            'page_key' => 'system.role',
-            'route' => 'role',
-            'icon' => 'Avatar',
-            'is_nav' => 1,
-            'status' => 1,
-            'sort' => 20,
-            'meta_json' => [
-                'hidden' => 0,
-                'keep_alive' => 1,
-            ],
-        ],
-        [
             'name' => 'system.admins',
             'title' => '后台管理员',
             'parent' => 'system',
@@ -100,6 +82,23 @@ return new class extends Migration
             'is_nav' => 1,
             'status' => 1,
             'sort' => 10,
+            'meta_json' => [
+                'hidden' => 0,
+                'keep_alive' => 1,
+            ],
+        ],
+        [
+            'name' => 'system.role',
+            'title' => '系统角色',
+            'parent' => 'system',
+            'type' => ResourceType::PAGE,
+            'module' => 'admin',
+            'page_key' => 'system.role',
+            'route' => 'role',
+            'icon' => 'Avatar',
+            'is_nav' => 1,
+            'status' => 1,
+            'sort' => 20,
             'meta_json' => [
                 'hidden' => 0,
                 'keep_alive' => 1,
@@ -244,19 +243,107 @@ return new class extends Migration
 
     public function up(): void
     {
+        $this->renameLegacyCloudResources();
+
         $service = new AdminResourceService();
         $service->registerBatch($this->definitions);
+
+        AdminResource::query()
+            ->whereNull('deleted_at')
+            ->orderBy('id')
+            ->get()
+            ->each(function (AdminResource $resource): void {
+                $changes = [];
+                $route = trim((string) ($resource->route ?? ''));
+                if ('' !== $route && !$this->isExternalRoute($route) && 0 === (int) $resource->parent_id && !str_starts_with($route, '/')) {
+                    $changes['route'] = '/'.$route;
+                }
+
+                $metaJson = (array) ($resource->meta_json ?? []);
+                $normalizedMetaJson = $metaJson;
+                if (array_key_exists('redirect', $normalizedMetaJson)) {
+                    $redirect = trim((string) $normalizedMetaJson['redirect']);
+                    if ('' === $redirect) {
+                        $normalizedMetaJson['redirect'] = null;
+                    } elseif (!$this->isExternalRoute($redirect) && 0 === (int) $resource->parent_id && !str_starts_with($redirect, '/')) {
+                        $normalizedMetaJson['redirect'] = '/'.$redirect;
+                    }
+                }
+
+                $normalizedMetaJson['hidden'] = isset($normalizedMetaJson['hidden']) ? (int) $normalizedMetaJson['hidden'] : 0;
+                $normalizedMetaJson['keep_alive'] = isset($normalizedMetaJson['keep_alive'])
+                    ? (int) $normalizedMetaJson['keep_alive']
+                    : $this->defaultKeepAlive((string) $resource->type);
+
+                if ($normalizedMetaJson !== $metaJson) {
+                    $changes['meta_json'] = $normalizedMetaJson;
+                }
+
+                if ([] === $changes) {
+                    return;
+                }
+
+                $changes['updated_at'] = time();
+                $resource->fill($changes);
+                $resource->save();
+            });
     }
 
     public function down(): void
     {
-        $names = array_column($this->definitions, 'name');
-        $resourceIds = AdminResource::query()->whereIn('name', $names)->pluck('id')->all();
+    }
 
-        if ([] !== $resourceIds) {
-            AdminGrant::query()->whereIn('resource_id', $resourceIds)->delete();
+    private function renameLegacyCloudResources(): void
+    {
+        /** @var null|AdminResource $legacyCloud */
+        $legacyCloud = AdminResource::query()->whereNull('deleted_at')->where('name', 'addon')->first();
+        /** @var null|AdminResource $cloud */
+        $cloud = AdminResource::query()->whereNull('deleted_at')->where('name', 'cloud')->first();
+
+        if (null !== $legacyCloud && null === $cloud) {
+            $legacyCloud->fill([
+                'name' => 'cloud',
+                'title' => '云平台',
+                'module' => '',
+                'page_key' => null,
+                'route' => '/cloud',
+                'icon' => 'Connection',
+                'updated_at' => time(),
+            ]);
+            $legacyCloud->save();
+            $cloud = $legacyCloud->fresh();
         }
 
-        AdminResource::query()->whereIn('name', $names)->delete();
+        if (null === $cloud) {
+            return;
+        }
+
+        /** @var null|AdminResource $legacyCloudApps */
+        $legacyCloudApps = AdminResource::query()->whereNull('deleted_at')->where('name', 'addon.addons')->first();
+        /** @var null|AdminResource $cloudApps */
+        $cloudApps = AdminResource::query()->whereNull('deleted_at')->where('name', 'cloud.apps')->first();
+        if (null !== $legacyCloudApps && null === $cloudApps) {
+            $legacyCloudApps->fill([
+                'name' => 'cloud.apps',
+                'title' => '本地应用中心',
+                'parent_id' => (int) $cloud->id,
+                'module' => 'cloud',
+                'page_key' => 'cloud.apps',
+                'route' => 'apps',
+                'icon' => 'Box',
+                'updated_at' => time(),
+            ]);
+            $legacyCloudApps->save();
+        }
+    }
+
+    private function defaultKeepAlive(string $type): int
+    {
+        return \in_array($type, [ResourceType::PAGE, ResourceType::ROUTE], true) ? 1 : 0;
+    }
+
+    private function isExternalRoute(string $route): bool
+    {
+        return str_starts_with($route, 'http://') || str_starts_with($route, 'https://');
     }
 };

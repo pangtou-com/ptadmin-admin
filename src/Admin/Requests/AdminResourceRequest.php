@@ -36,8 +36,8 @@ class AdminResourceRequest extends FormRequest
         $id = (int) request()->route('id');
 
         return [
-            'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:150', Rule::unique(AdminResource::class, 'code')->whereNull('deleted_at')->ignore($id)],
-            'title' => ['required', 'max:100', Rule::unique(AdminResource::class, 'name')->whereNull('deleted_at')->ignore($id)],
+            'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:150', Rule::unique(AdminResource::class, 'name')->whereNull('deleted_at')->ignore($id)],
+            'title' => ['required', 'max:100', Rule::unique(AdminResource::class, 'title')->whereNull('deleted_at')->ignore($id)],
             'module' => [Rule::requiredIf(function (): bool {
                 return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::BTN, MenuTypeEnum::LINK], true);
             }), 'max:50'],

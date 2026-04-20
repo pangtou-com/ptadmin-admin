@@ -43,23 +43,30 @@ class ThumbService
      * @param int    $width
      * @param int    $height
      * @param string $valign
+     * @param string $disk
      *
      * @return null|string
      */
-    public static function save(string $filepath, int $width = 100, int $height = 100, string $valign = 'middle'): ?string
+    public static function save(string $filepath, int $width = 100, int $height = 100, string $valign = 'middle', string $disk = 'public'): ?string
     {
+        $filesystem = Storage::disk($disk);
+
         // 已经存在缩略图直接返回
-        $thumbPath = self::thumbName($filepath, $width, $height);
-        if (file_exists(Storage::path($thumbPath))) {
+        $thumbPath = self::thumbName($filepath, $width, $height, $disk);
+        if ('' === $thumbPath) {
+            return null;
+        }
+
+        if ($filesystem->exists($thumbPath)) {
             return $thumbPath;
         }
-        $thumb = self::make(Storage::path($filepath), $width, $height, $valign);
+
+        $thumb = self::make($filesystem->path($filepath), $width, $height, $valign);
         if (!$thumb) {
             return null;
         }
-        $fh = @fopen(Storage::path($thumbPath), 'w');
-        fwrite($fh, $thumb);
-        fclose($fh);
+
+        $filesystem->put($thumbPath, $thumb);
 
         return $thumbPath;
     }
@@ -70,12 +77,13 @@ class ThumbService
      * @param $filepath
      * @param $width
      * @param $height
+     * @param string $disk
      *
      * @return string
      */
-    public static function thumbName($filepath, $width, $height): string
+    public static function thumbName($filepath, $width, $height, string $disk = 'public'): string
     {
-        $info = getimagesize(Storage::path($filepath));
+        $info = getimagesize(Storage::disk($disk)->path($filepath));
         if (!$info) {
             return '';
         }

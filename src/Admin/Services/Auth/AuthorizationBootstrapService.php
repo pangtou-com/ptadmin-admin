@@ -127,19 +127,19 @@ class AuthorizationBootstrapService
             ]);
         }
 
-        $resourceCodes = AdminResource::query()
+        $resourceNames = AdminResource::query()
             ->where('status', 1)
             ->whereNull('deleted_at')
-            ->pluck('code')
+            ->pluck('name')
             ->filter()
             ->values()
             ->all()
         ;
 
         if ($force || 0 === \count($this->adminGrantService->getRoleGrants((int) $role->id))) {
-            $payloads = array_map(static function (string $resourceCode): GrantPayload {
-                return new GrantPayload($resourceCode, GrantEffect::ALLOW, [Ability::ACCESS]);
-            }, $resourceCodes);
+            $payloads = array_map(static function (string $resourceName): GrantPayload {
+                return new GrantPayload($resourceName, GrantEffect::ALLOW, [Ability::ACCESS]);
+            }, $resourceNames);
 
             $this->adminGrantService->syncRoleGrants((int) $role->id, $payloads);
         }
@@ -158,7 +158,7 @@ class AuthorizationBootstrapService
                 'name' => (string) $role->name,
             ],
             'assigned_user_id' => null !== $admin ? $admin->id : null,
-            'resource_count' => \count($resourceCodes),
+            'resource_count' => \count($resourceNames),
         ];
     }
 

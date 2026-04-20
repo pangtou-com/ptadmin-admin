@@ -26,6 +26,7 @@ namespace PTAdmin\Admin\Controllers;
 use Illuminate\Http\Request;
 use PTAdmin\Admin\Requests\AdminResourceRequest;
 use PTAdmin\Admin\Services\AdminResourceService;
+use PTAdmin\Admin\Support\Query\AdminListQuery;
 use PTAdmin\Foundation\Response\AdminResponse;
 use PTAdmin\Contracts\Auth\CapabilityServiceInterface;
 
@@ -39,9 +40,9 @@ class AdminResourceController extends AbstractBackgroundController
         parent::__construct();
     }
 
-    public function index(): \Illuminate\Http\JsonResponse
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::success(['results' => $this->adminResourceService->resourceTree()]);
+        return AdminResponse::success(['results' => $this->adminResourceService->resourceTree(AdminListQuery::fromRequest($request, false))]);
     }
 
     public function store(AdminResourceRequest $request): \Illuminate\Http\JsonResponse
@@ -65,9 +66,9 @@ class AdminResourceController extends AbstractBackgroundController
         return AdminResponse::success();
     }
 
-    public function tree(): \Illuminate\Http\JsonResponse
+    public function tree(Request $request): \Illuminate\Http\JsonResponse
     {
-        $data = $this->adminResourceService->resourceTree();
+        $data = $this->adminResourceService->resourceTree(AdminListQuery::fromRequest($request, false));
 
         return AdminResponse::success($data);
     }

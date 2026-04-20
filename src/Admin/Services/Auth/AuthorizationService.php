@@ -105,7 +105,7 @@ class AuthorizationService implements AuthorizationServiceInterface
         $allowedFields = [];
         foreach ($requestedFields as $fieldName) {
             $fieldResourceCode = $this->resolveFieldResourceCode($resourceCode, $fieldName, $context);
-            if (null === $fieldResourceCode || null === AdminResource::findByCode($fieldResourceCode)) {
+            if (null === $fieldResourceCode || null === AdminResource::findByName($fieldResourceCode)) {
                 $allowedFields[] = $fieldName;
 
                 continue;

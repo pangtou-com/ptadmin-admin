@@ -54,8 +54,8 @@ return new class extends Migration
     {
         Schema::create('admin_resources', function (Blueprint $table): void {
             $table->id();
-            $table->string('code', 150)->comment('资源编码');
-            $table->string('name', 100)->comment('资源名称');
+            $table->string('name', 150)->comment('资源标识');
+            $table->string('title', 100)->comment('资源名称');
             $table->string('type', 30)->comment('资源类型');
             $table->string('module', 50)->comment('所属模块');
             $table->string('page_key', 100)->nullable()->comment('页面标识');
@@ -74,7 +74,7 @@ return new class extends Migration
             $table->unsignedInteger('updated_at')->default(0)->comment('更新时间');
             $table->unsignedInteger('deleted_at')->nullable()->comment('软删时间');
 
-            $table->unique('code', 'uniq_admin_resources_code');
+            $table->unique('name', 'uniq_admin_resources_name');
             $table->index('type', 'idx_admin_resources_type');
             $table->index('module', 'idx_admin_resources_module');
             $table->index('page_key', 'idx_admin_resources_page_key');

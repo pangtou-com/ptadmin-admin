@@ -42,7 +42,7 @@ class AddonFrontendService
         $results = [];
 
         foreach (array_keys(Addon::getAddons()) as $addonCode) {
-            $addonInfo = (array) Addon::getAddon((string) $addonCode)->getAddons();
+            $addonInfo = Addon::getAddon((string) $addonCode)->getAddons();
             foreach ($this->extractModuleDefinitions((string) $addonCode, $addonInfo) as $definition) {
                 $normalized = $this->normalizeModuleManifest((string) $addonCode, (array) $definition, $addonInfo);
                 if ([] === $normalized) {
@@ -53,7 +53,7 @@ class AddonFrontendService
             }
         }
 
-        usort($results, function (array $left, array $right): int {
+        usort($results, function (array $left, array $right) {
             $orderCompare = ((int) data_get($left, 'meta.order', 0)) <=> ((int) data_get($right, 'meta.order', 0));
             if (0 !== $orderCompare) {
                 return $orderCompare;
@@ -62,9 +62,7 @@ class AddonFrontendService
             return strcmp((string) ($left['key'] ?? ''), (string) ($right['key'] ?? ''));
         });
 
-        return [
-            'results' => array_values($results),
-        ];
+        return array_values($results);
     }
 
     protected function buildCacheKey(): string
@@ -301,14 +299,14 @@ class AddonFrontendService
     /**
      * 模块清单使用独立文件，方便前端构建阶段直接生成。
      *
-     * 默认读取插件根目录 `modules.json`。
+     * 默认读取插件根目录 `frontend.json`。
      * 也支持通过 manifest 显式指定 `module_manifest` 相对路径。
      *
      * @param array<string, mixed> $addonInfo
      */
     protected function resolveModuleManifestPath(string $addonCode, array $addonInfo): ?string
     {
-        $relativePath = trim((string) ($addonInfo['module_manifest'] ?? 'modules.json'));
+        $relativePath = trim((string) ($addonInfo['module_manifest'] ?? 'frontend.json'));
         if ('' === $relativePath) {
             return null;
         }

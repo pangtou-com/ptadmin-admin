@@ -26,6 +26,7 @@ namespace PTAdmin\Admin\Services;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use PTAdmin\Admin\Support\Query\BuilderQueryApplier;
 use PTAdmin\Support\Enums\MenuTypeEnum;
 use PTAdmin\Support\Enums\StatusEnum;
 use PTAdmin\Admin\Models\Admin;
@@ -246,31 +247,39 @@ class AdminResourceService
     public function resourceRows(array $filters = []): array
     {
         $query = AdminResource::query()->whereNull('deleted_at');
-        foreach ($filters as $field => $value) {
-            $query->where($field, $value);
-        }
+        $filters = $this->normalizeResourceListQuery($filters);
+
+        (new BuilderQueryApplier())->apply(
+            $query,
+            $filters,
+            [
+                'allowed_filters' => ['id', 'parent_id', 'title', 'name', 'status', 'sort', 'module', 'page_key', 'route', 'type', 'is_nav'],
+                'allowed_sorts' => ['id', 'parent_id', 'title', 'name', 'status', 'sort', 'module', 'type', 'is_nav'],
+                'allowed_keyword_fields' => ['title', 'name', 'module', 'page_key', 'route'],
+                'keyword_fields' => ['title', 'name', 'module', 'page_key', 'route'],
+                'default_order' => ['sort' => 'asc', 'id' => 'asc'],
+            ]
+        );
 
         $resources = $query
-            ->orderByDesc('sort')
-            ->orderBy('id')
             ->get()
         ;
 
         $resourceMapById = [];
-        $resourceCodeById = [];
+        $resourceNameById = [];
         foreach ($resources as $resource) {
             $resourceMapById[(int) $resource->id] = $resource;
-            $resourceCodeById[(int) $resource->id] = (string) $resource->code;
+            $resourceNameById[(int) $resource->id] = (string) $resource->name;
         }
 
-        return $resources->map(function (AdminResource $resource) use ($resourceMapById, $resourceCodeById): array {
+        return $resources->map(function (AdminResource $resource) use ($resourceMapById, $resourceNameById): array {
             return [
                 'id' => (int) $resource->id,
                 'parent_id' => (int) $resource->parent_id,
-                'parent_name' => $resourceCodeById[(int)$resource->parent_id] ?? self::TOP_RESOURCE_NAME,
+                'parent_name' => $resourceNameById[(int)$resource->parent_id] ?? self::TOP_RESOURCE_NAME,
                 'parent_ids' => $this->resolveAncestorIds((int) $resource->parent_id, $resourceMapById),
-                'title' => (string) $resource->name,
-                'name' => (string) $resource->code,
+                'title' => (string) $resource->title,
+                'name' => (string) $resource->name,
                 'status' => (int) $resource->status,
                 'weight' => (int) $resource->sort,
                 'module' => '' === (string) $resource->module ? null : (string) $resource->module,
@@ -281,10 +290,37 @@ class AdminResourceService
                 'icon' => $resource->icon,
                 'redirect' => $this->resolveMetaString($resource, 'redirect'),
                 'hidden' => $this->resolveMetaInt($resource, 'hidden', 0),
-                'keep_alive' => $this->resolveMetaInt($resource, 'keep_alive', 0),
+                'keep_alive' => $this->resolveKeepAlive($resource),
                 'component' => null,
             ];
         })->values()->all();
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeResourceListQuery(array $query): array
+    {
+        if (isset($query['filters']) || isset($query['sorts']) || isset($query['keyword']) || isset($query['keyword_fields'])) {
+            return $query;
+        }
+
+        $filters = [];
+        foreach ($query as $field => $value) {
+            if (!is_string($field)) {
+                continue;
+            }
+
+            $filters[] = [
+                'field' => $field,
+                'operator' => is_array($value) ? 'in' : '=',
+                'value' => $value,
+            ];
+        }
+
+        return ['filters' => $filters];
     }
 
     public function getQuickNav($adminId): array
@@ -343,7 +379,7 @@ class AdminResourceService
             ->where('status', StatusEnum::ENABLE)
             ->whereNull('deleted_at')
             ->where('type', ResourceType::PAGE)
-            ->orderByDesc('sort')
+            ->orderBy('sort')
             ->orderBy('id')
             ->get()
         ;
@@ -354,20 +390,20 @@ class AdminResourceService
         ;
 
         $resourceMapById = [];
-        $resourceCodeById = [];
+        $resourceNameById = [];
         foreach ($resources as $resource) {
             $resourceMapById[(int) $resource->id] = $resource;
-            $resourceCodeById[(int) $resource->id] = (string) $resource->code;
+            $resourceNameById[(int) $resource->id] = (string) $resource->name;
         }
 
-        $results = $resourceMap->map(function (AdminResource $resource) use ($resourceMapById, $resourceCodeById): array {
+        $results = $resourceMap->map(function (AdminResource $resource) use ($resourceMapById, $resourceNameById): array {
             return [
                 'id' => (int) $resource->id,
-                'parent_name' => isset($resourceCodeById[(int) $resource->parent_id])
-                    ? $resourceCodeById[(int) $resource->parent_id]
+                'parent_name' => isset($resourceNameById[(int) $resource->parent_id])
+                    ? $resourceNameById[(int) $resource->parent_id]
                     : self::TOP_RESOURCE_NAME,
-                'name' => (string) $resource->code,
-                'title' => (string) $resource->name,
+                'name' => (string) $resource->name,
+                'title' => (string) $resource->title,
                 'module' => '' === (string) $resource->module ? null : (string) $resource->module,
                 'page_key' => null === $resource->page_key ? null : (string) $resource->page_key,
                 'route' => $resource->route,
@@ -378,7 +414,7 @@ class AdminResourceService
                 'parent_ids' => $this->resolveAncestorIds((int) $resource->parent_id, $resourceMapById),
                 'redirect' => $this->resolveMetaString($resource, 'redirect'),
                 'hidden' => $this->resolveMetaInt($resource, 'hidden', 0),
-                'keep_alive' => $this->resolveMetaInt($resource, 'keep_alive', 0),
+                'keep_alive' => $this->resolveKeepAlive($resource),
                 'component' => null,
             ];
         })->values()->all();
@@ -401,8 +437,8 @@ class AdminResourceService
 
         if (null === $parentName || '' === (string) $parentName) {
             $definitions[] = array(
-                'code' => $addonCode,
-                'name' => (string) ($addonInfo['title'] ?? $addonCode),
+                'name' => $addonCode,
+                'title' => (string) ($addonInfo['title'] ?? $addonCode),
                 'type' => MenuTypeEnum::DIR,
                 'module' => $module,
                 'page_key' => null,
@@ -430,8 +466,8 @@ class AdminResourceService
     {
         foreach ($menu as $item) {
             $resource = $this->adminResourceService->create([
-                'code' => $addonInfo['code'].'.'.$item['name'],
-                'name' => $item['title'],
+                'name' => $addonInfo['code'].'.'.$item['name'],
+                'title' => $item['title'],
                 'module' => (string) ($item['module'] ?? $addonInfo['code']),
                 'page_key' => $this->resolvePageKeyFromMenuItem((array) $item),
                 'addon_code' => $addonInfo['code'],
@@ -454,15 +490,15 @@ class AdminResourceService
 
     public function installParentMenu($addonInfo): AdminResource
     {
-        $parent = $this->adminResourceService->findByCode((string) $addonInfo['code']);
+        $parent = $this->adminResourceService->findByName((string) $addonInfo['code']);
         $code = $addonInfo['code'];
         if (null !== $parent) {
             $code = $addonInfo['code'].'_'.Str::random(6);
         }
 
         return $this->adminResourceService->create([
-            'code' => $code,
-            'name' => $addonInfo['title'],
+            'name' => $code,
+            'title' => $addonInfo['title'],
             'module' => (string) ($addonInfo['module'] ?? $addonInfo['code']),
             'addon_code' => $addonInfo['code'],
             'type' => MenuTypeEnum::DIR,
@@ -497,13 +533,13 @@ class AdminResourceService
                 continue;
             }
 
-            $code = isset($item['code']) && '' !== trim((string) $item['code'])
+            $resourceName = isset($item['code']) && '' !== trim((string) $item['code'])
                 ? trim((string) $item['code'])
                 : $addonCode.'.'.$name;
 
             $definitions[] = array(
-                'code' => $code,
-                'name' => (string) ($item['title'] ?? $name),
+                'name' => $resourceName,
+                'title' => (string) ($item['title'] ?? $name),
                 'type' => (string) ($item['type'] ?? MenuTypeEnum::NAV),
                 'module' => (string) ($item['module'] ?? $module),
                 'page_key' => self::resolveStaticPageKeyFromMenuItem($item),
@@ -524,7 +560,7 @@ class AdminResourceService
             if (isset($item['children']) && \is_array($item['children']) && [] !== $item['children']) {
                 $definitions = array_merge(
                     $definitions,
-                    self::normalizeAddonMenuDefinitions($addonCode, $item['children'], $code, $module)
+                    self::normalizeAddonMenuDefinitions($addonCode, $item['children'], $resourceName, $module)
                 );
             }
         }
@@ -539,17 +575,17 @@ class AdminResourceService
             return [];
         }
 
-        $codes = AdminResource::query()
+        $names = AdminResource::query()
             ->whereIn('id', $resourceIds)
-            ->pluck('code')
+            ->pluck('name')
             ->filter()
             ->values()
             ->all()
         ;
 
-        return array_map(static function (string $code): GrantPayload {
-            return new GrantPayload($code, GrantEffect::ALLOW, [Ability::ACCESS]);
-        }, $codes);
+        return array_map(static function (string $name): GrantPayload {
+            return new GrantPayload($name, GrantEffect::ALLOW, [Ability::ACCESS]);
+        }, $names);
     }
 
     public function resolveResourceIdsFromResourceCodes(array $resourceCodes): array
@@ -560,7 +596,7 @@ class AdminResourceService
         }
 
         return AdminResource::query()
-            ->whereIn('code', $resourceCodes)
+            ->whereIn('name', $resourceCodes)
             ->pluck('id')
             ->map(static function ($id): int {
                 return (int) $id;
@@ -578,7 +614,7 @@ class AdminResourceService
             throw new \InvalidArgumentException(__('ptadmin::background.field_parent_invalid'));
         }
 
-        $baseCode = $this->resolveFieldBaseCode((string) $pageResource->code);
+        $baseCode = $this->resolveFieldBaseCode((string) $pageResource->name);
         $existingFieldResources = AdminResource::query()
             ->whereNull('deleted_at')
             ->where('parent_id', $pageResourceId)
@@ -587,14 +623,14 @@ class AdminResourceService
             ->orderBy('id')
             ->get()
             ->keyBy(static function (AdminResource $resource): string {
-                return (string) $resource->code;
+                return (string) $resource->name;
             })
         ;
 
         $syncedIds = [];
         foreach ($this->normalizeFieldDefinitions($fields, $baseCode, $pageResource) as $definition) {
             /** @var null|AdminResource $existing */
-            $existing = $existingFieldResources->get($definition['code']);
+            $existing = $existingFieldResources->get($definition['name']);
             if (null !== $existing) {
                 $resource = $this->adminResourceService->update((int) $existing->id, $definition);
             } else {
@@ -625,8 +661,8 @@ class AdminResourceService
 
                 return [
                     'id' => (int) $resource->id,
-                    'code' => (string) $resource->code,
                     'name' => (string) $resource->name,
+                    'title' => (string) $resource->title,
                     'field_name' => (string) ($metaJson['field_name'] ?? ''),
                     'status' => (int) $resource->status,
                     'sort' => (int) $resource->sort,
@@ -670,7 +706,7 @@ class AdminResourceService
     {
         $ancestorCodes = [];
         while ($parentId > 0 && isset($resourceMapById[$parentId])) {
-            array_unshift($ancestorCodes, (string) $resourceMapById[$parentId]->code);
+            array_unshift($ancestorCodes, (string) $resourceMapById[$parentId]->name);
             $parentId = (int) $resourceMapById[$parentId]->parent_id;
         }
 
@@ -689,8 +725,8 @@ class AdminResourceService
             }
 
             $definitions[] = [
-                'code' => $baseCode.'.field.'.$fieldName,
-                'name' => isset($field['title']) && '' !== trim((string) $field['title']) ? trim((string) $field['title']) : $fieldName,
+                'name' => $baseCode.'.field.'.$fieldName,
+                'title' => isset($field['title']) && '' !== trim((string) $field['title']) ? trim((string) $field['title']) : $fieldName,
                 'type' => ResourceType::FIELD,
                 'module' => (string) $pageResource->module,
                 'addon_code' => $pageResource->addon_code,
@@ -699,7 +735,7 @@ class AdminResourceService
                 'meta_json' => [
                     'field_name' => $fieldName,
                     'page_resource_id' => $pageResource->id,
-                    'page_resource_code' => (string) $pageResource->code,
+                    'page_resource_code' => (string) $pageResource->name,
                     'note' => isset($field['note']) ? (string) $field['note'] : '',
                 ],
                 'is_nav' => 0,
@@ -710,7 +746,7 @@ class AdminResourceService
 
         $uniqueDefinitions = [];
         foreach ($definitions as $definition) {
-            $uniqueDefinitions[$definition['code']] = $definition;
+            $uniqueDefinitions[$definition['name']] = $definition;
         }
 
         return array_values($uniqueDefinitions);
@@ -728,11 +764,11 @@ class AdminResourceService
         $payload = [];
 
         if ($withDefaults || \array_key_exists('name', $data)) {
-            $payload['code'] = (string) ($data['name'] ?? '');
+            $payload['name'] = (string) ($data['name'] ?? '');
         }
 
         if ($withDefaults || \array_key_exists('title', $data)) {
-            $payload['name'] = (string) ($data['title'] ?? '');
+            $payload['title'] = (string) ($data['title'] ?? '');
         }
 
         if ($withDefaults || \array_key_exists('type', $data)) {
@@ -817,7 +853,9 @@ class AdminResourceService
             'controller' => $data['controller'] ?? '',
             'redirect' => isset($data['redirect']) && '' !== trim((string) $data['redirect']) ? trim((string) $data['redirect']) : null,
             'hidden' => isset($data['hidden']) ? (int) $data['hidden'] : ($withDefaults ? 0 : null),
-            'keep_alive' => isset($data['keep_alive']) ? (int) $data['keep_alive'] : ($withDefaults ? 0 : null),
+            'keep_alive' => isset($data['keep_alive'])
+                ? (int) $data['keep_alive']
+                : ($withDefaults ? $this->defaultKeepAliveForMenuType((string) ($data['type'] ?? MenuTypeEnum::NAV)) : null),
         ], static function ($value): bool {
             return null !== $value;
         });
@@ -831,10 +869,10 @@ class AdminResourceService
         ;
 
         $resourceMapById = [];
-        $resourceCodeById = [];
+        $resourceNameById = [];
         foreach ($resources as $item) {
             $resourceMapById[(int) $item->id] = $item;
-            $resourceCodeById[(int) $item->id] = (string) $item->code;
+            $resourceNameById[(int) $item->id] = (string) $item->name;
         }
 
         $metaJson = (array) ($resource->meta_json ?? []);
@@ -842,19 +880,19 @@ class AdminResourceService
         return [
             'id' => $resource->id,
             'parent_id' => (int) $resource->parent_id,
-            'parent_name' => $resource->parent_id > 0 && isset($resourceCodeById[(int) $resource->parent_id])
-                ? $resourceCodeById[(int) $resource->parent_id]
+            'parent_name' => $resource->parent_id > 0 && isset($resourceNameById[(int) $resource->parent_id])
+                ? $resourceNameById[(int) $resource->parent_id]
                 : self::TOP_RESOURCE_NAME,
             'parent_ids' => $this->resolveAncestorIds((int) $resource->parent_id, $resourceMapById),
             'paths' => $this->resolveAncestorCodes((int) $resource->parent_id, $resourceMapById),
-            'title' => (string) $resource->name,
-            'name' => (string) $resource->code,
+            'title' => (string) $resource->title,
+            'name' => (string) $resource->name,
             'module' => '' === (string) $resource->module ? null : (string) $resource->module,
             'page_key' => null === $resource->page_key ? null : (string) $resource->page_key,
             'route' => $resource->route,
             'redirect' => $this->resolveMetaString($resource, 'redirect'),
             'hidden' => $this->resolveMetaInt($resource, 'hidden', 0),
-            'keep_alive' => $this->resolveMetaInt($resource, 'keep_alive', 0),
+            'keep_alive' => $this->resolveKeepAlive($resource),
             'component' => null,
             'icon' => $resource->icon,
             'weight' => (int) $resource->sort,
@@ -922,5 +960,20 @@ class AdminResourceService
         $metaJson = (array) ($resource->meta_json ?? []);
 
         return isset($metaJson[$key]) ? (int) $metaJson[$key] : $default;
+    }
+
+    private function resolveKeepAlive(AdminResource $resource): int
+    {
+        $metaJson = (array) ($resource->meta_json ?? []);
+        if (isset($metaJson['keep_alive'])) {
+            return (int) $metaJson['keep_alive'];
+        }
+
+        return $this->defaultKeepAliveForMenuType($this->mapMenuType((string) $resource->type));
+    }
+
+    private function defaultKeepAliveForMenuType(string $type): int
+    {
+        return \in_array($type, [MenuTypeEnum::NAV, MenuTypeEnum::LINK], true) ? 1 : 0;
     }
 }

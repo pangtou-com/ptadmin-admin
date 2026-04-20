@@ -38,9 +38,10 @@ class UploadController extends AbstractBackgroundController
         $this->uploadService = $uploadService;
         parent::__construct();
     }
-
+    
     /**
      * 上传单个文件。
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function upload(Request $request): JsonResponse
     {
@@ -51,9 +52,10 @@ class UploadController extends AbstractBackgroundController
 
         return AdminResponse::success($this->uploadService->upload($request));
     }
-
+    
     /**
      * TinyMCE 上传接口，仅返回编辑器要求的 location 字段。
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function tiny(Request $request): JsonResponse
     {

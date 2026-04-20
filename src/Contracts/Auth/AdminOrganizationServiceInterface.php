@@ -14,13 +14,13 @@ interface AdminOrganizationServiceInterface
 
     public function createOrganization(array $data): AdminOrganization;
 
-    public function updateOrganization(int $id, array $data): AdminOrganization;
+    public function updateOrganization(int $id, array $data);
 
     public function listDepartments(array $filters = []): array;
 
     public function createDepartment(array $data): AdminDepartment;
 
-    public function updateDepartment(int $id, array $data): AdminDepartment;
+    public function updateDepartment(int $id, array $data);
 
     public function syncUserRelations(int $userId, array $relations, ?int $tenantId = null): void;
 

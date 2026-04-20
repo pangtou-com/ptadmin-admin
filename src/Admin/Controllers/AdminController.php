@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Auth;
 use PTAdmin\Admin\Requests\AdminRequest;
 use PTAdmin\Admin\Services\AdminResourceService;
 use PTAdmin\Admin\Services\AdminService;
+use PTAdmin\Admin\Support\Query\AdminListQuery;
 use PTAdmin\Foundation\Auth\AdminAuth;
 use PTAdmin\Foundation\Response\AdminResponse;
 
@@ -45,7 +46,7 @@ class AdminController extends AbstractBackgroundController
 
     public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        $data = $this->adminService->page($request->all());
+        $data = $this->adminService->page(AdminListQuery::fromRequest($request));
 
         return AdminResponse::pages($data);
     }

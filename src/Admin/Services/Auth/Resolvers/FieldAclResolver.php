@@ -37,7 +37,7 @@ class FieldAclResolver implements AuthorizationResolverInterface
 
         foreach ($requestedFields as $fieldName) {
             $fieldResourceCode = $this->resolveFieldResourceCode($resourceCode, $fieldName, $context);
-            if (null === $fieldResourceCode || null === AdminResource::findByCode($fieldResourceCode)) {
+            if (null === $fieldResourceCode || null === AdminResource::findByName($fieldResourceCode)) {
                 continue;
             }
 

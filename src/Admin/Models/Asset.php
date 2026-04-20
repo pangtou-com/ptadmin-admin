@@ -74,7 +74,11 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
 
         if (Str::startsWith($this->attributes['mime'], 'image')) {
             if (file_exists(Storage::disk($disk)->path($this->attributes['path']))) {
-                return url(Storage::disk($disk)->url(ThumbService::save($this->attributes['path'])));
+                $thumbPath = ThumbService::save((string) $this->attributes['path'], 100, 100, 'middle', $disk);
+
+                return null === $thumbPath
+                    ? (string) config('constant.empty_image', '')
+                    : url(Storage::disk($disk)->url($thumbPath));
             }
 
             return (string) config('constant.empty_image', '');
@@ -141,6 +145,6 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
     {
         $driver = trim((string) ($this->attributes['driver'] ?? ''));
 
-        return '' === $driver ? (string) config('filesystems.default', 'public') : $driver;
+        return '' === $driver ? (string) config('ptadmin-auth.upload_local_disk', 'public') : $driver;
     }
 }

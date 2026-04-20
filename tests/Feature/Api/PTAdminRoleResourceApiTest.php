@@ -29,8 +29,8 @@ class PTAdminRoleResourceApiTest extends TestCase
         $token = $this->issueAdminToken($founder);
 
         $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/roles', [
-            'name' => 'custom_role',
-            'title' => '自定义角色',
+            'code' => 'custom_role',
+            'name' => '自定义角色',
             'note' => '用于测试',
             'status' => 1,
         ])->assertOk()->assertJson([
@@ -38,17 +38,44 @@ class PTAdminRoleResourceApiTest extends TestCase
         ]);
 
         $role = AdminRole::query()->where('code', 'custom_role')->firstOrFail();
+        AdminRole::query()->create([
+            'code' => 'custom_role_disabled',
+            'name' => '自定义角色-禁用',
+            'status' => 0,
+            'sort' => 10,
+        ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/roles')
+            ->getJson('/system/roles?'.http_build_query([
+                'filters' => json_encode([
+                    ['field' => 'status', 'operator' => '=', 'value' => 1],
+                    ['field' => 'code', 'operator' => 'like', 'value' => '%custom_role%'],
+                ], JSON_UNESCAPED_UNICODE),
+                'sorts' => json_encode([
+                    ['field' => 'id', 'direction' => 'desc'],
+                ], JSON_UNESCAPED_UNICODE),
+                'limit' => 1,
+                'page' => 1,
+            ]))
             ->assertOk()
             ->assertJson([
                 'code' => 0,
+                'data' => [
+                    'total' => 1,
+                    'results' => [
+                        [
+                            'id' => $role->id,
+                            'code' => 'custom_role',
+                            'name' => '自定义角色',
+                            'status' => 1,
+                        ],
+                    ],
+                ],
             ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/roles/'.$role->id, [
-            'name' => 'custom_role',
-            'title' => '自定义角色-已更新',
+            'code' => 'custom_role',
+            'name' => '自定义角色-已更新',
             'note' => '更新后',
             'status' => 0,
         ])->assertOk()->assertJson([
@@ -68,9 +95,9 @@ class PTAdminRoleResourceApiTest extends TestCase
             'name' => 'custom.dashboard',
             'title' => '自定义看板',
             'module' => 'dashboard',
-            'page_key' => 'custom_dashboard',
+            'page_key' => 'custom.dashboard',
             'route' => 'custom/dashboard',
-            'icon' => 'layui-icon-home',
+            'icon' => 'HomeFilled',
             'weight' => 9,
             'note' => '测试资源',
             'type' => 'nav',
@@ -82,7 +109,7 @@ class PTAdminRoleResourceApiTest extends TestCase
             'code' => 0,
         ]);
 
-        $resource = AdminResource::query()->where('code', 'custom.dashboard')->firstOrFail();
+        $resource = AdminResource::query()->where('name', 'custom.dashboard')->firstOrFail();
 
         $detailResponse = $this->withHeaders($this->jsonApiHeaders($token))
             ->getJson('/system/resources/'.$resource->id);
@@ -93,11 +120,13 @@ class PTAdminRoleResourceApiTest extends TestCase
                 'name' => 'custom.dashboard',
                 'title' => '自定义看板',
                 'module' => 'dashboard',
-                'page_key' => 'custom_dashboard',
-                'route' => 'custom/dashboard',
+                'page_key' => 'custom.dashboard',
+                'route' => '/custom/dashboard',
                 'type' => 'nav',
                 'status' => 1,
                 'is_nav' => 1,
+                'icon' => 'HomeFilled',
+                'keep_alive' => 1,
             ],
         ]);
 
@@ -105,9 +134,9 @@ class PTAdminRoleResourceApiTest extends TestCase
             'name' => 'custom.dashboard',
             'title' => '自定义看板-已更新',
             'module' => 'dashboard',
-            'page_key' => 'custom_dashboard',
-            'route' => 'custom/dashboard',
-            'icon' => 'layui-icon-chart',
+            'page_key' => 'custom.dashboard',
+            'route' => '/custom-dashboard',
+            'icon' => 'TrendCharts',
             'weight' => 12,
             'note' => '测试资源已更新',
             'type' => 'nav',
@@ -120,8 +149,24 @@ class PTAdminRoleResourceApiTest extends TestCase
         ]);
 
         $resource = $resource->fresh();
-        self::assertSame('自定义看板-已更新', $resource->name);
-        self::assertSame('custom/dashboard', $resource->route);
+        self::assertSame('custom.dashboard', $resource->name);
+        self::assertSame('自定义看板-已更新', $resource->title);
+        self::assertSame('/custom-dashboard', $resource->route);
+
+        $filteredTree = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/resources?'.http_build_query([
+                'filters' => [
+                    ['field' => 'status', 'operator' => '=', 'value' => 1],
+                    ['field' => 'title', 'operator' => 'like', 'value' => '%自定义看板%'],
+                ],
+                'sorts' => [
+                    ['field' => 'id', 'direction' => 'desc'],
+                ],
+            ]));
+        $filteredTree->assertOk()->assertJson([
+            'code' => 0,
+        ]);
+        self::assertSame('custom.dashboard', data_get($filteredTree->json(), 'data.results.0.name'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
             ->getJson('/system/roles-resource/'.$role->id)

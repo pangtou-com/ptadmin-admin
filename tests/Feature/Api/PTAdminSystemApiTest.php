@@ -58,10 +58,30 @@ class PTAdminSystemApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/admins')
+            ->getJson('/system/admins?'.http_build_query([
+                'filters' => [
+                    ['field' => 'status', 'operator' => '=', 'value' => 1],
+                    ['field' => 'username', 'operator' => 'like', 'value' => '%oper%'],
+                ],
+                'sorts' => [
+                    ['field' => 'id', 'direction' => 'desc'],
+                ],
+                'limit' => 1,
+                'page' => 1,
+            ]))
             ->assertOk()
             ->assertJson([
                 'code' => 0,
+                'data' => [
+                    'total' => 1,
+                    'results' => [
+                        [
+                            'id' => $admin->id,
+                            'username' => 'operator',
+                            'nickname' => 'Operator',
+                        ],
+                    ],
+                ],
             ]);
 
         $detailResponse = $this->withHeaders($this->jsonApiHeaders($token))

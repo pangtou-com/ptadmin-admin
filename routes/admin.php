@@ -28,13 +28,15 @@ use PTAdmin\Admin\Controllers as Admin;
 Route::group(['prefix' => admin_route_prefix()], function (): void {
     Route::get('login', [Admin\LoginController::class, 'notice'])->name('admin_login_notice');
     Route::match(['post'], 'login', [Admin\LoginController::class, 'login'])->name('admin_login');
-    Route::get('modules', [Admin\AddonController::class, 'moduleManifests']);
 });
 
 Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'.\PTAdmin\Foundation\Auth\AdminAuth::getGuard()]], function (): void {
+    // 模块加载，返回给前端已安装的模块信息
+    Route::get('auth/frontends', [Admin\AddonController::class, 'moduleManifests']);
     // 获取授权菜单树
-    Route::get('admin/resources', [Admin\LoginController::class, 'adminResources']);
+    Route::get('auth/resources', [Admin\LoginController::class, 'adminResources']);
     Route::get('auth/status', [Admin\AuthorizationController::class, 'status']);
+    Route::get('auth/profile', [Admin\AuthorizationController::class, 'profile']);
 
     Route::post('upload', [Admin\UploadController::class, 'upload']);
     Route::post('upload/tiny', [Admin\UploadController::class, 'tiny']);
@@ -138,13 +140,25 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     Route::put('system-config-items/{id}', [Admin\SystemConfigController::class, 'edit']);
     Route::delete('system-config-items/{id}', [Admin\SystemConfigController::class, 'delete']);
 
-    // 插件管理
-    Route::get('addons', [Admin\AddonController::class, 'index']);
+    // 本地服务
+    Route::get('cloud/local/apps', [Admin\AddonController::class, 'local']);
+    // 云服务
+    Route::get('cloud/market/services', [Admin\AddonController::class, 'cloud']);
+    Route::get('addons/cloud/me', [Admin\AddonController::class, 'cloudMine']);
+    Route::get('addons/{code}/status', [Admin\AddonController::class, 'status']);
+    Route::get('addons/{code}/config', [Admin\AddonController::class, 'config']);
+    Route::put('addons/{code}/config', [Admin\AddonController::class, 'saveConfig']);
+    Route::post('addons/{code}/enable', [Admin\AddonController::class, 'enable']);
+    Route::post('addons/{code}/disable', [Admin\AddonController::class, 'disable']);
+    Route::post('addons/{code}/upgrade', [Admin\AddonController::class, 'upgrade']);
+    Route::post('addons/{code}/frontend/pull', [Admin\AddonController::class, 'pullFrontend']);
+    Route::post('addons/init', [Admin\AddonController::class, 'init']);
+    Route::post('addons/install/cloud', [Admin\AddonController::class, 'installCloud']);
+    Route::post('addons/install/local', [Admin\AddonController::class, 'localInstall']);
     Route::post('addon-download', [Admin\AddonController::class, 'getAddonDownloadUrl']);
-    Route::post('my-addon', [Admin\AddonController::class, 'myAddon']);
+    Route::get('my-addon', [Admin\AddonController::class, 'myAddon']);
     Route::delete('addon-uninstall/{code}', [Admin\AddonController::class, 'uninstall']);
-    Route::post('addon-cloud', [Admin\AddonController::class, 'addonCloud']);
 
-    Route::match(['get', 'post'], 'cloud-login', [Admin\AddonCloudController::class, 'login']);
-    Route::get('cloud-logout', [Admin\AddonCloudController::class, 'logout']);
+    Route::post('addons/cloud/login', [Admin\AddonCloudController::class, 'login']);
+    Route::post('addons/cloud/logout', [Admin\AddonCloudController::class, 'logout']);
 });

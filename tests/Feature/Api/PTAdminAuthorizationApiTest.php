@@ -78,7 +78,7 @@ class PTAdminAuthorizationApiTest extends TestCase
             ]);
 
         $resourceResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/admin/resources');
+            ->getJson('/system/auth/resources');
 
         $resourceResponse->assertOk()->assertJson([
             'code' => 0,
@@ -87,7 +87,15 @@ class PTAdminAuthorizationApiTest extends TestCase
             ],
         ]);
 
-        self::assertGreaterThan(0, count((array) $resourceResponse->json('data.resources')));
+        $resources = (array) $resourceResponse->json('data.resources');
+        self::assertGreaterThan(0, count($resources));
+        self::assertSame('console', $resources[0]['name'] ?? null);
+        self::assertSame('/dashboard', $resources[0]['route'] ?? null);
+        self::assertSame('console.dashboard', $resources[0]['page_key'] ?? null);
+        self::assertSame('HomeFilled', $resources[0]['icon'] ?? null);
+        self::assertSame(1, $resources[0]['keep_alive'] ?? null);
+        self::assertSame('cloud', $resources[3]['name'] ?? null);
+        self::assertSame('/cloud', $resources[3]['route'] ?? null);
         self::assertDatabaseHas('admin_login_logs', [
             'admin_id' => $founder->id,
             'status' => 1,

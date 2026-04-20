@@ -34,8 +34,8 @@ class RoleRequest extends FormRequest
         $id = (int) request()->route('id');
 
         return [
-            'name' => ['required', 'max:255', Rule::unique(AdminRole::class, 'code')->ignore($id)],
-            'title' => ['required', 'max:255', Rule::unique(AdminRole::class, 'name')->ignore($id)],
+            'code' => ['required', 'max:255', Rule::unique(AdminRole::class, 'code')->ignore($id)],
+            'name' => ['required', 'max:255', Rule::unique(AdminRole::class, 'name')->ignore($id)],
             'note' => 'max:200',
             'status' => 'in:0,1',
         ];

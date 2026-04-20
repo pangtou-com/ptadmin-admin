@@ -124,10 +124,6 @@ class InstallController
         $data = request()->all();
 
         return response()->stream(function () use ($data): void {
-            while (ob_get_level() > 0) {
-                ob_end_flush();
-            }
-
             try {
                 if (!$this->hasAcceptedAgreementRecently()) {
                     $this->sendStreamMessage([

@@ -39,8 +39,8 @@ class PTAdminDatabaseMigrationTest extends TestCase
         }
 
         self::assertTrue(Schema::hasColumns('admin_resources', [
-            'code',
             'name',
+            'title',
             'type',
             'module',
             'page_key',
@@ -50,9 +50,9 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'meta_json',
         ]));
 
-        $codes = AdminResource::query()
+        $names = AdminResource::query()
             ->orderBy('id')
-            ->pluck('code')
+            ->pluck('name')
             ->all();
 
         self::assertSame([
@@ -67,8 +67,22 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'system.operate',
             'system.config',
             'system.assets',
-            'addon',
-            'addon.addons',
-        ], $codes);
+            'cloud',
+            'cloud.market',
+            'cloud.apps',
+        ], $names);
+
+        /** @var AdminResource $console */
+        $console = AdminResource::query()->where('name', 'console')->firstOrFail();
+        self::assertSame('仪表盘', $console->title);
+        self::assertSame('dashboard', $console->module);
+        self::assertSame('console.dashboard', $console->page_key);
+        self::assertSame('/dashboard', $console->route);
+
+        /** @var AdminResource $cloud */
+        $cloud = AdminResource::query()->where('name', 'cloud')->firstOrFail();
+        self::assertSame('云平台', $cloud->title);
+        self::assertSame('/cloud', $cloud->route);
+        self::assertSame('Connection', $cloud->icon);
     }
 }

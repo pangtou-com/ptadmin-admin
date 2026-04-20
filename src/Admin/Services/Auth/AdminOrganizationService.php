@@ -40,7 +40,7 @@ class AdminOrganizationService implements AdminOrganizationServiceInterface
         return $organization->refresh();
     }
 
-    public function updateOrganization(int $id, array $data): AdminOrganization
+    public function updateOrganization(int $id, array $data)
     {
         $organization = AdminOrganization::query()->findOrFail($id);
         $organization->fill($this->normalizeOrganizationPayload($data, false));
@@ -80,7 +80,7 @@ class AdminOrganizationService implements AdminOrganizationServiceInterface
         return $department->refresh();
     }
 
-    public function updateDepartment(int $id, array $data): AdminDepartment
+    public function updateDepartment(int $id, array $data)
     {
         $department = AdminDepartment::query()->findOrFail($id);
         $department->fill($this->normalizeDepartmentPayload($data, false));

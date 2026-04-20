@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services\Auth;
 
+use Illuminate\Support\Str;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 use PTAdmin\Admin\Models\AdminGrant;
 use PTAdmin\Admin\Models\AdminResource;
@@ -13,7 +14,7 @@ use PTAdmin\Support\Enums\ResourceType;
 
 class AdminResourceService implements AdminResourceServiceInterface
 {
-    public function create(array $data)
+    public function create(array $data): AdminResource
     {
         $resource = new AdminResource();
         $resource->fill($this->normalizePayload($data));
@@ -22,7 +23,7 @@ class AdminResourceService implements AdminResourceServiceInterface
         return $this->refreshHierarchy($resource);
     }
 
-    public function update(int $id, array $data)
+    public function update(int $id, array $data): AdminResource
     {
         /** @var AdminResource $resource */
         $resource = AdminResource::query()->whereNull('deleted_at')->findOrFail($id);
@@ -62,10 +63,10 @@ class AdminResourceService implements AdminResourceServiceInterface
         return AdminResource::query()->whereNull('deleted_at')->findOrFail($id);
     }
 
-    public function register(array $definition)
+    public function register(array $definition): AdminResource
     {
         $definition = $this->normalizeDefinition($definition);
-        $resource = AdminResource::query()->where('code', $definition['code'])->first();
+        $resource = AdminResource::query()->where('name', $definition['name'])->first();
         if (null === $resource) {
             $resource = new AdminResource();
         }
@@ -84,9 +85,9 @@ class AdminResourceService implements AdminResourceServiceInterface
         }
     }
 
-    public function findByCode(string $code)
+    public function findByName(string $name)
     {
-        return AdminResource::findByCode($code);
+        return AdminResource::findByName($name);
     }
 
     public function tree(array $filters = []): array
@@ -111,13 +112,13 @@ class AdminResourceService implements AdminResourceServiceInterface
         foreach ($definitions as $definition) {
             $definition['addon_code'] = $addonCode;
             $resource = $this->register($definition);
-            $codes[] = $resource->code;
+            $codes[] = $resource->name;
         }
 
         AdminResource::query()
             ->where('addon_code', $addonCode)
             ->when(\count($codes) > 0, function ($query) use ($codes): void {
-                $query->whereNotIn('code', $codes);
+                $query->whereNotIn('name', $codes);
             })
             ->update([
                 'status' => 0,
@@ -166,10 +167,12 @@ class AdminResourceService implements AdminResourceServiceInterface
 
     private function normalizeDefinition(array $definition): array
     {
+        $name = trim((string) ($definition['name'] ?? ''));
+        $title = trim((string) ($definition['title'] ?? ''));
         $parent = $definition['parent'] ?? null;
         $parentId = (int) ($definition['parent_id'] ?? 0);
         if (!$parentId && \is_string($parent) && '' !== $parent) {
-            $parentId = (int) AdminResource::query()->where('code', $parent)->value('id');
+            $parentId = (int) AdminResource::query()->where('name', $parent)->value('id');
         }
 
         $type = $this->mapResourceType((string) ($definition['type'] ?? ResourceType::PAGE));
@@ -179,19 +182,19 @@ class AdminResourceService implements AdminResourceServiceInterface
         }
 
         $payload = [
-            'code' => (string) ($definition['code'] ?? ''),
-            'name' => (string) ($definition['name'] ?? ''),
+            'name' => $name,
+            'title' => $title,
             'type' => $type,
-            'module' => $this->normalizeModuleValue($definition['module'] ?? $this->resolveModule((string) ($definition['code'] ?? ''))),
+            'module' => $this->normalizeModuleValue($definition['module'] ?? null, $type, $name),
             'page_key' => $this->normalizePageKeyValue($definition['page_key'] ?? null, $type),
             'addon_code' => $definition['addon_code'] ?? null,
             'parent_id' => $parentId,
             'level' => (int) ($definition['level'] ?? 0),
             'path' => $definition['path'] ?? null,
-            'route' => $this->normalizeRouteValue($definition['route'] ?? null),
+            'route' => $this->normalizeRouteValue($definition['route'] ?? null, $parentId),
             'icon' => $definition['icon'] ?? null,
             'ability_hint_json' => $abilities,
-            'meta_json' => $this->normalizeMetaJson((array) ($definition['meta'] ?? $definition['meta_json'] ?? array())),
+            'meta_json' => $this->normalizeMetaJson((array) ($definition['meta'] ?? $definition['meta_json'] ?? array()), $type),
             'is_nav' => (int) ($definition['is_nav'] ?? 0),
             'status' => (int) ($definition['status'] ?? 1),
             'sort' => (int) ($definition['sort'] ?? 0),
@@ -206,12 +209,14 @@ class AdminResourceService implements AdminResourceServiceInterface
     {
         $payload = [];
 
-        if ($withDefaults || array_key_exists('code', $data)) {
-            $payload['code'] = (string) ($data['code'] ?? '');
-        }
+        $resourceName = null !== $resource ? (string) $resource->name : '';
 
         if ($withDefaults || array_key_exists('name', $data)) {
             $payload['name'] = (string) ($data['name'] ?? '');
+        }
+
+        if ($withDefaults || array_key_exists('title', $data)) {
+            $payload['title'] = (string) ($data['title'] ?? '');
         }
 
         $type = null;
@@ -221,10 +226,19 @@ class AdminResourceService implements AdminResourceServiceInterface
         }
 
         if (array_key_exists('module', $data)) {
-            $payload['module'] = $this->normalizeModuleValue($data['module']);
-        } elseif ($withDefaults || isset($payload['code'])) {
-            $resourceCode = null !== $resource ? $resource->code : '';
-            $payload['module'] = $this->resolveModule((string) ($payload['code'] ?? $resourceCode ?? ''));
+            $resolvedType = null !== $type ? $type : (null !== $resource ? (string) $resource->type : ResourceType::PAGE);
+            $payload['module'] = $this->normalizeModuleValue(
+                $data['module'],
+                $resolvedType,
+                (string) ($payload['name'] ?? $resourceName)
+            );
+        } elseif ($withDefaults || isset($payload['name'])) {
+            $resolvedType = null !== $type ? $type : (null !== $resource ? (string) $resource->type : ResourceType::PAGE);
+            $payload['module'] = $this->normalizeModuleValue(
+                null,
+                $resolvedType,
+                (string) ($payload['name'] ?? $resourceName)
+            );
         }
 
         if ($withDefaults || array_key_exists('page_key', $data)) {
@@ -242,7 +256,7 @@ class AdminResourceService implements AdminResourceServiceInterface
         }
 
         if ($withDefaults || array_key_exists('route', $data)) {
-            $payload['route'] = $this->normalizeRouteValue($data['route'] ?? null);
+            $payload['route'] = $this->normalizeRouteValue($data['route'] ?? null, $parentId ?? (null !== $resource ? (int) $resource->parent_id : 0));
         }
 
         if ($withDefaults || array_key_exists('icon', $data)) {
@@ -282,6 +296,7 @@ class AdminResourceService implements AdminResourceServiceInterface
             $this->assertResourceProtocol(array_merge(
                 [
                     'type' => null !== $resource ? (string) $resource->type : ResourceType::PAGE,
+                    'title' => null !== $resource ? (string) $resource->title : '',
                     'module' => null !== $resource ? (string) $resource->module : '',
                     'page_key' => null !== $resource ? $resource->page_key : null,
                     'route' => null !== $resource ? $resource->route : null,
@@ -310,7 +325,7 @@ class AdminResourceService implements AdminResourceServiceInterface
         if (array_key_exists('parent', $data) && \is_string($data['parent']) && '' !== $data['parent']) {
             return (int) AdminResource::query()
                 ->whereNull('deleted_at')
-                ->where('code', $data['parent'])
+                ->where('name', $data['parent'])
                 ->value('id');
         }
 
@@ -323,8 +338,10 @@ class AdminResourceService implements AdminResourceServiceInterface
 
     private function resolveMetaJson(array $data, ?string $type, ?AdminResource $resource, bool $withDefaults): ?array
     {
+        $resolvedType = null !== $type ? $type : (null !== $resource ? (string) $resource->type : ResourceType::PAGE);
+
         if (array_key_exists('meta_json', $data)) {
-            return (array) $data['meta_json'];
+            return $this->normalizeMetaJson((array) $data['meta_json'], $resolvedType);
         }
 
         if (
@@ -358,10 +375,12 @@ class AdminResourceService implements AdminResourceServiceInterface
         }
 
         if ($withDefaults || array_key_exists('keep_alive', $data)) {
-            $metaJson['keep_alive'] = isset($data['keep_alive']) ? (int) $data['keep_alive'] : 0;
+            $metaJson['keep_alive'] = isset($data['keep_alive'])
+                ? (int) $data['keep_alive']
+                : $this->resolveDefaultKeepAlive($resolvedType);
         }
 
-        return $this->normalizeMetaJson($metaJson);
+        return $this->normalizeMetaJson($metaJson, $resolvedType);
     }
 
     private function mapResourceType(string $type): string
@@ -397,16 +416,29 @@ class AdminResourceService implements AdminResourceServiceInterface
         }
     }
 
-    private function resolveModule(string $code): string
+    private function resolveModule(string $name): string
     {
-        $segments = explode('.', $code);
+        $segments = explode('.', $name);
 
         return $segments[0] ?? 'system';
     }
 
-    private function normalizeModuleValue($module): string
+    private function normalizeModuleValue($module, string $type, string $name): string
     {
-        return trim((string) $module);
+        if (ResourceType::MENU === $type) {
+            return '';
+        }
+
+        $module = trim((string) $module);
+        if ('' !== $module) {
+            return $module;
+        }
+
+        if (\in_array($type, [ResourceType::PAGE, ResourceType::ROUTE, ResourceType::BUTTON, ResourceType::FIELD], true)) {
+            return $this->resolveModule($name);
+        }
+
+        return '';
     }
 
     private function normalizePageKeyValue($pageKey, string $type): ?string
@@ -420,11 +452,23 @@ class AdminResourceService implements AdminResourceServiceInterface
         return '' === $pageKey ? null : $pageKey;
     }
 
-    private function normalizeRouteValue($route): ?string
+    private function normalizeRouteValue($route, ?int $parentId = null): ?string
     {
         $route = trim((string) $route);
+        if ('' === $route) {
+            return null;
+        }
 
-        return '' === $route ? null : $route;
+        if (Str::startsWith($route, ['http://', 'https://'])) {
+            return $route;
+        }
+
+        $route = preg_replace('#/+#', '/', $route) ?: $route;
+        if (0 === (int) $parentId && !Str::startsWith($route, '/')) {
+            return '/'.$route;
+        }
+
+        return $route;
     }
 
     /**
@@ -432,7 +476,7 @@ class AdminResourceService implements AdminResourceServiceInterface
      *
      * @return array<string, mixed>
      */
-    private function normalizeMetaJson(array $metaJson): array
+    private function normalizeMetaJson(array $metaJson, string $type): array
     {
         if (array_key_exists('redirect', $metaJson)) {
             $metaJson['redirect'] = $this->normalizeRouteValue($metaJson['redirect']);
@@ -444,9 +488,20 @@ class AdminResourceService implements AdminResourceServiceInterface
 
         if (array_key_exists('keep_alive', $metaJson)) {
             $metaJson['keep_alive'] = (int) $metaJson['keep_alive'];
+        } else {
+            $metaJson['keep_alive'] = $this->resolveDefaultKeepAlive($type);
+        }
+
+        if (!array_key_exists('hidden', $metaJson)) {
+            $metaJson['hidden'] = 0;
         }
 
         return $metaJson;
+    }
+
+    private function resolveDefaultKeepAlive(string $type): int
+    {
+        return \in_array($type, [ResourceType::PAGE, ResourceType::ROUTE], true) ? 1 : 0;
     }
 
     /**
@@ -457,13 +512,13 @@ class AdminResourceService implements AdminResourceServiceInterface
     private function assertResourceProtocol(array $payload): void
     {
         $type = (string) ($payload['type'] ?? '');
-        $code = trim((string) ($payload['code'] ?? ''));
-        $title = trim((string) ($payload['name'] ?? ''));
+        $name = trim((string) ($payload['name'] ?? ''));
+        $title = trim((string) ($payload['title'] ?? ''));
         $module = trim((string) ($payload['module'] ?? ''));
         $pageKey = isset($payload['page_key']) ? trim((string) $payload['page_key']) : '';
-        $route = isset($payload['route']) && null !== $payload['route'] ? trim((string) $payload['route']) : '';
+        $route = isset($payload['route']) ? trim((string) $payload['route']) : '';
 
-        if ('' === $code) {
+        if ('' === $name) {
             throw new BackgroundException(__('ptadmin::background.resource_code_required'));
         }
 
@@ -500,7 +555,7 @@ class AdminResourceService implements AdminResourceServiceInterface
 
     private function resolveHierarchy(int $parentId): array
     {
-        $codes = [];
+        $names = [];
         while ($parentId > 0) {
             /** @var null|AdminResource $parent */
             $parent = AdminResource::query()->whereNull('deleted_at')->find($parentId);
@@ -508,11 +563,11 @@ class AdminResourceService implements AdminResourceServiceInterface
                 break;
             }
 
-            array_unshift($codes, (string) $parent->code);
+            array_unshift($names, (string) $parent->name);
             $parentId = (int) $parent->parent_id;
         }
 
-        return [\count($codes), [] === $codes ? null : implode('.', $codes)];
+        return [\count($names), [] === $names ? null : implode('.', $names)];
     }
 
     private function refreshChildrenHierarchy(int $parentId): void
@@ -553,7 +608,7 @@ class AdminResourceService implements AdminResourceServiceInterface
             ->each(function (AdminResource $resource) use (&$childrenMap): void {
                 $childrenMap[(int) $resource->parent_id][] = (int) $resource->id;
             });
-
+        unset($childrenMap);
         $ids = [];
         $stack = $childrenMap[$id] ?? [];
         while ([] !== $stack) {

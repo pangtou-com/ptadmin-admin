@@ -30,8 +30,8 @@ class AdminResource extends \PTAdmin\Foundation\Database\Models\AbstractModel
     protected $table = 'admin_resources';
 
     protected $fillable = [
-        'code',
         'name',
+        'title',
         'type',
         'module',
         'page_key',
@@ -54,10 +54,10 @@ class AdminResource extends \PTAdmin\Foundation\Database\Models\AbstractModel
         'meta_json' => 'array',
     ];
 
-    public static function findByCode(string $code)
+    public static function findByName(string $name)
     {
         return self::query()
             ->whereNull('deleted_at')
-            ->where('code', $code)->first();
+            ->where('name', $name)->first();
     }
 }

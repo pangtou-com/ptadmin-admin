@@ -26,7 +26,6 @@ namespace PTAdmin\Admin\Services;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PTAdmin\Addon\Addon;
@@ -134,6 +133,7 @@ class UploadService
     {
         $hashFileName = self::getHashFileName($tempPath, $fileContent);
         $cacheKey = "file_md5_{$hashFileName}";
+        $service = new self();
 
         if (Cache::has($cacheKey)) {
             unlink($tempPath);
@@ -162,11 +162,11 @@ class UploadService
             'title' => $hashFileName,
             'mime' => $contentType,
             'suffix' => $suffix,
-            'driver' => (new self())->getDriver(),
-            'groups' => (new self())->getGroup(request()),
+            'driver' => $service->getDriver(),
+            'groups' => $service->getGroup(request()),
             'path' => $relativePath,
             'size' => $contentLength,
-            'url' => Storage::url($relativePath),
+            'url' => $service->toAbsoluteUrl(Storage::url($relativePath)),
         ];
 
         $asset->fill($data)->save();
@@ -194,7 +194,7 @@ class UploadService
 
     private function getDriver(): string
     {
-        return (string) Config::get('filesystems.default', 'public');
+        return (string) config('ptadmin-auth.upload_local_disk', 'public');
     }
 
     private function getFilename(Request $request): string
@@ -268,7 +268,7 @@ class UploadService
         return [
             'driver' => $disk,
             'path' => $path,
-            'url' => Storage::disk($disk)->url($path),
+            'url' => $this->toAbsoluteUrl(Storage::disk($disk)->url($path)),
         ];
     }
 
@@ -351,9 +351,10 @@ class UploadService
     {
         $data = $asset->toArray();
         if (null !== $resolvedUrl) {
-            $data['url'] = $resolvedUrl;
+            $absoluteUrl = $this->toAbsoluteUrl($resolvedUrl);
+            $data['url'] = $absoluteUrl;
             if (Str::startsWith((string) $asset->mime, 'image')) {
-                $data['preview'] = $resolvedUrl;
+                $data['preview'] = $absoluteUrl;
             }
         }
 
@@ -406,5 +407,23 @@ class UploadService
         $driver = trim($driver);
 
         return '' === $driver ? $this->getDriver() : $driver;
+    }
+
+    private function toAbsoluteUrl(?string $url): ?string
+    {
+        if (null === $url) {
+            return null;
+        }
+
+        $url = trim($url);
+        if ('' === $url) {
+            return $url;
+        }
+
+        if (Str::startsWith($url, ['http://', 'https://', '//', 'data:'])) {
+            return $url;
+        }
+
+        return url($url);
     }
 }

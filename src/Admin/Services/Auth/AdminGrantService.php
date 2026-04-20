@@ -80,7 +80,7 @@ class AdminGrantService implements AdminGrantServiceInterface
 
     private function upsertGrant(string $subjectType, int $subjectId, GrantPayload $payload, ?int $tenantId = null)
     {
-        $resource = AdminResource::findByCode($payload->resourceCode);
+        $resource = AdminResource::findByName($payload->resourceCode);
         if (null === $resource) {
             throw new ServiceException(sprintf('Resource [%s] does not exist.', $payload->resourceCode));
         }
@@ -106,7 +106,7 @@ class AdminGrantService implements AdminGrantServiceInterface
 
     private function deleteGrant(string $subjectType, int $subjectId, string $resourceCode, ?int $tenantId = null): void
     {
-        $resourceId = AdminResource::query()->where('code', $resourceCode)->value('id');
+        $resourceId = AdminResource::query()->where('name', $resourceCode)->value('id');
         if (!$resourceId) {
             return;
         }
@@ -144,8 +144,8 @@ class AdminGrantService implements AdminGrantServiceInterface
                     'subject_type' => (string) $grant->subject_type,
                     'subject_id' => (int) $grant->subject_id,
                     'resource_id' => (int) $grant->resource_id,
-                    'resource_code' => null !== $grant->resource ? (string) $grant->resource->code : '',
-                    'resource_name' => null !== $grant->resource ? (string) $grant->resource->name : '',
+                    'resource_code' => null !== $grant->resource ? (string) $grant->resource->name : '',
+                    'resource_name' => null !== $grant->resource ? (string) $grant->resource->title : '',
                     'effect' => (string) $grant->effect,
                     'abilities' => (array) ($grant->abilities_json ?? []),
                     'scope_type' => $grant->scope_type,

@@ -26,12 +26,13 @@ namespace PTAdmin\Admin\Controllers;
 use Illuminate\Http\Request;
 use PTAdmin\Admin\Requests\RoleRequest;
 use PTAdmin\Admin\Services\AdminResourceService;
+use PTAdmin\Admin\Support\Query\AdminListQuery;
 use PTAdmin\Foundation\Response\AdminResponse;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 
 class RoleController extends AbstractBackgroundController
 {
-    protected $adminResourceService;
+    protected AdminResourceService $adminResourceService;
     private AdminRoleServiceInterface $adminRoleService;
 
     public function __construct(AdminResourceService $adminResourceService, AdminRoleServiceInterface $adminRoleService)
@@ -43,15 +44,15 @@ class RoleController extends AbstractBackgroundController
 
     public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::pages($this->adminRoleService->page());
+        return AdminResponse::pages($this->adminRoleService->page(AdminListQuery::fromRequest($request)));
     }
 
     public function store(RoleRequest $request): \Illuminate\Http\JsonResponse
     {
         $this->adminRoleService->create([
-            'code' => (string) $request->get('name'),
-            'name' => (string) $request->get('title'),
-            'description' => $request->get('note'),
+            'code' => (string) $request->get('code'),
+            'name' => (string) $request->get('name'),
+            'description' => $request->get('description'),
             'status' => (int) $request->get('status', 1),
         ]);
 
@@ -61,9 +62,9 @@ class RoleController extends AbstractBackgroundController
     public function edit(RoleRequest $request, $id): \Illuminate\Http\JsonResponse
     {
         $this->adminRoleService->update((int) $id, [
-            'code' => (string) $request->get('name'),
-            'name' => (string) $request->get('title'),
-            'description' => $request->get('note'),
+            'code' => (string) $request->get('code'),
+            'name' => (string) $request->get('name'),
+            'description' => $request->get('description'),
             'status' => (int) $request->get('status', 1),
         ]);
 

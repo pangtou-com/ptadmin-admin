@@ -292,7 +292,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
     public function test_module_manifests_endpoint_skips_addons_without_module_file_or_without_pages(): void
     {
         File::ensureDirectoryExists(base_path('addons/NoPages'));
-        File::put(base_path('addons/NoPages/modules.json'), (string) json_encode([
+        File::put(base_path('addons/NoPages/frontend.json'), (string) json_encode([
             'modules' => [
                 [
                     'key' => 'no-pages',
@@ -338,7 +338,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
     {
         $directory = base_path('addons/'.$basePath);
         File::ensureDirectoryExists($directory);
-        File::put($directory.'/modules.json', (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        File::put($directory.'/frontend.json', (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }
 
