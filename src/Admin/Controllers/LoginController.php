@@ -40,7 +40,6 @@ class LoginController extends AbstractBackgroundController
 
     public function __construct(LoginService $loginService, AdminResourceService $adminResourceService, AdminRoleServiceInterface $adminRoleService)
     {
-        parent::__construct();
         $this->loginService = $loginService;
         $this->adminResourceService = $adminResourceService;
         $this->adminRoleService = $adminRoleService;

@@ -14,7 +14,6 @@ class AdminTenantController extends AbstractBackgroundController
 
     public function __construct(AdminTenantServiceInterface $tenantService)
     {
-        parent::__construct();
         $this->tenantService = $tenantService;
     }
 

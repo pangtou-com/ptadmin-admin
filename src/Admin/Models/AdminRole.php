@@ -6,7 +6,7 @@ namespace PTAdmin\Admin\Models;
 
 use PTAdmin\Foundation\Database\Models\AbstractModel;
 
-class AdminRole extends \PTAdmin\Foundation\Database\Models\AbstractModel
+class AdminRole extends AbstractModel
 {
     protected $table = 'admin_roles';
 
@@ -17,17 +17,15 @@ class AdminRole extends \PTAdmin\Foundation\Database\Models\AbstractModel
         'tenant_id',
         'scope_mode',
         'scope_value_json',
-        'is_system',
         'status',
         'sort',
-        'deleted_at',
     ];
 
     protected $casts = [
         'scope_value_json' => 'array',
     ];
 
-    public function userRoles()
+    public function userRoles(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(AdminUserRole::class, 'role_id');
     }

@@ -32,7 +32,6 @@ class HomeController extends AbstractBackgroundController
 
     public function __construct(AdminResourceService $adminResourceService)
     {
-        parent::__construct();
         $this->adminResourceService = $adminResourceService;
     }
 

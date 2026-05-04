@@ -23,13 +23,13 @@ tags:
   - name: Upload
   - name: Asset
   - name: Operation
+  - name: Dashboard
   - name: Admin
   - name: Role
   - name: Resource
   - name: Tenant
   - name: Organization
-  - name: SystemConfigGroup
-  - name: SystemConfig
+  - name: Settings
   - name: Addon
 security:
   - bearerAuth: []
@@ -211,10 +211,11 @@ paths:
   /admins/login-logs:
     get:
       tags: [Admin]
-      summary: 当前管理员登录日志
+      summary: 管理员登录日志列表
       parameters:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Keyword'
       responses:
         '200':
           $ref: '#/components/responses/PagedResponse'
@@ -225,6 +226,197 @@ paths:
     get:
       tags: [Auth]
       summary: 未读消息数
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: 获取当前用户最终仪表盘
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 仪表盘配置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardConsoleResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /dashboard/widgets:
+    get:
+      tags: [Dashboard]
+      summary: 获取当前用户可见的仪表盘组件定义
+      parameters:
+        - $ref: '#/components/parameters/Group'
+      responses:
+        '200':
+          description: 仪表盘组件定义列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardWidgetListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /dashboard/widgets/{code}/query:
+    post:
+      tags: [Dashboard]
+      summary: 查询仪表盘组件数据
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardWidgetQueryRequest'
+      responses:
+        '200':
+          description: 仪表盘组件数据
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardWidgetRuntimeResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /dashboard/widgets/{code}/actions/{action}:
+    post:
+      tags: [Dashboard]
+      summary: 执行仪表盘组件动作
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardWidgetActionRequest'
+      responses:
+        '200':
+          description: 仪表盘组件动作执行结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardWidgetRuntimeResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /dashboard/me/widgets:
+    get:
+      tags: [Dashboard]
+      summary: 获取当前用户个人仪表盘配置
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 个人仪表盘组件配置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardWidgetSelectionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    put:
+      tags: [Dashboard]
+      summary: 保存当前用户个人仪表盘配置
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardWidgetSelectionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /dashboard/roles/{id}/widgets:
+    get:
+      tags: [Dashboard]
+      summary: 获取角色默认仪表盘配置
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 角色仪表盘组件配置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardWidgetSelectionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    put:
+      tags: [Dashboard]
+      summary: 保存角色默认仪表盘配置
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardWidgetSelectionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /dashboard/users/{id}/widgets:
+    get:
+      tags: [Dashboard]
+      summary: 获取指定用户仪表盘配置
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: 用户仪表盘组件配置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardWidgetSelectionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    put:
+      tags: [Dashboard]
+      summary: 保存指定用户仪表盘配置
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DashboardWidgetSelectionRequest'
       responses:
         '200':
           $ref: '#/components/responses/SuccessResponse'
@@ -561,24 +753,6 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /resource-field/{id}:
-    put:
-      tags: [Resource]
-      summary: 同步字段权限资源
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AdminResourceFieldRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
   /resources-role/{id}:
     get:
       tags: [Resource]
@@ -847,191 +1021,136 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /system-config-groups:
+
+  /settings/system/catalog:
     get:
-      tags: [SystemConfigGroup]
-      summary: 系统配置分组树
+      tags: [Settings]
+      summary: 获取系统设置目录
       responses:
         '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-    post:
-      tags: [SystemConfigGroup]
-      summary: 新增系统配置分组
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SystemConfigGroupRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-    delete:
-      tags: [SystemConfigGroup]
-      summary: 删除系统配置分组
-      parameters:
-        - $ref: '#/components/parameters/Ids'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
+          description: 系统设置目录
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SettingsSystemCatalogPayload'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /system-config-groups/{id}:
-    put:
-      tags: [SystemConfigGroup]
-      summary: 编辑系统配置分组
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SystemConfigGroupRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /system-config-groups/{id}/sections:
+  /settings/system/sections/{sectionKey}:
     get:
-      tags: [SystemConfigGroup]
-      summary: 获取分组下 section 配置
+      tags: [Settings]
+      summary: 获取系统设置分组详情
       parameters:
-        - $ref: '#/components/parameters/IdPath'
+        - $ref: '#/components/parameters/SectionKeyPath'
       responses:
         '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /system-config-groups/{id}/children:
-    get:
-      tags: [SystemConfigGroup]
-      summary: 获取分组下直接子分组
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /system-configs:
-    get:
-      tags: [SystemConfig]
-      summary: 系统配置导航树
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /system-configs/{id}:
-    get:
-      tags: [SystemConfig]
-      summary: 获取配置页签 schema 与当前值
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
+          description: 系统设置分组详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SettingsSectionDetailPayload'
         default:
           $ref: '#/components/responses/ErrorResponse'
     put:
-      tags: [SystemConfig]
-      summary: 保存配置页签值
+      tags: [Settings]
+      summary: 保存系统设置分组
       parameters:
-        - $ref: '#/components/parameters/IdPath'
+        - $ref: '#/components/parameters/SectionKeyPath'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/SettingsSectionSaveRequest'
       responses:
         '200':
-          $ref: '#/components/responses/SuccessResponse'
+          description: 保存后的最新值
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SettingsSaveResponsePayload'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /system-config-items:
+  /settings/plugins/catalog:
     get:
-      tags: [SystemConfig]
-      summary: 配置项定义分页列表
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Keyword'
+      tags: [Settings]
+      summary: 获取插件设置目录
       responses:
         '200':
-          $ref: '#/components/responses/PagedResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-    post:
-      tags: [SystemConfig]
-      summary: 新增配置项定义
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SystemConfigItemRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-    delete:
-      tags: [SystemConfig]
-      summary: 删除配置项定义
-      parameters:
-        - $ref: '#/components/parameters/Ids'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
+          description: 插件设置目录
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SettingsPluginCatalogPayload'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
-  /system-config-items/{id}:
+  /settings/plugins/{code}/sections/{sectionKey}:
+    get:
+      tags: [Settings]
+      summary: 获取插件设置分组详情
+      parameters:
+        - $ref: '#/components/parameters/CodePath'
+        - $ref: '#/components/parameters/SectionKeyPath'
+      responses:
+        '200':
+          description: 插件设置分组详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SettingsSectionDetailPayload'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
     put:
-      tags: [SystemConfig]
-      summary: 编辑配置项定义
+      tags: [Settings]
+      summary: 保存插件设置分组
       parameters:
-        - $ref: '#/components/parameters/IdPath'
+        - $ref: '#/components/parameters/CodePath'
+        - $ref: '#/components/parameters/SectionKeyPath'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SystemConfigItemRequest'
+              $ref: '#/components/schemas/SettingsSectionSaveRequest'
       responses:
         '200':
-          $ref: '#/components/responses/SuccessResponse'
-        default:
-          $ref: '#/components/responses/ErrorResponse'
-
-  /system-config-items/values:
-    post:
-      tags: [SystemConfig]
-      summary: 批量保存配置值
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessResponse'
+          description: 保存后的最新值
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SettingsSaveResponsePayload'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -1156,6 +1275,18 @@ components:
       required: true
       schema:
         type: integer
+    CodePath:
+      name: code
+      in: path
+      required: true
+      schema:
+        type: string
+    SectionKeyPath:
+      name: sectionKey
+      in: path
+      required: true
+      schema:
+        type: string
     Page:
       name: page
       in: query
@@ -1467,32 +1598,6 @@ components:
           enum: [0, 1]
         controller:
           type: string
-    AdminResourceFieldRequest:
-      type: object
-      properties:
-        fields:
-          type: array
-          items:
-            type: object
-            required: [name]
-            properties:
-              name:
-                type: string
-              title:
-                type: string
-              status:
-                type: integer
-                enum: [0, 1]
-              sort:
-                type: integer
-              weight:
-                type: integer
-              abilities:
-                type: array
-                items:
-                  type: string
-              note:
-                type: string
     TenantRequest:
       type: object
       required: [code, name]
@@ -1596,52 +1701,6 @@ components:
           type: string
         avatar:
           type: string
-    SystemConfigGroupRequest:
-      type: object
-      required: [title, name]
-      properties:
-        title:
-          type: string
-        name:
-          type: string
-        weight:
-          type: integer
-        parent_id:
-          type: integer
-          default: 0
-        intro:
-          type: string
-        status:
-          type: integer
-          enum: [0, 1]
-    SystemConfigItemRequest:
-      type: object
-      required: [system_config_group_id, title, name, type]
-      properties:
-        system_config_group_id:
-          type: integer
-        title:
-          type: string
-        name:
-          type: string
-        type:
-          type: string
-        value:
-          type: string
-        default_val:
-          type: string
-        weight:
-          type: integer
-        intro:
-          type: string
-        extra:
-          oneOf:
-            - type: string
-            - type: array
-              items:
-                type: string
-            - type: object
-              additionalProperties: true
     AddonDownloadRequest:
       type: object
       required: [code]
@@ -1758,6 +1817,361 @@ components:
                       description:
                         type: string
                         example: CMS 插件
+    SettingsOwner:
+      type: object
+      properties:
+        code:
+          type: string
+          example: system
+        name:
+          type: string
+          nullable: true
+          example: 系统设置
+    SettingsRenderDescriptor:
+      type: object
+      properties:
+        engine:
+          type: string
+          example: pt-render
+        version:
+          type: string
+          example: '1.0'
+        schema:
+          type: object
+          nullable: true
+          additionalProperties: true
+    SettingsSectionCatalogItem:
+      type: object
+      properties:
+        key:
+          type: string
+          example: basic
+        title:
+          type: string
+          example: 基础配置
+        description:
+          type: string
+          example: 站点基础配置
+        icon:
+          type: string
+          example: Setting
+        order:
+          type: integer
+          example: 10
+        mode:
+          type: string
+          enum: [hosted, external_route, none]
+        render:
+          $ref: '#/components/schemas/SettingsRenderDescriptor'
+    SettingsSystemCatalogPayload:
+      type: object
+      properties:
+        scope:
+          type: string
+          example: system
+        owner:
+          $ref: '#/components/schemas/SettingsOwner'
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettingsSectionCatalogItem'
+    SettingsPluginConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        mode:
+          type: string
+          enum: [hosted, external_route, none]
+        path:
+          type: string
+          nullable: true
+          example: /cms/settings
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettingsSectionCatalogItem'
+    SettingsPluginCatalogItem:
+      type: object
+      properties:
+        owner:
+          $ref: '#/components/schemas/SettingsOwner'
+        description:
+          type: string
+        icon:
+          type: string
+        enabled:
+          type: boolean
+        version:
+          type: string
+        settings:
+          $ref: '#/components/schemas/SettingsPluginConfig'
+    SettingsPluginCatalogPayload:
+      type: object
+      properties:
+        scope:
+          type: string
+          example: plugin
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettingsPluginCatalogItem'
+    SettingsSectionDescriptor:
+      type: object
+      properties:
+        key:
+          type: string
+          example: basic
+        title:
+          type: string
+          example: 基础配置
+        description:
+          type: string
+          example: 插件通用配置
+    SettingsSectionMeta:
+      type: object
+      properties:
+        editable:
+          type: boolean
+        supported:
+          type: boolean
+        updated_at:
+          type: string
+          nullable: true
+          example: '2026-04-29 15:00:00'
+        updated_by:
+          type: string
+          nullable: true
+          example: admin
+    SettingsSectionDetailPayload:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum: [system, plugin]
+        owner:
+          $ref: '#/components/schemas/SettingsOwner'
+        section:
+          $ref: '#/components/schemas/SettingsSectionDescriptor'
+        render:
+          $ref: '#/components/schemas/SettingsRenderDescriptor'
+        values:
+          type: object
+          additionalProperties: true
+        meta:
+          $ref: '#/components/schemas/SettingsSectionMeta'
+    SettingsSectionSaveRequest:
+      type: object
+      description: 推荐通过 `values` 提交；也兼容直接平铺字段。
+      properties:
+        values:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+    SettingsSaveResponsePayload:
+      type: object
+      properties:
+        values:
+          type: object
+          additionalProperties: true
+        meta:
+          $ref: '#/components/schemas/SettingsSectionMeta'
+    DashboardWidgetQueryRequest:
+      type: object
+      properties:
+        tenant_id:
+          type: integer
+          nullable: true
+        query:
+          type: object
+          additionalProperties: true
+    DashboardWidgetActionRequest:
+      type: object
+      properties:
+        tenant_id:
+          type: integer
+          nullable: true
+        payload:
+          type: object
+          additionalProperties: true
+    DashboardWidgetSelectionRequest:
+      type: object
+      required: [widgets]
+      properties:
+        widgets:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardWidgetAssignment'
+    DashboardWidgetDefinition:
+      type: object
+      properties:
+        code:
+          type: string
+          example: cms.overview
+        title:
+          type: string
+          example: 内容概览
+        type:
+          type: string
+          example: stats
+        group:
+          type: string
+          example: content
+        addon_code:
+          type: string
+          example: cms
+        icon:
+          type: string
+          example: layui-icon-chart
+        sort:
+          type: integer
+          example: 100
+        resource_code:
+          type: string
+          example: cms.dashboard
+        description:
+          type: string
+        default_enabled:
+          type: boolean
+        default_query:
+          type: object
+          additionalProperties: true
+        default_layout:
+          type: object
+          additionalProperties: true
+        settings_schema:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              label:
+                type: string
+              type:
+                type: string
+              target:
+                type: string
+              confirm_text:
+                type: string
+              payload_schema:
+                type: object
+                additionalProperties: true
+              meta:
+                type: object
+                additionalProperties: true
+        capabilities:
+          type: object
+          additionalProperties: true
+    DashboardWidgetAssignment:
+      allOf:
+        - $ref: '#/components/schemas/DashboardWidgetDefinition'
+        - type: object
+          properties:
+            enabled:
+              type: boolean
+            layout:
+              type: object
+              additionalProperties: true
+            config:
+              type: object
+              additionalProperties: true
+            source:
+              type: object
+              additionalProperties: true
+    DashboardConsoleResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: 操作成功
+        data:
+          type: object
+          properties:
+            key:
+              type: string
+              example: dashboard.default
+            title:
+              type: string
+              example: 仪表盘
+            description:
+              type: string
+            updatedAt:
+              type: string
+            widgets:
+              type: array
+              items:
+                $ref: '#/components/schemas/DashboardWidgetAssignment'
+    DashboardWidgetListResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: 操作成功
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/DashboardWidgetDefinition'
+    DashboardWidgetSelectionResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: 操作成功
+        data:
+          type: object
+          properties:
+            available_widgets:
+              type: array
+              items:
+                $ref: '#/components/schemas/DashboardWidgetDefinition'
+            selected_widgets:
+              type: array
+              items:
+                $ref: '#/components/schemas/DashboardWidgetAssignment'
+    DashboardWidgetRuntimeResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: 操作成功
+        data:
+          type: object
+          properties:
+            widget:
+              $ref: '#/components/schemas/DashboardWidgetAssignment'
+            action:
+              type: object
+              additionalProperties: true
+            data:
+              type: object
+              additionalProperties: true
+            queried_at:
+              type: integer
+              nullable: true
+            executed_at:
+              type: integer
+              nullable: true
     CloudLoginRequest:
       type: object
       required: [username, password]

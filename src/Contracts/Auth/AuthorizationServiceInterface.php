@@ -19,7 +19,5 @@ interface AuthorizationServiceInterface
 
     public function allowedButtons($subject, string $resourceCode, ?AuthorizationContext $context = null): array;
 
-    public function allowedFields($subject, string $resourceCode, ?AuthorizationContext $context = null): array;
-
     public function forTenant(?int $tenantId): self;
 }

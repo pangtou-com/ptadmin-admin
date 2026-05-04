@@ -55,7 +55,7 @@ trait HasApiTokens
      * 创建新的访问令牌.
      *
      * @param $guard_name
-     * @param null $expiresAt
+     * @param null|int $expiresAt 自定义绝对过期时间戳；为 null 或 0 时使用 guard 默认 TTL
      *
      * @return NewAccessToken
      */

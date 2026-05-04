@@ -41,8 +41,7 @@ class AddonFrontendService
     {
         $results = [];
 
-        foreach (array_keys(Addon::getAddons()) as $addonCode) {
-            $addonInfo = Addon::getAddon((string) $addonCode)->getAddons();
+        foreach ($this->getAvailableAddons() as $addonCode => $addonInfo) {
             foreach ($this->extractModuleDefinitions((string) $addonCode, $addonInfo) as $definition) {
                 $normalized = $this->normalizeModuleManifest((string) $addonCode, (array) $definition, $addonInfo);
                 if ([] === $normalized) {
@@ -74,8 +73,7 @@ class AddonFrontendService
     {
         $fingerprints = [];
 
-        foreach (array_keys(Addon::getAddons()) as $addonCode) {
-            $addonInfo = (array) Addon::getAddon((string) $addonCode)->getAddons();
+        foreach ($this->getAvailableAddons() as $addonCode => $addonInfo) {
             $fingerprints[] = [
                 'code' => (string) ($addonInfo['code'] ?? $addonCode),
                 'version' => (string) ($addonInfo['version'] ?? ''),
@@ -106,11 +104,17 @@ class AddonFrontendService
             return [];
         }
 
-        $definitions = isset($payload['modules']) && \is_array($payload['modules'])
-            ? $payload['modules']
-            : $payload;
+        if (isset($payload['modules']) && \is_array($payload['modules'])) {
+            return array_values(array_filter($payload['modules'], static function ($item): bool {
+                return \is_array($item);
+            }));
+        }
 
-        return array_values(array_filter($definitions, static function ($item): bool {
+        if ($this->looksLikeManifestDefinition($payload)) {
+            return [$payload];
+        }
+
+        return array_values(array_filter($payload, static function ($item): bool {
             return \is_array($item);
         }));
     }
@@ -122,6 +126,21 @@ class AddonFrontendService
      * @return array<string, mixed>
      */
     protected function normalizeModuleManifest(string $addonCode, array $definition, array $addonInfo): array
+    {
+        if ($this->looksLikeFrontendDefinition($definition)) {
+            return $this->normalizeFrontendDefinition($addonCode, $definition, $addonInfo);
+        }
+
+        return $this->normalizeLegacyModuleManifest($addonCode, $definition, $addonInfo);
+    }
+
+    /**
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $addonInfo
+     *
+     * @return array<string, mixed>
+     */
+    protected function normalizeLegacyModuleManifest(string $addonCode, array $definition, array $addonInfo): array
     {
         $key = trim((string) ($definition['key'] ?? ''));
         if ('' === $key) {
@@ -156,6 +175,57 @@ class AddonFrontendService
             ],
             'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $addonCode),
             'pages' => $pages,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $addonInfo
+     *
+     * @return array<string, mixed>
+     */
+    protected function normalizeFrontendDefinition(string $addonCode, array $definition, array $addonInfo): array
+    {
+        $enabled = isset($definition['enabled']) ? (bool) $definition['enabled'] : true;
+        if (!$enabled) {
+            return [];
+        }
+
+        $code = trim((string) ($definition['code'] ?? $addonInfo['code'] ?? $addonCode));
+        if ('' === $code) {
+            return [];
+        }
+
+        $name = trim((string) ($definition['name'] ?? $addonInfo['title'] ?? $code));
+        $runtime = trim((string) ($definition['runtime'] ?? 'local'));
+        $routeBase = $this->normalizeRoute((string) ($definition['routeBase'] ?? $definition['route_base'] ?? ''));
+        if ('' === $routeBase) {
+            $routeBase = '/'.$code;
+        }
+
+        return [
+            'id' => trim((string) ($definition['id'] ?? $code)),
+            'key' => trim((string) ($definition['key'] ?? $code)),
+            'code' => $code,
+            'name' => '' === $name ? $code : $name,
+            'title' => '' === $name ? $code : $name,
+            'description' => (string) data_get($definition, 'meta.description', $addonInfo['description'] ?? ''),
+            'version' => (string) ($definition['version'] ?? $addonInfo['version'] ?? ''),
+            'enabled' => 1,
+            'kind' => (string) ($definition['kind'] ?? 'module'),
+            'runtime' => '' === $runtime ? 'local' : $runtime,
+            'routeBase' => $routeBase,
+            'route_base' => $routeBase,
+            'meta' => [
+                'icon' => $this->normalizeNullableString(data_get($definition, 'meta.icon')),
+                'order' => (int) data_get($definition, 'meta.order', 0),
+                'preload' => (bool) data_get($definition, 'meta.preload', false),
+                'develop' => (bool) data_get($definition, 'meta.develop', !empty($addonInfo['develop'])),
+            ],
+            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $code),
+            'capabilities' => $this->normalizeCapabilities((array) ($definition['capabilities'] ?? [])),
+            'pages' => $this->normalizePages((array) ($definition['pages'] ?? []), $routeBase),
+            'compatibility' => \is_array($definition['compatibility'] ?? null) ? $definition['compatibility'] : [],
         ];
     }
 
@@ -205,6 +275,18 @@ class AddonFrontendService
     {
         if (!\is_array($entry)) {
             return [];
+        }
+
+        if ('federation' === $runtime) {
+            $federation = \is_array($entry['federation'] ?? null) ? $entry['federation'] : [];
+
+            return [
+                'federation' => [
+                    'remote' => (string) ($federation['remote'] ?? $addonCode),
+                    'entry' => (string) ($federation['entry'] ?? ''),
+                    'expose' => (string) ($federation['expose'] ?? './module'),
+                ],
+            ];
         }
 
         if ('wujie' === $runtime) {
@@ -271,6 +353,21 @@ class AddonFrontendService
         return array_values(array_unique($results));
     }
 
+    /**
+     * @param array<string, mixed> $capabilities
+     *
+     * @return array<string, bool>
+     */
+    protected function normalizeCapabilities(array $capabilities): array
+    {
+        return [
+            'routes' => (bool) ($capabilities['routes'] ?? false),
+            'pages' => (bool) ($capabilities['pages'] ?? false),
+            'widgets' => (bool) ($capabilities['widgets'] ?? false),
+            'settings' => (bool) ($capabilities['settings'] ?? false),
+        ];
+    }
+
     protected function normalizeRoute(string $path): string
     {
         $path = trim($path);
@@ -297,20 +394,103 @@ class AddonFrontendService
     }
 
     /**
+     * @param array<string, mixed> $definition
+     */
+    protected function looksLikeManifestDefinition(array $definition): bool
+    {
+        return $this->looksLikeFrontendDefinition($definition)
+            || isset($definition['key'])
+            || isset($definition['route_base'])
+            || isset($definition['pages']);
+    }
+
+    /**
+     * @param array<string, mixed> $definition
+     */
+    protected function looksLikeFrontendDefinition(array $definition): bool
+    {
+        return isset($definition['kind'])
+            || isset($definition['routeBase'])
+            || isset($definition['capabilities'])
+            || isset($definition['entry']);
+    }
+
+    /**
      * 模块清单使用独立文件，方便前端构建阶段直接生成。
      *
-     * 默认读取插件根目录 `frontend.json`。
+     * 开发阶段优先读取 `Frontend/frontend.json`。
+     * 部署阶段优先读取插件根目录 `frontend.json`。
      * 也支持通过 manifest 显式指定 `module_manifest` 相对路径。
      *
      * @param array<string, mixed> $addonInfo
      */
     protected function resolveModuleManifestPath(string $addonCode, array $addonInfo): ?string
     {
-        $relativePath = trim((string) ($addonInfo['module_manifest'] ?? 'frontend.json'));
-        if ('' === $relativePath) {
-            return null;
+        $candidates = [];
+        $configuredPath = trim((string) ($addonInfo['module_manifest'] ?? ''));
+        $isDevelop = !empty($addonInfo['develop']);
+
+        if ('' !== $configuredPath) {
+            $candidates[] = $configuredPath;
         }
 
-        return Addon::getAddon($addonCode)->getAddonPath($relativePath);
+        if ($isDevelop) {
+            $candidates[] = 'Frontend/frontend.json';
+            $candidates[] = 'frontend.json';
+        } else {
+            $candidates[] = 'frontend.json';
+            $candidates[] = 'Frontend/frontend.json';
+        }
+
+        foreach (array_unique(array_filter($candidates, static function (string $path): bool {
+            return '' !== trim($path);
+        })) as $relativePath) {
+            $resolvedPath = $this->resolveAddonFilePath($addonCode, $addonInfo, $relativePath);
+            if (is_file($resolvedPath)) {
+                return $resolvedPath;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    protected function getAvailableAddons(): array
+    {
+        $addons = [];
+
+        foreach (Addon::getAddons() as $addonCode => $addon) {
+            if (!\is_array($addon)) {
+                continue;
+            }
+
+            $addonInfo = \is_array($addon['addons'] ?? null) ? $addon['addons'] : $addon;
+            if (!\is_array($addonInfo) || !empty($addonInfo['disable'])) {
+                continue;
+            }
+
+            $addons[(string) $addonCode] = $addonInfo;
+        }
+
+        return $addons;
+    }
+
+    /**
+     * @param array<string, mixed> $addonInfo
+     */
+    protected function resolveAddonFilePath(string $addonCode, array $addonInfo, string $relativePath): string
+    {
+        $basePath = trim((string) ($addonInfo['base_path'] ?? ''));
+        if ('' !== $basePath) {
+            return base_path('addons/'.$basePath.'/'.ltrim($relativePath, '/'));
+        }
+
+        if (Addon::hasAddon($addonCode)) {
+            return Addon::getAddon($addonCode)->getAddonPath($relativePath);
+        }
+
+        return base_path('addons/'.ltrim($relativePath, '/'));
     }
 }

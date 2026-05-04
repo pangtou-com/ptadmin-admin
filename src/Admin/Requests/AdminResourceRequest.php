@@ -39,10 +39,10 @@ class AdminResourceRequest extends FormRequest
             'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:150', Rule::unique(AdminResource::class, 'name')->whereNull('deleted_at')->ignore($id)],
             'title' => ['required', 'max:100', Rule::unique(AdminResource::class, 'title')->whereNull('deleted_at')->ignore($id)],
             'module' => [Rule::requiredIf(function (): bool {
-                return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::BTN, MenuTypeEnum::LINK], true);
+                return $this->get('type') === MenuTypeEnum::NAV;
             }), 'max:50'],
             'page_key' => [Rule::requiredIf(function (): bool {
-                return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::LINK], true);
+                return $this->get('type') === MenuTypeEnum::NAV;
             }), 'max:100'],
             'route' => [Rule::requiredIf(function (): bool {
                 return \in_array($this->get('type'), [MenuTypeEnum::NAV, MenuTypeEnum::LINK], true);
@@ -53,15 +53,12 @@ class AdminResourceRequest extends FormRequest
                 }
             }],
             'icon' => 'max:100',
-            'weight' => 'integer|min:0|max:255',
+            'meta_json' => 'nullable|array',
+            'sort' => 'integer|min:0|max:255',
             'note' => 'max:500',
             'type' => ['required', Rule::in(MenuTypeEnum::getValues()->toArray())],
             'status' => 'integer|in:0,1',
             'is_nav' => 'required|integer|in:0,1',
-            'controller' => 'max:255',
-            'redirect' => 'max:150',
-            'hidden' => 'integer|in:0,1',
-            'keep_alive' => 'integer|in:0,1',
         ];
     }
 

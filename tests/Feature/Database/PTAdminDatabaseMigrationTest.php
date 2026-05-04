@@ -25,6 +25,8 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'admin_resources',
             'admin_user_roles',
             'admin_grants',
+            'admin_dashboard_role_widgets',
+            'admin_dashboard_user_widgets',
             'admin_tenants',
             'admin_organizations',
             'admin_departments',
@@ -46,8 +48,48 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'page_key',
             'parent_id',
             'route',
-            'ability_hint_json',
             'meta_json',
+        ]));
+
+        self::assertTrue(Schema::hasColumns('admin_login_logs', [
+            'admin_id',
+            'login_account',
+            'login_at',
+            'login_ip',
+            'status',
+            'reason',
+            'user_agent',
+        ]));
+
+        self::assertTrue(Schema::hasColumns('system_config_groups', [
+            'name',
+            'title',
+            'parent_id',
+            'addon_code',
+            'intro',
+            'extra',
+        ]));
+
+        self::assertTrue(Schema::hasColumns('operation_records', [
+            'admin_id',
+            'admin_username',
+            'nickname',
+            'ip',
+            'user_agent',
+            'url',
+            'title',
+            'resource_name',
+            'method',
+            'controller',
+            'action',
+            'trace_id',
+            'target_type',
+            'target_id',
+            'status',
+            'request',
+            'error_message',
+            'response_code',
+            'response_time',
         ]));
 
         $names = AdminResource::query()

@@ -34,12 +34,11 @@ use PTAdmin\Foundation\Response\AdminResponse;
 
 class AdminController extends AbstractBackgroundController
 {
-    protected $adminResourceService;
-    protected $adminService;
+    protected AdminResourceService $adminResourceService;
+    protected AdminService $adminService;
 
     public function __construct(AdminResourceService $adminResourceService, AdminService $adminService)
     {
-        parent::__construct();
         $this->adminResourceService = $adminResourceService;
         $this->adminService = $adminService;
     }
@@ -56,14 +55,14 @@ class AdminController extends AbstractBackgroundController
      */
     public function store(AdminRequest $request): \Illuminate\Http\JsonResponse
     {
-        $this->adminService->create($request->all());
+        $this->adminService->create($request->validated());
 
         return AdminResponse::success();
     }
 
     public function edit(AdminRequest $request, $id): \Illuminate\Http\JsonResponse
     {
-        $this->adminService->update((int) $id, $request->all());
+        $this->adminService->update((int) $id, $request->validated());
 
         return AdminResponse::success();
     }
@@ -124,9 +123,9 @@ class AdminController extends AbstractBackgroundController
     /**
      * 登录日志.
      */
-    public function loginLog(): \Illuminate\Http\JsonResponse
+    public function loginLog(Request $request): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::pages($this->adminService->loginLogs((int) AdminAuth::user()->id));
+        return AdminResponse::pages($this->adminService->loginLogs(AdminAuth::user(), AdminListQuery::fromRequest($request)));
     }
 
     public function status(): \Illuminate\Http\JsonResponse

@@ -26,16 +26,23 @@ namespace PTAdmin\Admin\Models;
 /**
  * 操作日志记录表.
  *
- * @property int    $admin_id
+ * @property int|null $admin_id
+ * @property string $admin_username
  * @property string $nickname
- * @property string $ip
+ * @property string|null $ip
+ * @property string|null $user_agent
  * @property string $url
  * @property string $title
+ * @property string|null $resource_name
  * @property string $method
  * @property string $controller
  * @property string $action
- * @property string $request
- * @property string $response
+ * @property string|null $trace_id
+ * @property string|null $target_type
+ * @property string|null $target_id
+ * @property string $status
+ * @property string|null $request
+ * @property string|null $error_message
  * @property int    $response_code
  * @property int    $response_time
  */

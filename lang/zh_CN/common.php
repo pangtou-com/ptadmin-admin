@@ -11,12 +11,19 @@ return [
     'system_config' => [
         'group' => [
             'system_title' => '系统配置',
+            'oauth_title' => '第三方登录',
         ],
         'section' => [
             'basic_title' => '基础配置',
             'basic_intro' => '站点基础信息与通用开关配置',
+            'security_title' => '安全配置',
+            'security_intro' => '注册、认证与访问安全相关配置',
             'upload_title' => '上传配置',
             'upload_intro' => '文件上传与对象存储相关配置',
+            'oauth_wechat_title' => '微信登录',
+            'oauth_wechat_intro' => '微信公众号、开放平台等微信授权登录参数',
+            'oauth_qq_title' => 'QQ 登录',
+            'oauth_qq_intro' => 'QQ 互联授权登录参数',
         ],
         'field' => [
             'site_title_title' => '站点标题',
@@ -25,6 +32,8 @@ return [
             'site_description_intro' => '用于站点介绍与 SEO 描述',
             'login_captcha_title' => '登录验证码',
             'login_captcha_intro' => '控制后台登录是否显示验证码',
+            'is_register_title' => '自动注册用户',
+            'is_register_intro' => '短信/邮箱验证码登录时，未注册用户是否允许自动创建账号',
             'storage_driver_title' => '上传存储驱动',
             'storage_driver_intro' => 'local 使用本地磁盘；填写插件 storage inject code 时走插件上传',
             'storage_code_title' => '上传存储编码',
@@ -37,6 +46,14 @@ return [
             'storage_visibility_intro' => '对象存储文件默认可见性',
             'storage_meta_title' => '上传扩展参数',
             'storage_meta_intro' => '传递给插件 storage inject 的扩展参数，JSON 对象格式',
+            'oauth_active_title' => '启用授权登录',
+            'oauth_active_intro' => '关闭后，该第三方登录方式不会出现在可用登录列表中',
+            'oauth_app_id_title' => '应用 ID',
+            'oauth_app_id_intro' => '第三方开放平台分配的应用标识',
+            'oauth_app_secret_title' => '应用密钥',
+            'oauth_app_secret_intro' => '第三方开放平台分配的应用密钥',
+            'oauth_redirect_title' => '回调地址',
+            'oauth_redirect_intro' => '第三方授权回调地址，不填写时由业务侧自行处理',
         ],
         'option' => [
             'visibility_public' => '公开',

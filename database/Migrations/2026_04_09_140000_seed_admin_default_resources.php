@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use PTAdmin\Admin\Models\AdminGrant;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Services\Auth\AdminResourceService;
-use PTAdmin\Support\Enums\ResourceType;
+use PTAdmin\Support\Enums\MenuTypeEnum;
 
 return new class extends Migration
 {
@@ -14,7 +14,7 @@ return new class extends Migration
         [
             'name' => 'console',
             'title' => '仪表盘',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'dashboard',
             'page_key' => 'console.dashboard',
             'route' => '/dashboard',
@@ -30,7 +30,7 @@ return new class extends Migration
         [
             'name' => 'user',
             'title' => '用户管理',
-            'type' => ResourceType::MENU,
+            'type' => MenuTypeEnum::DIR,
             'icon' => 'UserFilled',
             'is_nav' => 1,
             'status' => 1,
@@ -44,7 +44,7 @@ return new class extends Migration
             'name' => 'user.users',
             'title' => '会员列表',
             'parent' => 'user',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'admin',
             'page_key' => 'user.users',
             'route' => '/users',
@@ -60,7 +60,7 @@ return new class extends Migration
         [
             'name' => 'system',
             'title' => '系统管理',
-            'type' => ResourceType::MENU,
+            'type' => MenuTypeEnum::DIR,
             'route' => '/admin',
             'icon' => 'Setting',
             'is_nav' => 1,
@@ -75,7 +75,7 @@ return new class extends Migration
             'name' => 'system.role',
             'title' => '系统角色',
             'parent' => 'system',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'admin',
             'page_key' => 'system.role',
             'route' => 'role',
@@ -92,7 +92,7 @@ return new class extends Migration
             'name' => 'system.admins',
             'title' => '后台管理员',
             'parent' => 'system',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'admin',
             'page_key' => 'system.admins',
             'route' => 'admin',
@@ -109,7 +109,7 @@ return new class extends Migration
             'name' => 'system.resources',
             'title' => '菜单资源',
             'parent' => 'system',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'admin',
             'page_key' => 'system.resources',
             'route' => 'permission',
@@ -126,7 +126,7 @@ return new class extends Migration
             'name' => 'system.admin_login_logs',
             'title' => '登录日志',
             'parent' => 'system',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'admin',
             'page_key' => 'system.admin_login_logs',
             'route' => 'login-logs',
@@ -144,7 +144,7 @@ return new class extends Migration
             'name' => 'system.operate',
             'title' => '操作日志',
             'parent' => 'system',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'admin',
             'page_key' => 'system.operate',
             'route' => 'operations',
@@ -162,7 +162,7 @@ return new class extends Migration
             'name' => 'system.config',
             'title' => '系统配置',
             'parent' => 'system',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'admin',
             'page_key' => 'system.config',
             'route' => 'system-configs',
@@ -179,7 +179,7 @@ return new class extends Migration
             'name' => 'system.assets',
             'title' => '资源管理',
             'parent' => 'system',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'admin',
             'page_key' => 'system.assets',
             'route' => 'assets',
@@ -195,7 +195,7 @@ return new class extends Migration
         [
             'name' => 'cloud',
             'title' => '云平台',
-            'type' => ResourceType::MENU,
+            'type' => MenuTypeEnum::DIR,
             'route' => '/cloud',
             'icon' => 'Connection',
             'is_nav' => 1,
@@ -210,7 +210,7 @@ return new class extends Migration
             'name' => 'cloud.market',
             'title' => '云市场',
             'parent' => 'cloud',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'cloud',
             'page_key' => 'cloud.market',
             'route' => 'market',
@@ -227,7 +227,7 @@ return new class extends Migration
             'name' => 'cloud.apps',
             'title' => '本地应用中心',
             'parent' => 'cloud',
-            'type' => ResourceType::PAGE,
+            'type' => MenuTypeEnum::NAV,
             'module' => 'cloud',
             'page_key' => 'cloud.apps',
             'route' => 'apps',

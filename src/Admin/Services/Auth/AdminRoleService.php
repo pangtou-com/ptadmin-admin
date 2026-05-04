@@ -25,20 +25,9 @@ class AdminRoleService implements AdminRoleServiceInterface
                 'allowed_sorts' => ['id', 'code', 'name', 'status', 'sort'],
                 'allowed_keyword_fields' => ['code', 'name', 'description'],
                 'keyword_fields' => ['code', 'name', 'description'],
-                'default_order' => ['id' => 'desc'],
-                'default_limit' => 15,
+                'default_order' => ['sort' => 'desc', 'id' => 'desc'],
             ]
         );
-
-        $roles->getCollection()->transform(static function (AdminRole $role): array {
-            return [
-                'id' =>  $role->id,
-                'code' => (string) $role->code,
-                'name' => (string) $role->name,
-                'description' => $role->description,
-                'status' => (int) $role->status,
-            ];
-        });
 
         return $roles;
     }
@@ -158,19 +147,17 @@ class AdminRoleService implements AdminRoleServiceInterface
                 }
 
                 return [
-                    'id' => (int) $userRole->role->id,
-                    'code' => (string) $userRole->role->code,
-                    'name' => (string) $userRole->role->name,
+                    'id' => $userRole->role->id,
+                    'code' => $userRole->role->code,
+                    'name' => $userRole->role->name,
                     'description' => $userRole->role->description,
-                    'status' => (int) $userRole->role->status,
-                    'sort' => (int) $userRole->role->sort,
+                    'status' => $userRole->role->status,
+                    'sort' => $userRole->role->sort,
                 ];
             })
             ->filter()
             ->sortBy(static function (array $item): string {
                 return sprintf('%010d-%010d', (int) $item['sort'], (int) $item['id']);
-            })
-            ->values()
-            ->all();
+            })->values()->all();
     }
 }

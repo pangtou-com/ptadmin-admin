@@ -36,7 +36,6 @@ class UploadController extends AbstractBackgroundController
     public function __construct(UploadService $uploadService)
     {
         $this->uploadService = $uploadService;
-        parent::__construct();
     }
     
     /**

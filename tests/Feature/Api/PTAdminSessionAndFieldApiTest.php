@@ -9,7 +9,6 @@ use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Models\AdminLoginLog;
 use PTAdmin\Admin\Models\UserToken;
 use PTAdmin\Admin\Tests\TestCase;
-use PTAdmin\Contracts\Auth\CapabilityServiceInterface;
 
 class PTAdminSessionAndFieldApiTest extends TestCase
 {
@@ -85,6 +84,40 @@ class PTAdminSessionAndFieldApiTest extends TestCase
         ]);
     }
 
+    public function test_custom_token_expiration_uses_absolute_timestamp_semantics(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount([
+            'username' => 'founder_expiration',
+            'nickname' => 'Founder Expiration',
+            'is_founder' => 1,
+        ]);
+
+        $validToken = $founder->createToken(config('ptadmin-auth.guard'), time() + 60)->plainTextToken;
+        $expiredToken = $founder->createToken(config('ptadmin-auth.guard'), time() - 60)->plainTextToken;
+
+        $this->withHeaders($this->jsonApiHeaders($validToken))
+            ->getJson('/system/auth/profile')
+            ->assertOk()
+            ->assertJson([
+                'code' => 0,
+                'data' => [
+                    'username' => 'founder_expiration',
+                ],
+            ]);
+
+        $this->withHeaders($this->jsonApiHeaders($expiredToken))
+            ->getJson('/system/auth/profile')
+            ->assertOk()
+            ->assertJson([
+                'code' => 419,
+                'message' => '未登录',
+            ]);
+    }
+
     public function test_login_log_and_my_resource_endpoints_return_founder_runtime_data(): void
     {
         $this->createAdminsTable();
@@ -100,9 +133,12 @@ class PTAdminSessionAndFieldApiTest extends TestCase
 
         AdminLoginLog::query()->create([
             'admin_id' => $founder->id,
+            'login_account' => 'founder_runtime',
             'login_at' => time(),
-            'login_ip' => (int) ip2long('127.0.0.1'),
-            'status' => 1,
+            'login_ip' => '127.0.0.1',
+            'status' => AdminLoginLog::STATUS_SUCCESS,
+            'reason' => 'login_success',
+            'user_agent' => 'PHPUnit',
         ]);
 
         $token = $this->issueAdminToken($founder);
@@ -130,88 +166,268 @@ class PTAdminSessionAndFieldApiTest extends TestCase
         self::assertStringContainsString('system.resources', $payload);
     }
 
-    public function test_edit_field_endpoint_returns_fail_when_field_acl_is_disabled(): void
+    public function test_founder_can_view_all_login_logs_with_list_query_filters(): void
     {
         $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
         $this->createUserTokensTable();
         $this->migratePackageTables();
 
         $founder = $this->createAdminAccount([
-            'username' => 'founder_field_disabled',
-            'nickname' => 'Founder',
+            'username' => 'founder_logs',
+            'nickname' => 'Founder Logs',
             'is_founder' => 1,
         ]);
+        $memberA = $this->createAdminAccount([
+            'username' => 'member_a',
+            'nickname' => 'Member A',
+        ]);
+        $memberB = $this->createAdminAccount([
+            'username' => 'member_b',
+            'nickname' => 'Member B',
+        ]);
+
+        AdminLoginLog::query()->create([
+            'admin_id' => $memberA->id,
+            'login_account' => 'member_a',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.1',
+            'status' => AdminLoginLog::STATUS_SUCCESS,
+            'reason' => 'login_success',
+            'user_agent' => 'PHPUnit',
+        ]);
+        AdminLoginLog::query()->create([
+            'admin_id' => $memberB->id,
+            'login_account' => 'member_b',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.2',
+            'status' => AdminLoginLog::STATUS_DISABLED,
+            'reason' => 'account_disabled',
+            'user_agent' => 'PHPUnit',
+        ]);
+
         $token = $this->issueAdminToken($founder);
-        $pageResource = AdminResource::query()->where('name', 'system.resources')->firstOrFail();
 
-        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/resource-field/'.$pageResource->id, [
-            'fields' => [
-                [
-                    'name' => 'status',
-                    'title' => '状态',
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/admins/login-logs?'.http_build_query([
+                'filters' => [
+                    ['field' => 'admin_login_logs.status', 'operator' => '=', 'value' => AdminLoginLog::STATUS_SUCCESS],
                 ],
-            ],
-        ])->assertOk()->assertJson([
-            'code' => 10000,
-            'message' => '字段权限能力尚未启用',
-        ]);
-    }
-
-    public function test_edit_field_endpoint_can_sync_page_field_resources_when_capability_is_enabled(): void
-    {
-        $this->createAdminsTable();
-        $this->createUserTokensTable();
-        $this->migratePackageTables();
-
-        config()->set('ptadmin-auth.capabilities.field_acl', true);
-        $this->app->forgetInstance(CapabilityServiceInterface::class);
-
-        $founder = $this->createAdminAccount([
-            'username' => 'founder_field_enabled',
-            'nickname' => 'Founder',
-            'is_founder' => 1,
-        ]);
-        $token = $this->issueAdminToken($founder);
-        $pageResource = AdminResource::query()->where('name', 'system.resources')->firstOrFail();
-
-        $response = $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/resource-field/'.$pageResource->id, [
-            'fields' => [
-                [
-                    'name' => 'status',
-                    'title' => '状态',
-                    'abilities' => ['view', 'access'],
-                    'sort' => 10,
-                    'status' => 1,
-                ],
-                [
-                    'name' => 'icon',
-                    'title' => '图标',
-                    'abilities' => ['view'],
-                    'sort' => 20,
-                    'status' => 1,
-                ],
-            ],
-        ]);
+                'keyword' => 'member_a',
+                'limit' => 10,
+                'page' => 1,
+            ]));
 
         $response->assertOk()->assertJson([
             'code' => 0,
+            'data' => [
+                'total' => 1,
+                'results' => [
+                    [
+                        'admin_id' => $memberA->id,
+                        'login_account' => 'member_a',
+                        'status' => AdminLoginLog::STATUS_SUCCESS,
+                        'reason' => 'login_success',
+                        'admin' => [
+                            'id' => $memberA->id,
+                            'username' => 'member_a',
+                            'nickname' => 'Member A',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function test_login_logs_endpoint_supports_simple_status_filter_alias_from_frontend(): void
+    {
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount([
+            'username' => 'founder_status_filter',
+            'nickname' => 'Founder Status Filter',
+            'is_founder' => 1,
+        ]);
+        $memberSuccess = $this->createAdminAccount([
+            'username' => 'member_success',
+            'nickname' => 'Member Success',
+        ]);
+        $memberFailed = $this->createAdminAccount([
+            'username' => 'member_failed',
+            'nickname' => 'Member Failed',
         ]);
 
-        self::assertDatabaseHas('admin_resources', [
-            'parent_id' => $pageResource->id,
-            'name' => 'system.resources.field.status',
-            'title' => '状态',
-            'type' => 'field',
-            'status' => 1,
+        AdminLoginLog::query()->create([
+            'admin_id' => $memberSuccess->id,
+            'login_account' => 'member_success',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.1',
+            'status' => AdminLoginLog::STATUS_SUCCESS,
+            'reason' => 'login_success',
+            'user_agent' => 'PHPUnit',
         ]);
-        self::assertDatabaseHas('admin_resources', [
-            'parent_id' => $pageResource->id,
-            'name' => 'system.resources.field.icon',
-            'title' => '图标',
-            'type' => 'field',
-            'status' => 1,
+        AdminLoginLog::query()->create([
+            'admin_id' => $memberFailed->id,
+            'login_account' => 'member_failed',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.2',
+            'status' => AdminLoginLog::STATUS_FAILED,
+            'reason' => 'password_invalid',
+            'user_agent' => 'PHPUnit',
         ]);
 
-        self::assertCount(2, (array) $response->json('data.results'));
+        $token = $this->issueAdminToken($founder);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/admins/login-logs?'.http_build_query([
+                'filters' => json_encode([
+                    ['field' => 'status', 'operator' => 'eq', 'value' => AdminLoginLog::STATUS_FAILED],
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'page' => 1,
+                'limit' => 20,
+            ]));
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'total' => 1,
+                'results' => [
+                    [
+                        'admin_id' => $memberFailed->id,
+                        'login_account' => 'member_failed',
+                        'status' => AdminLoginLog::STATUS_FAILED,
+                        'reason' => 'password_invalid',
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function test_login_logs_endpoint_supports_admin_nickname_filter_alias_with_plain_like_value(): void
+    {
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount([
+            'username' => 'founder_nickname_filter',
+            'nickname' => 'Founder Nickname Filter',
+            'is_founder' => 1,
+        ]);
+        $memberMatched = $this->createAdminAccount([
+            'username' => 'member_matched',
+            'nickname' => '张三测试用户',
+        ]);
+        $memberOther = $this->createAdminAccount([
+            'username' => 'member_other',
+            'nickname' => '李四',
+        ]);
+
+        AdminLoginLog::query()->create([
+            'admin_id' => $memberMatched->id,
+            'login_account' => 'member_matched',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.1',
+            'status' => AdminLoginLog::STATUS_SUCCESS,
+            'reason' => 'login_success',
+            'user_agent' => 'PHPUnit',
+        ]);
+        AdminLoginLog::query()->create([
+            'admin_id' => $memberOther->id,
+            'login_account' => 'member_other',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.2',
+            'status' => AdminLoginLog::STATUS_FAILED,
+            'reason' => 'password_invalid',
+            'user_agent' => 'PHPUnit',
+        ]);
+
+        $token = $this->issueAdminToken($founder);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/admins/login-logs?'.http_build_query([
+                'filters' => json_encode([
+                    ['field' => 'admin.nickname', 'operator' => 'like', 'value' => '测试'],
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'page' => 1,
+                'limit' => 20,
+            ]));
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'total' => 1,
+                'results' => [
+                    [
+                        'admin_id' => $memberMatched->id,
+                        'login_account' => 'member_matched',
+                        'admin' => [
+                            'id' => $memberMatched->id,
+                            'username' => 'member_matched',
+                            'nickname' => '张三测试用户',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function test_non_founder_login_logs_endpoint_only_returns_current_admin_logs(): void
+    {
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $memberA = $this->createAdminAccount([
+            'username' => 'member_self',
+            'nickname' => 'Member Self',
+        ]);
+        $memberB = $this->createAdminAccount([
+            'username' => 'member_other',
+            'nickname' => 'Member Other',
+        ]);
+
+        AdminLoginLog::query()->create([
+            'admin_id' => $memberA->id,
+            'login_account' => 'member_self',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.1',
+            'status' => AdminLoginLog::STATUS_SUCCESS,
+            'reason' => 'login_success',
+            'user_agent' => 'PHPUnit',
+        ]);
+        AdminLoginLog::query()->create([
+            'admin_id' => $memberB->id,
+            'login_account' => 'member_other',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.2',
+            'status' => AdminLoginLog::STATUS_SUCCESS,
+            'reason' => 'login_success',
+            'user_agent' => 'PHPUnit',
+        ]);
+
+        $token = $this->issueAdminToken($memberA);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/admins/login-logs?'.http_build_query([
+                'filters' => [
+                    ['field' => 'admin_login_logs.admin_id', 'operator' => '=', 'value' => $memberB->id],
+                ],
+                'limit' => 10,
+                'page' => 1,
+            ]));
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'total' => 0,
+                'results' => [],
+            ],
+        ]);
     }
 }

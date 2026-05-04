@@ -26,7 +26,7 @@ final class BuilderQueryApplier
                 continue;
             }
 
-            $this->applyFilter($builder, $field, strtolower((string) ($filter['operator'] ?? '=')), $filter['value'] ?? null);
+            $this->applyFilter($builder, $field, $this->normalizeOperator((string) ($filter['operator'] ?? '=')), $filter['value'] ?? null);
         }
 
         $this->applyKeyword($builder, $query, $options);
@@ -45,7 +45,7 @@ final class BuilderQueryApplier
     {
         $this->apply($builder, $query, $options);
 
-        $paginate = array_key_exists('paginate', $query) ? $this->normalizeBool($query['paginate']) : false;
+        $paginate = array_key_exists('paginate', $query) && $this->normalizeBool($query['paginate']);
         if ($paginate) {
             $perPage = $this->normalizePositiveInt($query['limit'] ?? null) ?? (int) ($options['default_limit'] ?? 15);
             $page = $this->normalizePositiveInt($query['page'] ?? null) ?? 1;
@@ -75,7 +75,12 @@ final class BuilderQueryApplier
                 return;
 
             case 'like':
-                $builder->where($field, 'like', (string) $value);
+                $value = (string) $value;
+                if ('' !== $value && false === strpos($value, '%') && false === strpos($value, '_')) {
+                    $value = '%'.$value.'%';
+                }
+
+                $builder->where($field, 'like', $value);
 
                 return;
 
@@ -102,6 +107,34 @@ final class BuilderQueryApplier
                 $builder->whereNotNull($field);
 
                 return;
+        }
+    }
+
+    private function normalizeOperator(string $operator): string
+    {
+        $operator = strtolower(trim($operator));
+
+        switch ($operator) {
+            case 'eq':
+                return '=';
+
+            case 'neq':
+                return '!=';
+
+            case 'gt':
+                return '>';
+
+            case 'gte':
+                return '>=';
+
+            case 'lt':
+                return '<';
+
+            case 'lte':
+                return '<=';
+
+            default:
+                return $operator;
         }
     }
 
@@ -173,7 +206,7 @@ final class BuilderQueryApplier
      */
     private function applyLimit($builder, array $query): void
     {
-        $paginate = array_key_exists('paginate', $query) ? $this->normalizeBool($query['paginate']) : false;
+        $paginate = array_key_exists('paginate', $query) && $this->normalizeBool($query['paginate']);
         if ($paginate) {
             return;
         }

@@ -25,8 +25,10 @@ namespace PTAdmin\Admin\Models;
 
 use PTAdmin\Foundation\Database\Models\AbstractModel;
 
-class AdminResource extends \PTAdmin\Foundation\Database\Models\AbstractModel
+class AdminResource extends AbstractModel
 {
+    public const AUDIT_META_CACHE_KEY = 'ptadmin_admin_resource_audit_meta';
+
     protected $table = 'admin_resources';
 
     protected $fillable = [
@@ -41,7 +43,6 @@ class AdminResource extends \PTAdmin\Foundation\Database\Models\AbstractModel
         'path',
         'route',
         'icon',
-        'ability_hint_json',
         'meta_json',
         'is_nav',
         'status',
@@ -50,7 +51,6 @@ class AdminResource extends \PTAdmin\Foundation\Database\Models\AbstractModel
     ];
 
     protected $casts = [
-        'ability_hint_json' => 'array',
         'meta_json' => 'array',
     ];
 

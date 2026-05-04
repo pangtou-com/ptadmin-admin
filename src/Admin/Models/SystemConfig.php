@@ -64,11 +64,44 @@ class SystemConfig extends \PTAdmin\Foundation\Database\Models\AbstractModel
     public function setExtraAttribute($val): void
     {
         if (null === $val || '' === $val) {
-            $this->attributes['extra'] = json_encode(['options' => []], JSON_UNESCAPED_UNICODE);
+            $this->attributes['extra'] = json_encode(['options' => [], 'meta' => []], JSON_UNESCAPED_UNICODE);
 
             return;
         }
 
+        if (\is_array($val) && array_key_exists('meta', $val)) {
+            $meta = \is_array($val['meta']) ? $val['meta'] : [];
+            $options = $this->normalizeExtraOptions($val['options'] ?? []);
+
+            $this->attributes['extra'] = json_encode([
+                'options' => $options,
+                'meta' => $meta,
+            ], JSON_UNESCAPED_UNICODE);
+
+            return;
+        }
+
+        if (\is_array($val) && !$this->shouldNormalizeExtraAsOptions($val)) {
+            $this->attributes['extra'] = json_encode([
+                'options' => [],
+                'meta' => $val,
+            ], JSON_UNESCAPED_UNICODE);
+
+            return;
+        }
+
+        $extraOptions = $this->normalizeExtraOptions($val);
+
+        $this->attributes['extra'] = json_encode(['options' => $extraOptions, 'meta' => []], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * @param mixed $val
+     *
+     * @return array<string, string>
+     */
+    private function normalizeExtraOptions($val): array
+    {
         $extraOptions = [];
         $options = \is_array($val) ? ($val['options'] ?? $val) : preg_split('/\r\n|\r|\n/', (string) $val);
 
@@ -98,7 +131,39 @@ class SystemConfig extends \PTAdmin\Foundation\Database\Models\AbstractModel
             $extraOptions[$normalizedKey] = $normalizedValue;
         }
 
-        $this->attributes['extra'] = json_encode(['options' => $extraOptions], JSON_UNESCAPED_UNICODE);
+        return $extraOptions;
+    }
+
+    /**
+     * @param array<string|int, mixed> $val
+     */
+    private function shouldNormalizeExtraAsOptions(array $val): bool
+    {
+        if ([] === $val) {
+            return true;
+        }
+
+        if (array_key_exists('options', $val)) {
+            return true;
+        }
+
+        foreach ($val as $key => $item) {
+            if (\is_array($item)) {
+                return true;
+            }
+
+            if (\is_int($key)) {
+                continue;
+            }
+
+            if (\is_string($item)) {
+                continue;
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     public function getExtraValueAttribute(): string

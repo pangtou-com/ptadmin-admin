@@ -7,14 +7,12 @@ namespace PTAdmin\Foundation\Database\Models;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use PTAdmin\Foundation\Auth\AdminAuth;
-use PTAdmin\Foundation\Database\Concerns\Searchable;
 
 /**
  * @property int $id
  */
 abstract class AbstractModel extends Model
 {
-    use Searchable;
 
     protected $dateFormat = 'U';
     protected $guarded = ['id'];

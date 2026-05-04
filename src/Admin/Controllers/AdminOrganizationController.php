@@ -14,7 +14,6 @@ class AdminOrganizationController extends AbstractBackgroundController
 
     public function __construct(AdminOrganizationServiceInterface $organizationService)
     {
-        parent::__construct();
         $this->organizationService = $organizationService;
     }
 

@@ -6,6 +6,7 @@ namespace PTAdmin\Admin\Tests\Feature\Api;
 
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\Service\BaseBootstrap;
+use PTAdmin\Admin\Services\Dashboard\DashboardLayoutService;
 use PTAdmin\Admin\Tests\TestCase;
 use PTAdmin\Contracts\AdminDashboardWidgetActionHandlerInterface;
 use PTAdmin\Contracts\AdminDashboardWidgetHandlerInterface;
@@ -243,6 +244,133 @@ class PTAdminDashboardApiTest extends TestCase
             ->assertJson(array(
                 'code' => 10000,
                 'message' => '仪表盘动作不存在',
+            ));
+    }
+
+    public function test_dashboard_query_returns_forbidden_when_widget_is_not_assigned_to_current_user(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $member = $this->createAdminAccount(array(
+            'username' => 'member_dashboard_forbidden',
+            'nickname' => 'Member Dashboard Forbidden',
+            'is_founder' => 0,
+        ));
+        $token = $this->issueAdminToken($member);
+
+        Addon::swap(new FakeDashboardAddonManager(
+            array(
+                'cms' => array(
+                    'code' => 'cms',
+                    'title' => '内容管理',
+                    'module' => 'cms',
+                ),
+            ),
+            array(
+                'cms' => new FakeDashboardBootstrap(),
+            )
+        ));
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/system/dashboard/widgets/cms.overview/query', array(
+                'query' => array(),
+            ))
+            ->assertOk()
+            ->assertJson(array(
+                'code' => 10000,
+                'message' => '暂无权限访问该仪表盘组件',
+            ));
+    }
+
+    public function test_dashboard_query_uses_saved_user_widget_config_and_tenant_scope(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $member = $this->createAdminAccount(array(
+            'username' => 'member_dashboard_tenant_query',
+            'nickname' => 'Member Dashboard Tenant Query',
+            'is_founder' => 1,
+        ));
+        $token = $this->issueAdminToken($member);
+
+        Addon::swap(new FakeDashboardAddonManager(
+            array(
+                'cms' => array(
+                    'code' => 'cms',
+                    'title' => '内容管理',
+                    'module' => 'cms',
+                ),
+            ),
+            array(
+                'cms' => new FakeDashboardBootstrap(),
+            )
+        ));
+
+        /** @var DashboardLayoutService $layoutService */
+        $layoutService = app(DashboardLayoutService::class);
+        $layoutService->saveUserWidgets((int) $member->id, array(
+            array(
+                'widget_code' => 'cms.overview',
+                'enabled' => true,
+                'sort' => 18,
+                'layout' => array(
+                    'x' => 1,
+                    'y' => 1,
+                    'w' => 7,
+                    'h' => 4,
+                ),
+                'config' => array(
+                    'range' => 'month',
+                    'channel' => 'private',
+                ),
+            ),
+        ), 9);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/system/dashboard/widgets/cms.overview/query', array(
+                'tenant_id' => 9,
+                'query' => array(
+                    'refresh' => 1,
+                ),
+            ));
+
+        $response->assertOk()
+            ->assertJson(array(
+                'code' => 0,
+                'data' => array(
+                    'widget' => array(
+                        'code' => 'cms.overview',
+                        'sort' => 18,
+                        'config' => array(
+                            'range' => 'month',
+                            'channel' => 'private',
+                        ),
+                        'source' => array(
+                            'type' => 'user',
+                        ),
+                    ),
+                    'data' => array(
+                        'payload' => array(
+                            'range' => 'month',
+                            'channel' => 'private',
+                            'refresh' => 1,
+                        ),
+                        'context' => array(
+                            'user_id' => $member->id,
+                            'tenant_id' => 9,
+                            'widget_config' => array(
+                                'range' => 'month',
+                                'channel' => 'private',
+                            ),
+                        ),
+                    ),
+                ),
             ));
     }
 }

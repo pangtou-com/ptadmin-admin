@@ -18,7 +18,6 @@ class CapabilityService implements CapabilityServiceInterface
             'organization' => false,
             'tenant' => false,
             'data_scope' => false,
-            'field_acl' => false,
             'workflow' => false,
         ]);
     }

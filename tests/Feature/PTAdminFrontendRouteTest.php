@@ -41,7 +41,8 @@ class PTAdminFrontendRouteTest extends TestCase
         $response->assertSee('"webBase":"/admin"', false);
         $response->assertSee('"apiBase":"/system"', false);
         $response->assertSee('"loginPath":"/system/login"', false);
-        $response->assertSee('"moduleManifestPath":"/system/modules"', false);
+        $response->assertSee('"userResourcesPath":"/system/auth/resources"', false);
+        $response->assertSee('"moduleManifestPath":"/system/auth/frontends"', false);
     }
 
     public function test_frontend_entry_falls_back_to_published_dist_when_available(): void

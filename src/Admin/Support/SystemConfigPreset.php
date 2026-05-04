@@ -40,6 +40,13 @@ class SystemConfigPreset
                 'title' => __('ptadmin::common.system_config.group.system_title'),
                 'name' => 'system',
                 'weight' => 100,
+                'extra' => [
+                    'label' => __('ptadmin::common.system_config.group.system_title'),
+                    'layout' => [
+                        'mode' => 'tab',
+                    ],
+                    'managed_by' => 'system',
+                ],
                 'status' => 1,
                 'children' => [
                     [
@@ -47,12 +54,25 @@ class SystemConfigPreset
                         'name' => 'basic',
                         'weight' => 100,
                         'intro' => __('ptadmin::common.system_config.section.basic_intro'),
+                        'extra' => [
+                            'icon' => 'Setting',
+                            'layout' => [
+                                'mode' => 'block',
+                                'labelWidth' => 140,
+                            ],
+                        ],
                         'status' => 1,
                         'fields' => [
                             [
                                 'title' => __('ptadmin::common.system_config.field.site_title_title'),
                                 'name' => 'site_title',
                                 'type' => 'text',
+                                'extra' => [
+                                    'meta' => [
+                                        'placeholder' => '请输入站点标题',
+                                        'expose' => 'public',
+                                    ],
+                                ],
                                 'value' => 'PTAdmin',
                                 'default_val' => 'PTAdmin',
                                 'weight' => 100,
@@ -62,6 +82,13 @@ class SystemConfigPreset
                                 'title' => __('ptadmin::common.system_config.field.site_description_title'),
                                 'name' => 'site_description',
                                 'type' => 'textarea',
+                                'extra' => [
+                                    'meta' => [
+                                        'placeholder' => '请输入站点描述',
+                                        'rows' => 4,
+                                        'expose' => 'public',
+                                    ],
+                                ],
                                 'value' => '',
                                 'default_val' => '',
                                 'weight' => 90,
@@ -71,6 +98,11 @@ class SystemConfigPreset
                                 'title' => __('ptadmin::common.system_config.field.login_captcha_title'),
                                 'name' => 'login_captcha',
                                 'type' => 'switch',
+                                'extra' => [
+                                    'meta' => [
+                                        'expose' => 'private',
+                                    ],
+                                ],
                                 'value' => '1',
                                 'default_val' => '1',
                                 'weight' => 80,
@@ -79,16 +111,59 @@ class SystemConfigPreset
                         ],
                     ],
                     [
+                        'title' => __('ptadmin::common.system_config.section.security_title'),
+                        'name' => 'security',
+                        'weight' => 95,
+                        'intro' => __('ptadmin::common.system_config.section.security_intro'),
+                        'extra' => [
+                            'icon' => 'Lock',
+                            'layout' => [
+                                'mode' => 'block',
+                                'labelWidth' => 140,
+                            ],
+                        ],
+                        'status' => 1,
+                        'fields' => [
+                            [
+                                'title' => __('ptadmin::common.system_config.field.is_register_title'),
+                                'name' => 'is_register',
+                                'type' => 'switch',
+                                'extra' => [
+                                    'meta' => [
+                                        'expose' => 'private',
+                                    ],
+                                ],
+                                'value' => '1',
+                                'default_val' => '1',
+                                'weight' => 100,
+                                'intro' => __('ptadmin::common.system_config.field.is_register_intro'),
+                            ],
+                        ],
+                    ],
+                    [
                         'title' => __('ptadmin::common.system_config.section.upload_title'),
                         'name' => 'upload',
                         'weight' => 90,
                         'intro' => __('ptadmin::common.system_config.section.upload_intro'),
+                        'extra' => [
+                            'icon' => 'Upload',
+                            'layout' => [
+                                'mode' => 'block',
+                                'labelWidth' => 160,
+                            ],
+                        ],
                         'status' => 1,
                         'fields' => [
                             [
                                 'title' => __('ptadmin::common.system_config.field.storage_driver_title'),
                                 'name' => 'storage_driver',
                                 'type' => 'text',
+                                'extra' => [
+                                    'meta' => [
+                                        'placeholder' => 'local / plugin code',
+                                        'expose' => 'private',
+                                    ],
+                                ],
                                 'value' => 'local',
                                 'default_val' => 'local',
                                 'weight' => 100,
@@ -98,6 +173,12 @@ class SystemConfigPreset
                                 'title' => __('ptadmin::common.system_config.field.storage_code_title'),
                                 'name' => 'storage_code',
                                 'type' => 'text',
+                                'extra' => [
+                                    'meta' => [
+                                        'placeholder' => '请输入存储插件编码',
+                                        'expose' => 'private',
+                                    ],
+                                ],
                                 'value' => '',
                                 'default_val' => '',
                                 'weight' => 90,
@@ -107,6 +188,12 @@ class SystemConfigPreset
                                 'title' => __('ptadmin::common.system_config.field.storage_disk_title'),
                                 'name' => 'storage_disk',
                                 'type' => 'text',
+                                'extra' => [
+                                    'meta' => [
+                                        'placeholder' => '请输入磁盘标识',
+                                        'expose' => 'private',
+                                    ],
+                                ],
                                 'value' => 'oss',
                                 'default_val' => 'oss',
                                 'weight' => 80,
@@ -116,6 +203,12 @@ class SystemConfigPreset
                                 'title' => __('ptadmin::common.system_config.field.storage_bucket_title'),
                                 'name' => 'storage_bucket',
                                 'type' => 'text',
+                                'extra' => [
+                                    'meta' => [
+                                        'placeholder' => '请输入 bucket',
+                                        'expose' => 'private',
+                                    ],
+                                ],
                                 'value' => '',
                                 'default_val' => '',
                                 'weight' => 70,
@@ -125,11 +218,16 @@ class SystemConfigPreset
                                 'title' => __('ptadmin::common.system_config.field.storage_visibility_title'),
                                 'name' => 'storage_visibility',
                                 'type' => 'radio',
-                                'extra' => sprintf(
-                                    "public=%s\nprivate=%s",
-                                    __('ptadmin::common.system_config.option.visibility_public'),
-                                    __('ptadmin::common.system_config.option.visibility_private')
-                                ),
+                                'extra' => [
+                                    'options' => [
+                                        'public' => __('ptadmin::common.system_config.option.visibility_public'),
+                                        'private' => __('ptadmin::common.system_config.option.visibility_private'),
+                                    ],
+                                    'meta' => [
+                                        'expose' => 'private',
+                                        'style' => 'button',
+                                    ],
+                                ],
                                 'value' => 'public',
                                 'default_val' => 'public',
                                 'weight' => 60,
@@ -139,10 +237,155 @@ class SystemConfigPreset
                                 'title' => __('ptadmin::common.system_config.field.storage_meta_title'),
                                 'name' => 'storage_meta',
                                 'type' => 'json',
+                                'extra' => [
+                                    'meta' => [
+                                        'placeholder' => '请填写 JSON 扩展参数',
+                                        'expose' => 'private',
+                                    ],
+                                ],
                                 'value' => json_encode([], JSON_UNESCAPED_UNICODE),
                                 'default_val' => json_encode([], JSON_UNESCAPED_UNICODE),
                                 'weight' => 50,
                                 'intro' => __('ptadmin::common.system_config.field.storage_meta_intro'),
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'title' => __('ptadmin::common.system_config.group.oauth_title'),
+                'name' => 'oauth',
+                'weight' => 90,
+                'extra' => [
+                    'label' => __('ptadmin::common.system_config.group.oauth_title'),
+                    'layout' => [
+                        'mode' => 'tab',
+                    ],
+                    'managed_by' => 'system',
+                ],
+                'status' => 1,
+                'children' => [
+                    [
+                        'title' => __('ptadmin::common.system_config.section.oauth_wechat_title'),
+                        'name' => 'wechat',
+                        'weight' => 100,
+                        'intro' => __('ptadmin::common.system_config.section.oauth_wechat_intro'),
+                        'extra' => [
+                            'icon' => 'ChatDotRound',
+                            'layout' => [
+                                'mode' => 'block',
+                                'labelWidth' => 160,
+                            ],
+                        ],
+                        'status' => 1,
+                        'fields' => [
+                            [
+                                'title' => __('ptadmin::common.system_config.field.oauth_active_title'),
+                                'name' => 'active',
+                                'type' => 'switch',
+                                'value' => '0',
+                                'default_val' => '0',
+                                'weight' => 100,
+                                'intro' => __('ptadmin::common.system_config.field.oauth_active_intro'),
+                            ],
+                            [
+                                'title' => __('ptadmin::common.system_config.field.oauth_app_id_title'),
+                                'name' => 'app_id',
+                                'type' => 'text',
+                                'extra' => [
+                                    'meta' => [
+                                        'expose' => 'private',
+                                    ],
+                                ],
+                                'value' => '',
+                                'default_val' => '',
+                                'weight' => 90,
+                                'intro' => __('ptadmin::common.system_config.field.oauth_app_id_intro'),
+                            ],
+                            [
+                                'title' => __('ptadmin::common.system_config.field.oauth_app_secret_title'),
+                                'name' => 'app_secret',
+                                'type' => 'password',
+                                'extra' => [
+                                    'meta' => [
+                                        'expose' => 'private',
+                                    ],
+                                ],
+                                'value' => '',
+                                'default_val' => '',
+                                'weight' => 80,
+                                'intro' => __('ptadmin::common.system_config.field.oauth_app_secret_intro'),
+                            ],
+                            [
+                                'title' => __('ptadmin::common.system_config.field.oauth_redirect_title'),
+                                'name' => 'redirect',
+                                'type' => 'text',
+                                'value' => '',
+                                'default_val' => '',
+                                'weight' => 70,
+                                'intro' => __('ptadmin::common.system_config.field.oauth_redirect_intro'),
+                            ],
+                        ],
+                    ],
+                    [
+                        'title' => __('ptadmin::common.system_config.section.oauth_qq_title'),
+                        'name' => 'qq',
+                        'weight' => 90,
+                        'intro' => __('ptadmin::common.system_config.section.oauth_qq_intro'),
+                        'extra' => [
+                            'icon' => 'Connection',
+                            'layout' => [
+                                'mode' => 'block',
+                                'labelWidth' => 160,
+                            ],
+                        ],
+                        'status' => 1,
+                        'fields' => [
+                            [
+                                'title' => __('ptadmin::common.system_config.field.oauth_active_title'),
+                                'name' => 'active',
+                                'type' => 'switch',
+                                'value' => '0',
+                                'default_val' => '0',
+                                'weight' => 100,
+                                'intro' => __('ptadmin::common.system_config.field.oauth_active_intro'),
+                            ],
+                            [
+                                'title' => __('ptadmin::common.system_config.field.oauth_app_id_title'),
+                                'name' => 'app_id',
+                                'type' => 'text',
+                                'extra' => [
+                                    'meta' => [
+                                        'expose' => 'private',
+                                    ],
+                                ],
+                                'value' => '',
+                                'default_val' => '',
+                                'weight' => 90,
+                                'intro' => __('ptadmin::common.system_config.field.oauth_app_id_intro'),
+                            ],
+                            [
+                                'title' => __('ptadmin::common.system_config.field.oauth_app_secret_title'),
+                                'name' => 'app_secret',
+                                'type' => 'password',
+                                'extra' => [
+                                    'meta' => [
+                                        'expose' => 'private',
+                                    ],
+                                ],
+                                'value' => '',
+                                'default_val' => '',
+                                'weight' => 80,
+                                'intro' => __('ptadmin::common.system_config.field.oauth_app_secret_intro'),
+                            ],
+                            [
+                                'title' => __('ptadmin::common.system_config.field.oauth_redirect_title'),
+                                'name' => 'redirect',
+                                'type' => 'text',
+                                'value' => '',
+                                'default_val' => '',
+                                'weight' => 70,
+                                'intro' => __('ptadmin::common.system_config.field.oauth_redirect_intro'),
                             ],
                         ],
                     ],

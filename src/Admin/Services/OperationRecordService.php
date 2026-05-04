@@ -25,8 +25,9 @@ namespace PTAdmin\Admin\Services;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Route;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use PTAdmin\Admin\Support\Query\BuilderQueryApplier;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Models\OperationRecord;
 use PTAdmin\Foundation\Auth\AdminAuth;
@@ -37,18 +38,27 @@ class OperationRecordService
     {
         /** @var OperationRecord $dao */
         $dao = OperationRecord::query()->findOrFail($id);
-        $dao->request = @json_decode($dao->request);
-        $dao->response = @json_decode($dao->response);
-        $dao->sql_param = $dao->sql_param ? @json_decode($dao->sql_param, true) : [];
 
         return $dao->toArray();
     }
 
-    public function page($search = []): array
+    public function page(array $query = []): array
     {
-        $model = OperationRecord::query();
+        $query['paginate'] = true;
 
-        return $model->orderBy('id', 'desc')->paginate()->toArray();
+        $logs = (new BuilderQueryApplier())->fetch(
+            OperationRecord::query(),
+            $query,
+            [
+                'allowed_filters' => ['id', 'admin_id', 'admin_username', 'nickname', 'ip', 'url', 'resource_name', 'method', 'action', 'status', 'response_code', 'target_type', 'target_id', 'created_at'],
+                'allowed_sorts' => ['id', 'admin_id', 'response_code', 'response_time', 'created_at'],
+                'allowed_keyword_fields' => ['admin_username', 'nickname', 'ip', 'url', 'title', 'resource_name', 'method', 'controller', 'action', 'trace_id', 'target_type', 'target_id', 'error_message'],
+                'keyword_fields' => ['admin_username', 'nickname', 'ip', 'url', 'title', 'resource_name', 'method', 'controller', 'action', 'trace_id', 'target_type', 'target_id', 'error_message'],
+                'default_order' => ['id' => 'desc'],
+            ]
+        );
+
+        return $logs->toArray();
     }
 
     /**
@@ -60,7 +70,7 @@ class OperationRecordService
      */
     public static function record($request, $response, $route): void
     {
-        if (false !== strpos(\PHP_SAPI, 'cli')) {
+        if (\in_array(\PHP_SAPI, ['cli', 'phpdbg'], true)) {
             return;
         }
         $log = new self();
@@ -76,18 +86,26 @@ class OperationRecordService
         }
         if (AdminAuth::check()) {
             $data['admin_id'] = AdminAuth::user()->id;
+            $data['admin_username'] = (string) AdminAuth::user()->username;
             $data['nickname'] = AdminAuth::user()->nickname;
         }
-        $data['ip'] = (int) ip2long($request->getClientIp());
+        $data['ip'] = $request->getClientIp();
+        $data['user_agent'] = $log->normalizeString($request->userAgent(), 255);
         $data['url'] = $request->getPathInfo();
-        $data['title'] = $log->getTitle($data['url']);
+        ['resource_name' => $resourceName, 'title' => $title] = $log->resolveResourceMeta($route);
+        $data['resource_name'] = $resourceName;
+        $data['title'] = $title;
         $data['method'] = $request->getMethod();
-        $data['request'] = $log->getRequestContent($request->all());
-        $data['response'] = $log->getResponseContent($response);
+        $data['trace_id'] = $log->resolveTraceId($request, $response);
+        ['target_type' => $targetType, 'target_id' => $targetId] = $log->resolveTargetMeta($request);
+        $data['target_type'] = $targetType;
+        $data['target_id'] = $targetId;
+        $data['request'] = $log->shouldRecordRequest((string) $data['method']) ? $log->getRequestContent($request->all()) : null;
+        ['status' => $status, 'error_message' => $errorMessage] = $log->resolveResponseState($response);
+        $data['error_message'] = $errorMessage;
         $data['response_code'] = $response->getStatusCode();
+        $data['status'] = $status;
         $data['response_time'] = $log->getTime();
-
-        // $data['sql_param'] = json_encode(LogSqlService::getSqlResults());
 
         OperationRecord::query()->create($data);
     }
@@ -101,82 +119,87 @@ class OperationRecordService
      */
     private function getRequestContent($data): string
     {
-        $notAllow = ['password', 'password_confirmation', 'current_password'];
-        foreach ($notAllow as $value) {
-            if (isset($data[$value])) {
-                unset($data[$value]);
-            }
-        }
+        $data = $this->sanitizeSensitiveData(\is_array($data) ? $data : []);
 
-        return @json_encode($data);
+        return $this->encodeSummary($data);
     }
 
     /**
-     * 返回响应参数.如果有结果级则不返回.
+     * @return array{status:string,error_message:?string}
      *
      * @param $response
-     *
-     * @return string
      */
-    private function getResponseContent($response): string
+    private function resolveResponseState($response): array
     {
-        $res = '';
-        if ($response instanceof JsonResponse) {
-            $res = $response->getContent();
+        $status = $response->getStatusCode() >= 400 ? 'failed' : 'success';
+        $errorMessage = null;
 
-            try {
-                $res = @json_decode($res, true);
-                if (isset($res['data']) && !blank($res['data'])) {
-                    unset($res['data']);
+        if ($response instanceof JsonResponse) {
+            $payload = @json_decode($response->getContent(), true);
+            if (\is_array($payload)) {
+                $code = $payload['code'] ?? null;
+                if (\is_numeric($code) && (int) $code !== 0) {
+                    $status = 'failed';
                 }
-                $res = @json_encode($res);
-            } catch (\Exception $e) {
-                $res = [
-                    'code' => $e->getCode(),
-                    'message' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                ];
-                $res = @json_encode($res);
+
+                if ('failed' === $status && isset($payload['message']) && '' !== trim((string) $payload['message'])) {
+                    $errorMessage = $this->normalizeString((string) $payload['message'], 1000);
+                }
             }
         }
-        if (200 !== $response->getStatusCode() && $response->exception) {
-            $error = [
-                'code' => $response->exception->getCode(),
-                'file' => $response->exception->getFile(),
-                'line' => $response->exception->getLine(),
-                'message' => $response->exception->getMessage(),
-            ];
-            $res = @json_encode($error);
+
+        if ($response->getStatusCode() >= 400 && isset($response->exception)) {
+            $status = 'failed';
+            $errorMessage = $this->normalizeString((string) $response->exception->getMessage(), 1000);
         }
 
-        return $res;
+        return [
+            'status' => $status,
+            'error_message' => $errorMessage,
+        ];
     }
 
     /**
-     * 获取请求名称.
+     * 获取请求资源信息.
      *
      * @param mixed $route
      *
-     * @return string
+     * @return array<string, string>
      */
-    private function getTitle($route): string
+    private function resolveResourceMeta($route): array
     {
-        $data = AdminResource::query()
-            ->whereNull('deleted_at')
-            ->select(['route', 'name'])
-            ->get()
-            ->toArray();
-        $key = Str::after($route, '/'.admin_route_prefix().'/');
-        $results = [];
-        foreach ($data as $datum) {
-            if (blank($datum['route'])) {
-                continue;
-            }
-
-            $results[$datum['route']] = $datum['name'];
+        if (!$route instanceof Route) {
+            return [ 'resource_name' => '', 'title' => '' ];
         }
 
-        return $results[$key] ?? '';
+        $resourceName = trim((string) ($route->defaults['__audit_resource__'] ?? ''));
+        if ('' === $resourceName) {
+            return [ 'resource_name' => '', 'title' => '' ];
+        }
+
+        $metaMap = Cache::rememberForever(AdminResource::AUDIT_META_CACHE_KEY, static function (): array {
+            return AdminResource::query()
+                ->whereNull('deleted_at')
+                ->select(['name', 'title'])
+                ->get()
+                ->mapWithKeys(static function (AdminResource $resource): array {
+                    return [
+                        $resource->name => [
+                            'resource_name' => $resource->name,
+                            'title' => $resource->title,
+                        ],
+                    ];
+                })->all();
+        });
+
+        if (isset($metaMap[$resourceName]) && \is_array($metaMap[$resourceName])) {
+            return [
+                'resource_name' => ($metaMap[$resourceName]['resource_name'] ?? $resourceName),
+                'title' => ($metaMap[$resourceName]['title'] ?? ''),
+            ];
+        }
+
+        return [ 'resource_name' => $resourceName, 'title' => '' ];
     }
 
     /**
@@ -203,14 +226,84 @@ class OperationRecordService
      */
     private function isRecord(string $method, int $code): bool
     {
-        $methods = Config::get('logging.custom.method', ['GET', 'POST', 'PUT', 'DELETE']);
         if (200 !== $code) {
             return true;
         }
-        if (\is_array($methods) && \in_array($method, $methods, true)) {
-            return true;
+        // get 方法不进行日志记录
+        return \in_array($method, [ 'POST', 'PUT', 'PATCH', 'DELETE'], true);
+    }
+
+    private function shouldRecordRequest(string $method): bool
+    {
+        return \in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    private function sanitizeSensitiveData(array $data): array
+    {
+        $sensitiveKeys = ['password', 'password_confirmation', 'current_password', 'token', 'authorization', 'access_token', 'refresh_token'];
+
+        foreach ($data as $key => $value) {
+            $normalizedKey = strtolower((string) $key);
+            if (\in_array($normalizedKey, $sensitiveKeys, true)) {
+                $data[$key] = '***';
+
+                continue;
+            }
+
+            if (\is_array($value)) {
+                $data[$key] = $this->sanitizeSensitiveData($value);
+            }
         }
 
-        return false;
+        return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function encodeSummary(array $data): string
+    {
+        $json = @json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!\is_string($json)) {
+            return '';
+        }
+
+        return mb_substr($json, 0, 5000);
+    }
+
+    /**
+     * @return array{target_type:?string,target_id:?string}
+     */
+    private function resolveTargetMeta($request): array
+    {
+        $segments = array_values(array_filter(explode('/', trim(Str::after($request->getPathInfo(), '/'.admin_route_prefix()), '/'))));
+
+        return [
+            'target_type' => $segments[0] ?? null,
+            'target_id' => $segments[1] ?? null,
+        ];
+    }
+
+    private function resolveTraceId($request, $response): ?string
+    {
+        $traceId = $request->headers->get('X-Request-Id') ?? $request->headers->get('X-Trace-Id');
+
+        if (null === $traceId && isset($response->headers)) {
+            $traceId = $response->headers->get('X-Request-Id') ?? $response->headers->get('X-Trace-Id');
+        }
+
+        return $this->normalizeString($traceId, 100);
+    }
+
+    private function normalizeString($value, int $length): ?string
+    {
+        $value = trim((string) $value);
+
+        return '' === $value ? null : mb_substr($value, 0, $length);
     }
 }

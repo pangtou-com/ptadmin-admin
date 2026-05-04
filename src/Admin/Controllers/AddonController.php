@@ -39,7 +39,6 @@ class AddonController extends AbstractBackgroundController
 
     public function __construct(AddonPlatformService $addonPlatformService)
     {
-        parent::__construct();
         $this->addonPlatformService = $addonPlatformService;
 
         view()->share('ptadmin_addon_user', AddonApi::getCloudUserinfo());
@@ -329,6 +328,14 @@ class AddonController extends AbstractBackgroundController
             'Cache-Control' => 'no-cache',
             'X-Accel-Buffering' => 'no',
         ]);
+    }
+
+    /**
+     * 新接口：同步插件后台资源。
+     */
+    public function syncResources(string $code): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success($this->addonPlatformService->syncResources($code));
     }
 
     /**

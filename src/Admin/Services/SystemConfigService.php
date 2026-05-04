@@ -29,80 +29,13 @@ use Illuminate\Support\Facades\DB;
 use PTAdmin\Easy\Easy;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
+use PTAdmin\Admin\Support\ConfigRuleValidator;
 use PTAdmin\Foundation\Exceptions\ServiceException;
 use PTAdmin\Support\Enums\StatusEnum;
 
 class SystemConfigService
 {
     private const CACHE_KEY = 'systemConfig';
-
-    /**
-     * 批量保存指定分组下的配置项值。
-     *
-     * 这里兼容旧接口的扁平字段格式：
-     * - ids: [section_id]
-     * - basic_site_title: PTAdmin
-     *
-     * @param array<string, mixed> $data
-     */
-    public function saveValues(array $data): void
-    {
-        DB::transaction(function () use ($data): void {
-            $sectionIds = array_values(array_filter(array_map('intval', (array) ($data['ids'] ?? []))));
-            if (0 === \count($sectionIds)) {
-                return;
-            }
-
-            $sectionNames = SystemConfigGroup::query()
-                ->whereIn('id', $sectionIds)
-                ->pluck('name', 'id')
-                ->all();
-
-            $configs = SystemConfig::query()
-                ->whereIn('system_config_group_id', $sectionIds)
-                ->get();
-
-            /** @var SystemConfig $config */
-            foreach ($configs as $config) {
-                $fieldName = ($sectionNames[$config->system_config_group_id] ?? '').'_'.$config->name;
-                $config->value = $this->serializeSystemConfigValue($config, $data[$fieldName] ?? '');
-                $config->save();
-            }
-        });
-
-        self::updateSystemConfigCache();
-    }
-
-    public function items(array $search = []): array
-    {
-        $query = SystemConfig::query()->with('category');
-
-        $groupId = (int) ($search['system_config_group_id'] ?? 0);
-        if (0 !== $groupId) {
-            $query->where('system_config_group_id', $groupId);
-        }
-
-        $title = trim((string) ($search['title'] ?? ''));
-        if ('' !== $title) {
-            $query->where('title', 'like', "%{$title}%");
-        }
-
-        $name = trim((string) ($search['name'] ?? ''));
-        if ('' !== $name) {
-            $query->where('name', 'like', "%{$name}%");
-        }
-
-        $type = trim((string) ($search['type'] ?? ''));
-        if ('' !== $type) {
-            $query->where('type', $type);
-        }
-
-        return $query
-            ->orderBy('system_config_group_id')
-            ->orderBy('weight', 'desc')
-            ->paginate()
-            ->toArray();
-    }
 
     /**
      * 返回某个配置分组的表单协议与当前值。
@@ -130,12 +63,14 @@ class SystemConfigService
                 'name' => $group->name,
                 'title' => $group->title,
                 'intro' => $group->intro,
+                'extra' => (array) ($group->extra ?? []),
             ],
             'section' => [
                 'id' => $section->id,
                 'name' => $section->name,
                 'title' => $section->title,
                 'intro' => $section->intro,
+                'extra' => (array) ($section->extra ?? []),
             ],
             'schema' => $this->buildSectionBlueprint($group, $section, $configs->all()),
             'values' => $this->resolveSectionValues($configs->all()),
@@ -177,6 +112,7 @@ class SystemConfigService
                     continue;
                 }
 
+                $this->assertSystemConfigValueAllowed($config, $payload[$config->name]);
                 $config->value = $this->serializeSystemConfigValue($config, $payload[$config->name]);
                 $config->save();
             }
@@ -200,7 +136,7 @@ class SystemConfigService
      *
      * @return array|mixed
      */
-    public static function byGroupName(string $name, $default = null)
+    public static function group(string $name, $default = null)
     {
         $group = SystemConfigGroup::query()
             ->with(['children', 'children.configs'])
@@ -226,54 +162,16 @@ class SystemConfigService
         return $data;
     }
 
-    public function store(array $data): void
-    {
-        try {
-            DB::transaction(function () use ($data): void {
-                $filter = new SystemConfig();
-                $filter->fill($data)->save();
-            });
-        } catch (\Exception $e) {
-            throw new ServiceException($e->getMessage());
-        }
-        self::updateSystemConfigCache();
-    }
-
     /**
-     * 删除配置项定义。
+     * 兼容旧命名，后续请使用 group()。
      *
-     * @param array<int, int|string> $ids
-     */
-    public function delete(array $ids): void
-    {
-        $ids = array_values(array_filter(array_map('intval', $ids)));
-        if (0 === \count($ids)) {
-            return;
-        }
-
-        DB::transaction(function () use ($ids): void {
-            SystemConfig::query()->whereIn('id', $ids)->delete();
-        });
-
-        self::updateSystemConfigCache();
-    }
-
-    /**
-     * 编辑配置信息.
+     * @param mixed $default
      *
-     * @param array<string, mixed> $data
+     * @return array|mixed
      */
-    public function edit(int $id, array $data): void
+    public static function byGroupName(string $name, $default = null)
     {
-        try {
-            DB::transaction(function () use ($id, $data): void {
-                $config = SystemConfig::query()->findOrFail($id);
-                $config->fill($data)->save();
-            });
-        } catch (\Exception $e) {
-            throw new ServiceException($e->getMessage());
-        }
-        self::updateSystemConfigCache();
+        return self::group($name, $default);
     }
 
     /**
@@ -284,15 +182,15 @@ class SystemConfigService
      *
      * @return null|array|mixed
      */
-    public static function getSystemConfig($key, $default = null)
+    public static function value($key, $default = null)
     {
         if (\is_string($key)) {
-            return self::config($key, $default);
+            return self::valueByPath($key, $default);
         }
         if (\is_array($key)) {
             $return = [];
             foreach ($key as $k => $item) {
-                $return[$item] = self::config(\is_int($k) ? $item : $k, $default);
+                $return[$item] = self::valueByPath(\is_int($k) ? $item : $k, $default);
             }
 
             return $return;
@@ -302,14 +200,65 @@ class SystemConfigService
     }
 
     /**
-     * 根据key值获取指定系统配置信息.
+     * 返回允许公开输出到前端界面的系统配置。
+     *
+     * @return array<string, mixed>
+     */
+    public static function public(): array
+    {
+        $results = [];
+        $groups = SystemConfigGroup::query()
+            ->whereNull('addon_code')
+            ->where('status', StatusEnum::ENABLE)
+            ->where('parent_id', '>', 0)
+            ->with('configs')
+            ->orderBy('weight', 'desc')
+            ->orderBy('id')
+            ->get();
+
+        /** @var SystemConfigGroup $group */
+        foreach ($groups as $group) {
+            $parent = SystemConfigGroup::query()->find((int) $group->parent_id);
+            if (null === $parent) {
+                continue;
+            }
+
+            /** @var SystemConfig $config */
+            foreach ($group->configs as $config) {
+                $meta = (array) (((array) ($config->extra ?? []))['meta'] ?? []);
+                if ('public' !== strtolower(trim((string) ($meta['expose'] ?? 'private')))) {
+                    continue;
+                }
+
+                $path = sprintf('%s.%s.%s', $parent->name, $group->name, $config->name);
+                $results[$path] = self::resolveRuntimeValue((string) $config->type, $config->value);
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * 兼容旧命名，后续请使用 value()。
+     *
+     * @param mixed $default
+     *
+     * @return null|array|mixed
+     */
+    public static function getSystemConfig($key, $default = null)
+    {
+        return self::value($key, $default);
+    }
+
+    /**
+     * 根据 key 路径获取指定系统配置信息.
      *
      * @param string $key
      * @param null   $default
      *
      * @return array|mixed
      */
-    public static function config(string $key, $default = null)
+    public static function valueByPath(string $key, $default = null)
     {
         $data = self::getSystemConfigCache();
         if (null === $data) {
@@ -329,6 +278,19 @@ class SystemConfigService
         }
 
         return data_get($data, $key, $default);
+    }
+
+    /**
+     * 兼容旧命名，后续请使用 valueByPath()。
+     *
+     * @param string $key
+     * @param null   $default
+     *
+     * @return array|mixed
+     */
+    public static function config(string $key, $default = null)
+    {
+        return self::valueByPath($key, $default);
     }
 
     /**
@@ -447,7 +409,7 @@ class SystemConfigService
                         'layout' => 'vertical',
                     ],
                 ],
-                'layout' => [],
+                'layout' => $this->resolveSectionLayout($group, $section),
                 'fields' => [],
                 'relations' => [],
                 'permissions' => [],
@@ -462,6 +424,7 @@ class SystemConfigService
             'form' => [
                 'layout' => 'vertical',
             ],
+            'layout' => $this->resolveSectionLayout($group, $section),
             'fields' => array_map(function (SystemConfig $config): array {
                 return $this->buildFieldSchema($config);
             }, $settings),
@@ -487,7 +450,16 @@ class SystemConfigService
             'label' => $config->title,
             'default' => self::resolveRuntimeValue($type, $config->default_val),
             'comment' => $config->intro ?? '',
+            'metadata' => $this->resolveFieldMetadata($config),
         ];
+
+        foreach ($field['metadata'] as $metaKey => $metaValue) {
+            if (\in_array($metaKey, ['options_map', 'storage_type'], true)) {
+                continue;
+            }
+
+            $field[$metaKey] = $metaValue;
+        }
 
         $options = $this->resolveFieldOptions($config);
         if (0 !== \count($options)) {
@@ -495,6 +467,42 @@ class SystemConfigService
         }
 
         return $field;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveSectionLayout(SystemConfigGroup $group, SystemConfigGroup $section): array
+    {
+        $groupExtra = (array) ($group->extra ?? []);
+        $sectionExtra = (array) ($section->extra ?? []);
+        $layout = (array) ($sectionExtra['layout'] ?? $groupExtra['layout'] ?? []);
+
+        $mode = strtolower(trim((string) ($layout['mode'] ?? 'block')));
+        if (!\in_array($mode, ['tab', 'block'], true)) {
+            $mode = 'block';
+        }
+
+        $layout['mode'] = $mode;
+
+        return $layout;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resolveFieldMetadata(SystemConfig $config): array
+    {
+        $extra = (array) ($config->extra ?? []);
+        $meta = (array) ($extra['meta'] ?? []);
+
+        if ([] !== (array) ($extra['options'] ?? [])) {
+            $meta['options_map'] = (array) $extra['options'];
+        }
+
+        $meta['storage_type'] = $this->normalizeFieldType((string) $config->type);
+
+        return $meta;
     }
 
     /**
@@ -617,6 +625,68 @@ class SystemConfigService
     }
 
     /**
+     * @param mixed $value
+     */
+    private function assertSystemConfigValueAllowed(SystemConfig $setting, $value): void
+    {
+        $type = $this->normalizeFieldType((string) $setting->type);
+
+        switch ($type) {
+            case 'switch':
+                if ($this->isBooleanLikeValue($value)) {
+                    return;
+                }
+
+                throw new ServiceException(__('ptadmin::background.config_field_value_switch_invalid', ['name' => $setting->name]));
+
+            case 'radio':
+            case 'select':
+                if (!\is_scalar($value) && null !== $value) {
+                    throw new ServiceException(__('ptadmin::background.config_field_value_option_invalid', ['name' => $setting->name]));
+                }
+
+                $this->assertValueInFieldOptions($setting, null === $value ? '' : (string) $value);
+
+                return;
+
+            case 'checkbox':
+                if (!\is_array($value)) {
+                    throw new ServiceException(__('ptadmin::background.config_field_value_checkbox_invalid', ['name' => $setting->name]));
+                }
+
+                foreach ($value as $item) {
+                    if (!\is_scalar($item) && null !== $item) {
+                        throw new ServiceException(__('ptadmin::background.config_field_value_checkbox_invalid', ['name' => $setting->name]));
+                    }
+
+                    $this->assertValueInFieldOptions($setting, null === $item ? '' : (string) $item);
+                }
+
+                return;
+
+            case 'json':
+            case 'cascader':
+                if (\is_array($value)) {
+                    return;
+                }
+
+                if (\is_string($value)) {
+                    $decoded = json_decode($value, true);
+                    if (\is_array($decoded)) {
+                        return;
+                    }
+                }
+
+                throw new ServiceException(__('ptadmin::background.config_field_value_json_invalid', ['name' => $setting->name]));
+
+            default:
+                $this->assertScalarFieldMetaRules($setting, $value, $type);
+
+                return;
+        }
+    }
+
+    /**
      * 将历史字段类型映射为 easy 标准类型。
      */
     private function normalizeFieldType(string $type): string
@@ -684,6 +754,88 @@ class SystemConfigService
         }
 
         return $results;
+    }
+
+    private function isBooleanLikeValue($value): bool
+    {
+        if (\is_bool($value)) {
+            return true;
+        }
+
+        if (\is_int($value)) {
+            return \in_array($value, [0, 1], true);
+        }
+
+        if (\is_string($value)) {
+            return \in_array(strtolower(trim($value)), ['0', '1', 'true', 'false'], true);
+        }
+
+        return false;
+    }
+
+    private function assertValueInFieldOptions(SystemConfig $setting, string $value): void
+    {
+        $extra = (array) ($setting->extra ?? []);
+        $options = $extra['options'] ?? [];
+        if (!\is_array($options) || [] === $options) {
+            return;
+        }
+
+        if (array_key_exists($value, $options)) {
+            return;
+        }
+
+        $stringKeys = array_map(static function ($item): string {
+            return (string) $item;
+        }, array_keys($options));
+
+        if (\in_array($value, $stringKeys, true)) {
+            return;
+        }
+
+        throw new ServiceException(__('ptadmin::background.config_field_value_option_invalid', ['name' => $setting->name]));
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private function assertScalarFieldMetaRules(SystemConfig $setting, $value, string $type): void
+    {
+        if (\in_array($type, ['text', 'textarea', 'password'], true)) {
+            if (\is_array($value) || \is_object($value)) {
+                throw new ServiceException(__('ptadmin::background.config_field_value_scalar_invalid', ['name' => $setting->name]));
+            }
+        }
+
+        $extra = (array) ($setting->extra ?? []);
+        $meta = (array) ($extra['meta'] ?? []);
+        if ([] === $meta) {
+            return;
+        }
+
+        $stringValue = null === $value ? '' : (\is_scalar($value) ? (string) $value : '');
+        $trimmedValue = trim($stringValue);
+
+        if ((bool) ($meta['required'] ?? false) && '' === $trimmedValue) {
+            throw new ServiceException(__('ptadmin::background.config_field_required', ['name' => $setting->name]));
+        }
+
+        if ('' === $trimmedValue) {
+            return;
+        }
+
+        if (isset($meta['min']) && is_numeric($meta['min']) && mb_strlen($stringValue) < (int) $meta['min']) {
+            throw new ServiceException(__('ptadmin::background.config_field_min_invalid', ['name' => $setting->name, 'min' => (int) $meta['min']]));
+        }
+
+        if (isset($meta['max']) && is_numeric($meta['max']) && mb_strlen($stringValue) > (int) $meta['max']) {
+            throw new ServiceException(__('ptadmin::background.config_field_max_invalid', ['name' => $setting->name, 'max' => (int) $meta['max']]));
+        }
+
+        $pattern = trim((string) ($meta['pattern'] ?? ''));
+        if ('' !== $pattern && 1 !== @preg_match($pattern, $stringValue)) {
+            throw new ServiceException(__('ptadmin::background.config_field_pattern_invalid', ['name' => $setting->name]));
+        }
     }
 
     /**

@@ -24,11 +24,13 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Models\AdminLoginLog;
 use PTAdmin\Admin\Models\AdminRole;
+use PTAdmin\Admin\Models\AdminUserRole;
 use PTAdmin\Admin\Support\Query\BuilderQueryApplier;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
@@ -45,10 +47,9 @@ class AdminService
 
     public function page($search = []): array
     {
-        $model = Admin::query();
-
-        return (new BuilderQueryApplier())->fetch(
-            $model,
+        /** @var LengthAwarePaginator $admins */
+        $admins = (new BuilderQueryApplier())->fetch(
+            Admin::query(),
             is_array($search) ? $search : [],
             [
                 'allowed_filters' => ['id', 'username', 'nickname', 'mobile', 'email', 'status', 'is_founder'],
@@ -58,7 +59,11 @@ class AdminService
                 'default_order' => ['id' => 'desc'],
                 'default_limit' => 15,
             ]
-        )->toArray();
+        );
+
+        $admins->setCollection($this->attachRoleDisplayToAdmins($admins->getCollection()));
+
+        return $admins->toArray();
     }
 
     public function create(array $data): Admin
@@ -148,14 +153,61 @@ class AdminService
         ]);
     }
 
-    public function loginLogs(int $adminId): LengthAwarePaginator
+    public function loginLogs(Admin $admin, array $query = []): LengthAwarePaginator
     {
-        return AdminLoginLog::query()
-            ->select(['id', 'admin_id', 'login_at', 'login_ip', 'status'])
-            ->where('admin_id', $adminId)
-            ->with('admin:id,nickname')
-            ->orderBy('id', 'desc')
-            ->paginate();
+        $query = $this->normalizeLoginLogQuery($query);
+
+        $builder = AdminLoginLog::query()
+            ->leftJoin('admins', 'admins.id', '=', 'admin_login_logs.admin_id')
+            ->select([
+                'admin_login_logs.id',
+                'admin_login_logs.admin_id',
+                'admin_login_logs.login_account',
+                'admin_login_logs.login_at',
+                'admin_login_logs.login_ip',
+                'admin_login_logs.status',
+                'admin_login_logs.reason',
+                'admin_login_logs.user_agent',
+                'admins.username as admin_username',
+                'admins.nickname as admin_nickname',
+            ]);
+
+        if (1 !== $admin->is_founder) {
+            $builder->where('admin_login_logs.admin_id', $admin->id);
+        }
+
+        /** @var LengthAwarePaginator $logs */
+        $logs = (new BuilderQueryApplier())->fetch(
+            $builder,
+            $query,
+            [
+                'allowed_filters' => ['admin_login_logs.admin_id', 'admin_login_logs.login_account', 'admin_login_logs.login_ip', 'admin_login_logs.status', 'admin_login_logs.reason', 'admin_login_logs.login_at', 'admins.username', 'admins.nickname'],
+                'allowed_sorts' => ['admin_login_logs.id', 'admin_login_logs.admin_id', 'admin_login_logs.login_at', 'admin_login_logs.status', 'admins.username', 'admins.nickname'],
+                'allowed_keyword_fields' => ['admin_login_logs.login_account', 'admin_login_logs.login_ip', 'admin_login_logs.reason', 'admin_login_logs.user_agent', 'admins.username', 'admins.nickname'],
+                'keyword_fields' => ['admin_login_logs.login_account', 'admin_login_logs.login_ip', 'admin_login_logs.reason', 'admin_login_logs.user_agent', 'admins.username', 'admins.nickname'],
+                'default_order' => ['admin_login_logs.id' => 'desc'],
+            ]
+        );
+
+        $logs->getCollection()->transform(function (AdminLoginLog $log): array {
+            return [
+                'id' => $log->id,
+                'admin_id' => $log->admin_id,
+                'login_account' => $log->login_account,
+                'login_at' => $log->login_at,
+                'login_ip' => $log->login_ip,
+                'status' => $log->status,
+                'reason' => $log->reason,
+                'user_agent' => $log->user_agent,
+                'admin' => [
+                    'id' => $log->admin_id,
+                    'username' => $log->admin_username,
+                    'nickname' => $log->admin_nickname,
+                ],
+            ];
+        });
+
+        return $logs;
     }
 
     public function updatePassword(Admin $admin, string $oldPassword, string $newPassword): void
@@ -195,5 +247,123 @@ class AdminService
     private function normalizeRoleIds(array $roleIds): array
     {
         return array_values(array_unique(array_map('intval', $roleIds)));
+    }
+
+    private function attachRoleDisplayToAdmins(Collection $admins): Collection
+    {
+        if ($admins->isEmpty()) {
+            return $admins;
+        }
+
+        $adminIds = $admins->pluck('id')->map(static fn ($id): int => (int) $id)->all();
+        $rolesByAdminId = AdminUserRole::query()
+            ->with('role')
+            ->whereIn('user_id', $adminIds)
+            ->whereNull('tenant_id')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('user_id')
+            ->map(function (Collection $userRoles): array {
+                $roles = $userRoles
+                    ->map(static function (AdminUserRole $userRole): ?array {
+                        if (null === $userRole->role) {
+                            return null;
+                        }
+
+                        return [
+                            'id' => (int) $userRole->role->id,
+                            'title' => (string) $userRole->role->name,
+                            'code' => (string) $userRole->role->code,
+                        ];
+                    })
+                    ->filter()
+                    ->values();
+
+                return [
+                    'role_id' => $roles->first()['id'] ?? null,
+                    'role_ids' => $roles->pluck('id')->values()->all(),
+                    'role_names' => $roles->pluck('title')->values()->all(),
+                    'roles' => $roles->all(),
+                ];
+            })
+            ->all();
+
+        return $admins->map(function (Admin $admin) use ($rolesByAdminId): array {
+            $payload = $admin->toArray();
+
+            if (1 === (int) $admin->is_founder) {
+                $payload['role_id'] = null;
+                $payload['role_ids'] = [];
+                $payload['role_names'] = ['创始人'];
+                $payload['roles'] = [
+                    [
+                        'id' => 0,
+                        'title' => '创始人',
+                        'code' => 'founder',
+                    ],
+                ];
+
+                return $payload;
+            }
+
+            $roleDisplay = $rolesByAdminId[(int) $admin->id] ?? [
+                'role_id' => null,
+                'role_ids' => [],
+                'role_names' => [],
+                'roles' => [],
+            ];
+
+            return array_merge($payload, $roleDisplay);
+        })->values();
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeLoginLogQuery(array $query): array
+    {
+        $fieldMap = [
+            'id' => 'admin_login_logs.id',
+            'admin_id' => 'admin_login_logs.admin_id',
+            'login_account' => 'admin_login_logs.login_account',
+            'login_at' => 'admin_login_logs.login_at',
+            'login_ip' => 'admin_login_logs.login_ip',
+            'status' => 'admin_login_logs.status',
+            'reason' => 'admin_login_logs.reason',
+            'user_agent' => 'admin_login_logs.user_agent',
+            'admin.id' => 'admin_login_logs.admin_id',
+            'admin.username' => 'admins.username',
+            'admin.nickname' => 'admins.nickname',
+            'username' => 'admins.username',
+            'nickname' => 'admins.nickname',
+        ];
+
+        $query['filters'] = array_map(function ($filter) use ($fieldMap) {
+            if (!is_array($filter) || !isset($filter['field']) || !is_string($filter['field'])) {
+                return $filter;
+            }
+
+            $filter['field'] = $fieldMap[$filter['field']] ?? $filter['field'];
+
+            return $filter;
+        }, (array) ($query['filters'] ?? []));
+
+        $query['sorts'] = array_map(function ($sort) use ($fieldMap) {
+            if (!is_array($sort) || !isset($sort['field']) || !is_string($sort['field'])) {
+                return $sort;
+            }
+
+            $sort['field'] = $fieldMap[$sort['field']] ?? $sort['field'];
+
+            return $sort;
+        }, (array) ($query['sorts'] ?? []));
+
+        $query['keyword_fields'] = array_values(array_map(function ($field) use ($fieldMap) {
+            return is_string($field) ? ($fieldMap[$field] ?? $field) : $field;
+        }, (array) ($query['keyword_fields'] ?? [])));
+
+        return $query;
     }
 }

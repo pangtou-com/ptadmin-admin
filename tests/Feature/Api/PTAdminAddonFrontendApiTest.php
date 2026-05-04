@@ -29,18 +29,26 @@ class PTAdminAddonFrontendApiTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_module_manifests_endpoint_is_public_and_returns_empty_results_by_default(): void
+    public function test_module_manifests_endpoint_requires_admin_login_and_returns_empty_array_by_default(): void
     {
         Addon::swap(new FakeAddonFrontendManager([]));
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/modules')
+            ->getJson('/system/auth/frontends')
+            ->assertOk()
+            ->assertJson([
+                'code' => 419,
+                'message' => '未登录',
+            ]);
+
+        $token = $this->issueFrontendToken();
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
-                'data' => [
-                    'results' => [],
-                ],
+                'data' => [],
             ]);
     }
 
@@ -143,67 +151,67 @@ class PTAdminAddonFrontendApiTest extends TestCase
             ],
         ]));
 
-        $response = $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/modules');
+        $token = $this->issueFrontendToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends');
 
         $response->assertOk()
             ->assertJson([
                 'code' => 0,
                 'data' => [
-                    'results' => [
-                        [
-                            'key' => 'cms',
-                            'title' => '内容管理',
-                            'description' => '内容管理与站点资源维护模块。',
-                            'version' => '0.1.0',
-                            'enabled' => 1,
-                            'runtime' => 'local',
-                            'route_base' => '/cms',
-                            'meta' => [
-                                'icon' => 'Document',
-                                'order' => 40,
-                                'preload' => false,
-                                'develop' => true,
-                            ],
-                            'entry' => [
-                                'local' => [
-                                    'type' => 'module',
-                                    'js' => '/addons/cms/dist/admin/index.js',
-                                    'css' => ['/addons/cms/dist/admin/index.css'],
-                                ],
-                            ],
-                            'pages' => [
-                                [
-                                    'key' => 'cms.article',
-                                    'path' => '/cms/article',
-                                    'route_name' => 'cms-article',
-                                    'title' => '文章管理',
-                                    'keep_alive' => true,
-                                ],
+                    [
+                        'key' => 'cms',
+                        'title' => '内容管理',
+                        'description' => '内容管理与站点资源维护模块。',
+                        'version' => '0.1.0',
+                        'enabled' => 1,
+                        'runtime' => 'local',
+                        'route_base' => '/cms',
+                        'meta' => [
+                            'icon' => 'Document',
+                            'order' => 40,
+                            'preload' => false,
+                            'develop' => true,
+                        ],
+                        'entry' => [
+                            'local' => [
+                                'type' => 'module',
+                                'js' => '/addons/cms/dist/admin/index.js',
+                                'css' => ['/addons/cms/dist/admin/index.css'],
                             ],
                         ],
-                        [
-                            'key' => 'workspace',
-                            'title' => '生态工作台',
-                            'runtime' => 'wujie',
-                            'route_base' => '/workspace',
-                            'entry' => [
-                                'wujie' => [
-                                    'name' => 'pangtou_workspace_micro',
-                                    'url' => 'http://localhost:5181/',
-                                    'alive' => true,
-                                    'sync' => true,
-                                    'degrade' => false,
-                                ],
+                        'pages' => [
+                            [
+                                'key' => 'cms.article',
+                                'path' => '/cms/article',
+                                'route_name' => 'cms-article',
+                                'title' => '文章管理',
+                                'keep_alive' => true,
+                            ],
+                        ],
+                    ],
+                    [
+                        'key' => 'workspace',
+                        'title' => '生态工作台',
+                        'runtime' => 'wujie',
+                        'route_base' => '/workspace',
+                        'entry' => [
+                            'wujie' => [
+                                'name' => 'pangtou_workspace_micro',
+                                'url' => 'http://localhost:5181/',
+                                'alive' => true,
+                                'sync' => true,
+                                'degrade' => false,
                             ],
                         ],
                     ],
                 ],
             ]);
 
-        self::assertCount(2, (array) $response->json('data.results'));
-        self::assertSame('cms.category', $response->json('data.results.0.pages.1.key'));
-        self::assertSame('workspace.home', $response->json('data.results.1.pages.0.key'));
+        self::assertCount(2, (array) $response->json('data'));
+        self::assertSame('cms.category', $response->json('data.0.pages.1.key'));
+        self::assertSame('workspace.home', $response->json('data.1.pages.0.key'));
     }
 
     public function test_module_manifests_endpoint_uses_cache_when_cache_key_is_stable(): void
@@ -246,11 +254,13 @@ class PTAdminAddonFrontendApiTest extends TestCase
             ],
         ]));
 
-        $first = $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/modules');
+        $token = $this->issueFrontendToken();
+
+        $first = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends');
 
         $first->assertOk();
-        self::assertSame('内容管理', $first->json('data.results.0.title'));
+        self::assertSame('内容管理', $first->json('data.0.title'));
 
         $this->writeAddonModuleManifest('Cms', [
             'modules' => [
@@ -281,12 +291,12 @@ class PTAdminAddonFrontendApiTest extends TestCase
             ],
         ]));
 
-        $second = $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/modules');
+        $second = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends');
 
         $second->assertOk();
-        self::assertSame('内容管理', $second->json('data.results.0.title'));
-        self::assertSame('文章管理', $second->json('data.results.0.pages.0.title'));
+        self::assertSame('内容管理', $second->json('data.0.title'));
+        self::assertSame('文章管理', $second->json('data.0.pages.0.title'));
     }
 
     public function test_module_manifests_endpoint_skips_addons_without_module_file_or_without_pages(): void
@@ -320,25 +330,176 @@ class PTAdminAddonFrontendApiTest extends TestCase
             ],
         ]));
 
-        $response = $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/modules');
+        $token = $this->issueFrontendToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends');
 
         $response->assertOk()->assertJson([
             'code' => 0,
-            'data' => [
-                'results' => [],
+            'data' => [],
+        ]);
+    }
+
+    public function test_module_manifests_endpoint_prefers_frontend_manifest_under_frontend_directory_in_develop_mode(): void
+    {
+        $this->writeAddonModuleManifest('DevelopAddon', [
+            'modules' => [
+                [
+                    'key' => 'develop-root',
+                    'title' => 'Root Manifest',
+                    'enabled' => 1,
+                    'runtime' => 'local',
+                    'route_base' => '/develop-root',
+                    'pages' => [
+                        [
+                            'key' => 'develop-root.index',
+                            'path' => '/develop-root/index',
+                            'title' => 'Root Page',
+                        ],
+                    ],
+                ],
             ],
         ]);
+
+        $this->writeAddonModuleManifest('DevelopAddon', [
+            'modules' => [
+                [
+                    'key' => 'develop-frontend',
+                    'title' => 'Frontend Manifest',
+                    'enabled' => 1,
+                    'runtime' => 'wujie',
+                    'route_base' => '/develop-frontend',
+                    'entry' => [
+                        'wujie' => [
+                            'name' => 'develop_frontend',
+                            'url' => 'http://localhost:5182/',
+                            'alive' => true,
+                            'sync' => true,
+                            'degrade' => false,
+                        ],
+                    ],
+                    'pages' => [
+                        [
+                            'key' => 'develop-frontend.index',
+                            'path' => '/develop-frontend/index',
+                            'title' => 'Frontend Page',
+                        ],
+                    ],
+                ],
+            ],
+        ], 'Frontend/frontend.json');
+
+        Addon::swap(new FakeAddonFrontendManager([
+            'develop-addon' => [
+                'code' => 'develop-addon',
+                'title' => '开发插件',
+                'version' => '1.0.0',
+                'base_path' => 'DevelopAddon',
+                'develop' => true,
+            ],
+        ]));
+
+        $token = $this->issueFrontendToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends');
+
+        $response->assertOk();
+        self::assertSame('develop-frontend', $response->json('data.0.key'));
+        self::assertSame('开发插件', $response->json('data.0.title'));
+        self::assertSame('http://localhost:5182/', $response->json('data.0.entry.wujie.url'));
+    }
+
+    public function test_module_manifests_endpoint_prefers_root_manifest_in_deploy_mode(): void
+    {
+        $this->writeAddonModuleManifest('DeployAddon', [
+            'modules' => [
+                [
+                    'key' => 'deploy-root',
+                    'title' => 'Deploy Root Manifest',
+                    'enabled' => 1,
+                    'runtime' => 'local',
+                    'route_base' => '/deploy-root',
+                    'pages' => [
+                        [
+                            'key' => 'deploy-root.index',
+                            'path' => '/deploy-root/index',
+                            'title' => 'Deploy Root Page',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->writeAddonModuleManifest('DeployAddon', [
+            'modules' => [
+                [
+                    'key' => 'deploy-frontend',
+                    'title' => 'Frontend Manifest',
+                    'enabled' => 1,
+                    'runtime' => 'wujie',
+                    'route_base' => '/deploy-frontend',
+                    'entry' => [
+                        'wujie' => [
+                            'name' => 'deploy_frontend',
+                            'url' => 'http://localhost:5182/',
+                            'alive' => true,
+                            'sync' => true,
+                            'degrade' => false,
+                        ],
+                    ],
+                    'pages' => [
+                        [
+                            'key' => 'deploy-frontend.index',
+                            'path' => '/deploy-frontend/index',
+                            'title' => 'Frontend Page',
+                        ],
+                    ],
+                ],
+            ],
+        ], 'Frontend/frontend.json');
+
+        Addon::swap(new FakeAddonFrontendManager([
+            'deploy-addon' => [
+                'code' => 'deploy-addon',
+                'title' => '部署插件',
+                'version' => '1.0.0',
+                'base_path' => 'DeployAddon',
+                'develop' => false,
+            ],
+        ]));
+
+        $token = $this->issueFrontendToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends');
+
+        $response->assertOk();
+        self::assertSame('deploy-root', $response->json('data.0.key'));
+        self::assertSame('Deploy Root Manifest', $response->json('data.0.title'));
     }
 
     /**
      * @param array<string, mixed> $payload
      */
-    private function writeAddonModuleManifest(string $basePath, array $payload): void
+    private function writeAddonModuleManifest(string $basePath, array $payload, string $relativePath = 'frontend.json'): void
     {
         $directory = base_path('addons/'.$basePath);
-        File::ensureDirectoryExists($directory);
-        File::put($directory.'/frontend.json', (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $targetPath = $directory.'/'.ltrim($relativePath, '/');
+
+        File::ensureDirectoryExists(dirname($targetPath));
+        File::put($targetPath, (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    private function issueFrontendToken(): string
+    {
+        $this->createAdminsTable();
+
+        return $this->issueAdminToken($this->createAdminAccount([
+            'username' => 'frontend_admin_'.uniqid(),
+            'is_founder' => 1,
+        ]));
     }
 }
 

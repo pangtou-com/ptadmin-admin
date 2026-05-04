@@ -116,6 +116,19 @@ class Admin extends Authenticate
         return '';
     }
 
+    public function setLoginAtAttribute($value): void
+    {
+        if (null === $value || '' === $value) {
+            $this->attributes['login_at'] = 0;
+
+            return;
+        }
+
+        $timestamp = is_numeric($value) ? (int) $value : strtotime((string) $value);
+
+        $this->attributes['login_at'] = false === $timestamp ? 0 : $timestamp;
+    }
+
     public function getScopeAttribute(): int
     {
         return 0;

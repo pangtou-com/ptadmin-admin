@@ -11,12 +11,19 @@ return [
     'system_config' => [
         'group' => [
             'system_title' => 'System Settings',
+            'oauth_title' => 'Third-Party Login',
         ],
         'section' => [
             'basic_title' => 'Basic Settings',
             'basic_intro' => 'Basic site information and common switch settings',
+            'security_title' => 'Security Settings',
+            'security_intro' => 'Registration, authentication, and access security settings',
             'upload_title' => 'Upload Settings',
             'upload_intro' => 'File upload and object storage related settings',
+            'oauth_wechat_title' => 'WeChat Login',
+            'oauth_wechat_intro' => 'OAuth login settings for WeChat official accounts or the open platform',
+            'oauth_qq_title' => 'QQ Login',
+            'oauth_qq_intro' => 'OAuth login settings for QQ Connect',
         ],
         'field' => [
             'site_title_title' => 'Site Title',
@@ -25,6 +32,8 @@ return [
             'site_description_intro' => 'Used for site introduction and SEO description',
             'login_captcha_title' => 'Login Captcha',
             'login_captcha_intro' => 'Controls whether the admin login shows a captcha',
+            'is_register_title' => 'Auto-register Users',
+            'is_register_intro' => 'Whether unregistered users can be created automatically when logging in by SMS or email verification code',
             'storage_driver_title' => 'Upload Storage Driver',
             'storage_driver_intro' => 'local uses the local disk; if a storage inject code from an addon is provided, addon upload will be used',
             'storage_code_title' => 'Upload Storage Code',
@@ -37,6 +46,14 @@ return [
             'storage_visibility_intro' => 'Default visibility of files in object storage',
             'storage_meta_title' => 'Upload Extra Parameters',
             'storage_meta_intro' => 'Extra parameters passed to the addon storage inject, in JSON object format',
+            'oauth_active_title' => 'Enable OAuth Login',
+            'oauth_active_intro' => 'When disabled, this third-party login method will not appear in the available login list',
+            'oauth_app_id_title' => 'App ID',
+            'oauth_app_id_intro' => 'Application identifier assigned by the third-party open platform',
+            'oauth_app_secret_title' => 'App Secret',
+            'oauth_app_secret_intro' => 'Application secret assigned by the third-party open platform',
+            'oauth_redirect_title' => 'Callback URL',
+            'oauth_redirect_intro' => 'OAuth callback URL. If omitted, it can be handled by the business application',
         ],
         'option' => [
             'visibility_public' => 'Public',

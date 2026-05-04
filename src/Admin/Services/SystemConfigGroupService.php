@@ -23,187 +23,13 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services;
 
-use Illuminate\Support\Facades\DB;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
-use PTAdmin\Foundation\Exceptions\BackgroundException;
+use PTAdmin\Admin\Support\ConfigRuleValidator;
 use PTAdmin\Foundation\Exceptions\ServiceException;
 
 class SystemConfigGroupService
 {
-    /**
-     * 返回系统配置导航树。
-     *
-     * 这里只返回“一级分组 -> 二级分组”结构，给前端做左侧导航或页签切换使用，
-     * 不再混入旧版 HTML 表单内容。
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function navigation(): array
-    {
-        $groups = SystemConfigGroup::query()
-            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'intro', 'status'])
-            ->where('status', 1)
-            ->orderBy('parent_id')
-            ->orderBy('weight', 'desc')
-            ->orderBy('id')
-            ->get()
-            ->toArray();
-
-        $roots = [];
-        foreach ($groups as $group) {
-            $group['children'] = [];
-            if (0 === (int) $group['parent_id']) {
-                $roots[$group['id']] = $group;
-            }
-        }
-
-        foreach ($groups as $group) {
-            if (0 === (int) $group['parent_id']) {
-                continue;
-            }
-            if (!isset($roots[$group['parent_id']])) {
-                continue;
-            }
-
-            $roots[$group['parent_id']]['children'][] = $group;
-        }
-
-        return array_values($roots);
-    }
-
-    public function tree(): array
-    {
-        $rows = SystemConfigGroup::query()
-            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'status'])
-            ->orderBy('weight', 'desc')
-            ->with('configs')
-            ->get()
-            ->map(static function (SystemConfigGroup $group): array {
-                $row = $group->toArray();
-                $row['id'] = (int) ($row['id'] ?? 0);
-                $row['parent_id'] = (int) ($row['parent_id'] ?? 0);
-
-                return $row;
-            })
-            ->all();
-
-        return infinite_tree($rows);
-    }
-
-    /**
-     * 新增系统配置分组。
-     *
-     * @param array<string, mixed> $data
-     */
-    public function store(array $data): SystemConfigGroup
-    {
-        try {
-            return DB::transaction(function () use ($data): SystemConfigGroup {
-                /** @var SystemConfigGroup $group */
-                $group = new SystemConfigGroup();
-                $group->fill($data)->save();
-
-                return $group->refresh();
-            });
-        } catch (\Throwable $e) {
-            throw new ServiceException($e->getMessage(), (int) $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * 编辑系统配置分组。
-     *
-     * @param array<string, mixed> $data
-     */
-    public function edit(int $id, array $data): SystemConfigGroup
-    {
-        try {
-            return DB::transaction(function () use ($id, $data): SystemConfigGroup {
-                /** @var SystemConfigGroup $group */
-                $group = SystemConfigGroup::query()->findOrFail($id);
-                $group->fill($data)->save();
-
-                return $group->refresh();
-            });
-        } catch (\Throwable $e) {
-            throw new ServiceException($e->getMessage(), (int) $e->getCode(), $e);
-        }
-    }
-
-    public function del($id): void
-    {
-        $dao = SystemConfigGroup::query()->findOrFail($id);
-        if (SystemConfigGroup::query()->where('parent_id', $id)->exists()) {
-            throw new BackgroundException(__('ptadmin::background.delete_child_group_first'));
-        }
-        if (SystemConfig::query()->where('system_config_group_id', $id)->exists()) {
-            throw new BackgroundException(__('ptadmin::background.delete_config_items_first'));
-        }
-        $dao->delete();
-    }
-
-    /**
-     * 根据分组 ID 获取当前节点下的系统配置项信息。
-     *
-     * @param $id
-     *
-     * @return array
-     */
-    public function children(int $id): array
-    {
-        $results = SystemConfigGroup::query()
-            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'intro', 'status'])
-            ->where('parent_id', $id)
-            ->with(['configs' => function ($query): void {
-                $query->orderBy('weight', 'desc')->orderBy('id');
-            }])
-            ->orderBy('weight', 'desc')->orderBy('id')->get()->toArray();
-
-        $data = [];
-        foreach ($results as $result) {
-            $configure = $result['configs'];
-            unset($result['configs']);
-            $result['children'] = $configure;
-            $data[] = $result;
-        }
-
-        return $data;
-    }
-
-    /**
-     * 根据父级 ID 获取当前节点下的系统配置项信息。
-     *
-     * @param $id
-     *
-     * @return array
-     */
-    public function sectionConfigs(int $id): array
-    {
-        $results = SystemConfigGroup::query()
-            ->select(['id', 'parent_id', 'title', 'name', 'weight', 'intro', 'status'])
-            ->where('parent_id', $id)
-            ->orWhere('id', $id)
-            ->with('configs')
-            ->orderBy('weight', 'desc')->get()->toArray();
-
-        $data = [];
-        foreach ($results as $result) {
-            $configure = $result['configs'];
-            unset($result['configs']);
-            // 当父级没有设置字段信息时 则没有展示的必要
-            if ($id === $result['id'] && !$configure) {
-                continue;
-            }
-            $data[] = [
-                'category' => $result,
-                'configs' => $configure,
-            ];
-        }
-
-        return $data;
-    }
-
     /**
      * 安装时数据初始化.
      *
@@ -212,6 +38,9 @@ class SystemConfigGroupService
     public static function installInitialize(array $data, int $parentId = 0): void
     {
         foreach ($data as $item) {
+            self::assertGroupHierarchyAllowed($item, $parentId);
+            self::assertGroupExtraAllowed((array) ($item['extra'] ?? []));
+
             $groupData = $item;
             $groupData['parent_id'] = $parentId;
             unset($groupData['children'], $groupData['fields']);
@@ -226,7 +55,11 @@ class SystemConfigGroupService
             }
 
             if (isset($item['fields']) && \count($item['fields']) > 0) {
+                self::assertUniqueFieldNames((array) $item['fields']);
                 foreach ($item['fields'] as $field) {
+                    $fieldType = strtolower(trim((string) ($field['type'] ?? '')));
+                    self::assertFieldTypeAllowed($fieldType);
+                    self::assertFieldExtraAllowed($fieldType, (array) ($field['extra'] ?? []));
                     $field['system_config_group_id'] = $model->id;
                     SystemConfig::query()->updateOrCreate(
                         [
@@ -237,6 +70,122 @@ class SystemConfigGroupService
                     );
                 }
             }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     */
+    private static function assertGroupHierarchyAllowed(array $item, int $parentId): void
+    {
+        if (0 === $parentId) {
+            return;
+        }
+
+        $parent = SystemConfigGroup::query()->find($parentId);
+        if (null === $parent) {
+            return;
+        }
+
+        if ((int) $parent->parent_id > 0) {
+            throw new ServiceException(__('ptadmin::background.config_group_depth_invalid'));
+        }
+
+        if (isset($item['children']) && \count((array) $item['children']) > 0) {
+            throw new ServiceException(__('ptadmin::background.config_group_depth_invalid'));
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     */
+    private static function assertGroupExtraAllowed(array $extra): void
+    {
+        $layout = (array) ($extra['layout'] ?? []);
+        if ([] === $layout) {
+            return;
+        }
+
+        $mode = strtolower(trim((string) ($layout['mode'] ?? 'block')));
+        if (!ConfigRuleValidator::isValidGroupLayoutMode($mode)) {
+            throw new ServiceException(__('ptadmin::background.config_group_layout_invalid'));
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $extra
+     */
+    private static function assertFieldExtraAllowed(string $type, array $extra): void
+    {
+        $meta = (array) ($extra['meta'] ?? []);
+        if ([] === $meta) {
+            return;
+        }
+
+        foreach (array_keys($meta) as $key) {
+            if (!\is_string($key)) {
+                continue;
+            }
+
+            $resolvedKey = strtolower(trim($key));
+            if ('' === $resolvedKey) {
+                continue;
+            }
+
+            if (!\in_array($resolvedKey, ConfigRuleValidator::supportedFieldMetaKeys(), true)) {
+                throw new ServiceException(__('ptadmin::background.config_field_meta_key_invalid', ['key' => $resolvedKey]));
+            }
+        }
+
+        $unsupportedKeys = ConfigRuleValidator::unsupportedMetaKeysForFieldType($type, $meta);
+        if ([] !== $unsupportedKeys) {
+            throw new ServiceException(__('ptadmin::background.config_field_meta_unsupported', [
+                'type' => $type,
+                'key' => $unsupportedKeys[0],
+            ]));
+        }
+
+        $expose = strtolower(trim((string) ($meta['expose'] ?? 'private')));
+        if (!ConfigRuleValidator::isValidExposeMode($expose)) {
+            throw new ServiceException(__('ptadmin::background.config_field_expose_invalid'));
+        }
+
+        $invalidMeta = ConfigRuleValidator::invalidMetaValueTypes($meta);
+        if ([] !== $invalidMeta) {
+            throw new ServiceException(__('ptadmin::background.config_field_meta_value_invalid', ['key' => reset($invalidMeta)]));
+        }
+    }
+
+    private static function assertFieldTypeAllowed(string $type): void
+    {
+        if (ConfigRuleValidator::isValidFieldType($type)) {
+            return;
+        }
+
+        throw new ServiceException(__('ptadmin::background.config_field_type_invalid'));
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $fields
+     */
+    private static function assertUniqueFieldNames(array $fields): void
+    {
+        $names = [];
+        foreach ($fields as $field) {
+            if (!\is_array($field)) {
+                continue;
+            }
+
+            $name = trim((string) ($field['name'] ?? ''));
+            if ('' === $name) {
+                continue;
+            }
+
+            if (isset($names[$name])) {
+                throw new ServiceException(__('ptadmin::background.config_field_name_duplicate', ['name' => $name]));
+            }
+
+            $names[$name] = true;
         }
     }
 }

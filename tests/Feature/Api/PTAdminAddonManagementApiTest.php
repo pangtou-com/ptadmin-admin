@@ -72,7 +72,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $listResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/addons/local');
+            ->getJson('/system/cloud/local/apps');
 
         $listResponse->assertOk()->assertJson([
             'code' => 0,
@@ -165,6 +165,104 @@ class PTAdminAddonManagementApiTest extends TestCase
         ]);
     }
 
+    public function test_local_addon_list_marks_settings_registration_addon_as_configurable(): void
+    {
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount([
+            'username' => 'addon-settings-admin',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $this->writeAddon('Shop', [
+            'id' => 'shop',
+            'code' => 'shop',
+            'name' => '商城插件',
+            'title' => '商城插件',
+            'version' => '1.1.0',
+            'providers' => [],
+        ]);
+        $this->writeAddonSettingsRegistration('Shop', [
+            'enabled' => true,
+            'mode' => 'hosted',
+            'sections' => [
+                [
+                    'key' => 'basic',
+                    'title' => '基础配置',
+                    'schema' => [
+                        'layout' => [
+                            'mode' => 'block',
+                        ],
+                        'fields' => [
+                            [
+                                'name' => 'app_name',
+                                'type' => 'text',
+                                'label' => '应用名称',
+                            ],
+                        ],
+                    ],
+                    'defaults' => [
+                        'app_name' => '商城插件',
+                    ],
+                ],
+            ],
+        ]);
+
+        Addon::swap(new AddonManager());
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/cloud/local/apps')
+            ->assertOk()
+            ->assertJsonPath('data.results.0.code', 'shop')
+            ->assertJsonPath('data.results.0.configurable', 1);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/addons/shop/status')
+            ->assertOk()
+            ->assertJsonPath('data.code', 'shop')
+            ->assertJsonPath('data.configurable', 1);
+    }
+
+    public function test_local_addon_list_excludes_none_mode_settings_registration_from_configurable(): void
+    {
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount([
+            'username' => 'addon-settings-none-admin',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $this->writeAddon('Toolbox', [
+            'id' => 'toolbox',
+            'code' => 'toolbox',
+            'name' => '工具插件',
+            'title' => '工具插件',
+            'version' => '0.9.0',
+            'providers' => [],
+        ]);
+        $this->writeAddonSettingsRegistration('Toolbox', [
+            'enabled' => true,
+            'mode' => 'none',
+            'sections' => [],
+        ]);
+
+        Addon::swap(new AddonManager());
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/cloud/local/apps')
+            ->assertOk()
+            ->assertJsonPath('data.results.0.code', 'toolbox')
+            ->assertJsonPath('data.results.0.configurable', 0);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/addons/toolbox/status')
+            ->assertOk()
+            ->assertJsonPath('data.code', 'toolbox')
+            ->assertJsonPath('data.configurable', 0);
+    }
+
     public function test_cloud_install_endpoint_streams_progress_messages(): void
     {
         $this->migratePackageTables();
@@ -236,8 +334,11 @@ class PTAdminAddonManagementApiTest extends TestCase
             {
             }
 
-            public function initAddon(string $code, string $title = '', bool $force = false): array
+            protected function performAddonInitialization(string $code, string $title = '', bool $force = false): array
             {
+                $directory = base_path('addons/'.ucfirst($code));
+                File::ensureDirectoryExists($directory.'/Config');
+
                 echo json_encode([
                     'type' => 'info',
                     'message' => '开始初始化插件',
@@ -251,7 +352,7 @@ class PTAdminAddonManagementApiTest extends TestCase
                 return [
                     'code' => $code,
                     'title' => $title,
-                    'path' => '/tmp/'.$code,
+                    'path' => $directory,
                 ];
             }
         };
@@ -273,6 +374,9 @@ class PTAdminAddonManagementApiTest extends TestCase
         self::assertStringContainsString('"message":"开始初始化插件"', $content);
         self::assertStringContainsString('"type":"success"', $content);
         self::assertStringContainsString('"title":"CMS Demo"', $content);
+        self::assertTrue(File::exists(base_path('addons/Cms/Config/settings.php')));
+        self::assertStringContainsString("'mode' => 'hosted'", (string) File::get(base_path('addons/Cms/Config/settings.php')));
+        self::assertStringContainsString("'app_name' => 'CMS Demo'", (string) File::get(base_path('addons/Cms/Config/settings.php')));
     }
 
     public function test_frontend_pull_endpoint_streams_progress_messages(): void
@@ -336,6 +440,119 @@ class PTAdminAddonManagementApiTest extends TestCase
         self::assertStringContainsString('"path":"/tmp/cms/Frontend"', $content);
     }
 
+    public function test_sync_resources_endpoint_delegates_to_platform_service(): void
+    {
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount([
+            'username' => 'addon-sync-admin',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $service = new class() extends AddonPlatformService
+        {
+            public function __construct()
+            {
+            }
+
+            public function syncResources(string $code): array
+            {
+                return [
+                    'code' => $code,
+                    'synced' => true,
+                    'enabled' => 1,
+                ];
+            }
+        };
+        $this->app->instance(AddonPlatformService::class, $service);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/system/addons/cms/resources/sync')
+            ->assertOk()
+            ->assertJson([
+                'code' => 0,
+                'data' => [
+                    'code' => 'cms',
+                    'synced' => true,
+                    'enabled' => 1,
+                ],
+            ]);
+    }
+
+    public function test_uninstall_purges_hosted_settings_when_cleanup_strategy_is_purge(): void
+    {
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount([
+            'username' => 'addon-uninstall-admin',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $this->writeAddon('Cms', [
+            'id' => 'cms',
+            'code' => 'cms',
+            'name' => '内容管理系统',
+            'title' => '内容管理系统',
+            'version' => '1.0.0',
+            'providers' => [],
+        ]);
+        $this->writeAddonSettingsRegistration('Cms', [
+            'enabled' => true,
+            'mode' => 'hosted',
+            'managed_by' => 'system',
+            'cleanup' => [
+                'on_uninstall' => 'purge',
+            ],
+            'sections' => [
+                [
+                    'key' => 'basic',
+                    'title' => '基础配置',
+                    'schema' => [
+                        'fields' => [
+                            [
+                                'name' => 'app_name',
+                                'type' => 'text',
+                                'label' => '应用名称',
+                            ],
+                        ],
+                    ],
+                    'defaults' => [
+                        'app_name' => '内容管理系统',
+                    ],
+                ],
+            ],
+        ]);
+
+        Addon::swap(new AddonManager());
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/settings/plugins/cms/sections/basic')
+            ->assertOk();
+
+        $this->assertDatabaseHas('system_config_groups', [
+            'addon_code' => 'cms',
+            'name' => 'addon_cms_basic',
+        ]);
+        $this->assertDatabaseHas('system_configs', [
+            'name' => 'app_name',
+        ]);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->deleteJson('/system/addon-uninstall/cms')
+            ->assertOk()
+            ->assertJsonPath('data.code', 'cms')
+            ->assertJsonPath('data.uninstalled', true);
+
+        $this->assertDatabaseMissing('system_config_groups', [
+            'addon_code' => 'cms',
+        ]);
+        $this->assertDatabaseMissing('system_configs', [
+            'name' => 'app_name',
+        ]);
+    }
+
     /**
      * @param array<string, mixed> $manifest
      * @param array<string, mixed> $config
@@ -378,5 +595,18 @@ class PTAdminAddonManagementApiTest extends TestCase
         if ($disabled) {
             File::put($directory.'/disable', '');
         }
+    }
+
+    /**
+     * @param array<string, mixed> $settings
+     */
+    private function writeAddonSettingsRegistration(string $basePath, array $settings): void
+    {
+        $directory = base_path('addons/'.$basePath.'/Config');
+        File::ensureDirectoryExists($directory);
+        File::put(
+            $directory.'/settings.php',
+            "<?php\n\ndeclare(strict_types=1);\n\nreturn ".var_export($settings, true).";\n"
+        );
     }
 }

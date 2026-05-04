@@ -86,6 +86,20 @@ if (!function_exists('admin_api_url')) {
     }
 }
 
+if (!function_exists('admin_audit_route')) {
+    /**
+     * 为后台路由声明审计资源归属。
+     *
+     * @param mixed $route
+     *
+     * @return mixed
+     */
+    function admin_audit_route($route, string $resource)
+    {
+        return $route->defaults('__audit_resource__', $resource);
+    }
+}
+
 if (!function_exists('get_table_name')) {
     /**
      * 返回数据表名称.
@@ -317,37 +331,6 @@ if (!function_exists('array_deny_field')) {
     function array_deny_field($data, array $deny, int $level = 1)
     {
         return array_filter_field($data, [], $deny, $level);
-    }
-}
-
-if (!function_exists('model_build')) {
-    /**
-     * 模型构建. 支持指定数据库链接.
-     * 有的时候特别懒 并不想为每个表建立模型文件，但是又希望使用模型相关的一些操作，则可以通过这个方法来操作.
-     *
-     * @param $model
-     * @param string $connection
-     *
-     * @return \Illuminate\Database\Eloquent\Model|mixed|object
-     */
-    function model_build($model, string $connection = '')
-    {
-        if ($model instanceof \Illuminate\Database\Eloquent\Model) {
-            return $model;
-        }
-        if (is_string($model)) {
-            // 如果带有命名空间则认为是一个 Model
-            if (\Illuminate\Support\Str::startsWith($model, ['App', '\App', 'Addon', '\Addon', 'PTAdmin', '\PTAdmin'])) {
-                try {
-                    return app($model);
-                } catch (\ReflectionException $e) {
-                }
-            }
-            // 最后尝试使用model生成
-            return \PTAdmin\Admin\Models\BuildModel::build($model, $connection);
-        }
-
-        throw new \PTAdmin\Foundation\Exceptions\BackgroundException(__('ptadmin::background.model_not_exists'));
     }
 }
 
@@ -636,7 +619,19 @@ if (!function_exists('system_config')) {
      */
     function system_config($key, $default = null)
     {
-        return \PTAdmin\Admin\Services\SystemConfigService::getSystemConfig($key, $default);
+        return \PTAdmin\Admin\Services\SystemConfigService::value($key, $default);
+    }
+}
+
+if (!function_exists('public_system_config')) {
+    /**
+     * 读取允许公开输出的系统配置集合。
+     *
+     * @return array<string, mixed>
+     */
+    function public_system_config(): array
+    {
+        return \PTAdmin\Admin\Services\SystemConfigService::public();
     }
 }
 
@@ -882,24 +877,124 @@ if (!function_exists('whenNotBlank')) {
 }
 
 /**
+ * 返回当前页面 SEO 上下文。
+ *
+ * @return array<string, mixed>
+ */
+function seo_context(): array
+{
+    if (!app()->bound('view')) {
+        return [];
+    }
+
+    $view = app('view');
+    $context = [];
+
+    $sharedSeo = $view->shared('seo');
+    if (\is_array($sharedSeo)) {
+        $context = array_replace_recursive($context, $sharedSeo);
+    }
+
+    $sharedContext = $view->shared('seo_context');
+    if (\is_array($sharedContext)) {
+        $context = array_replace_recursive($context, $sharedContext);
+    }
+
+    foreach ([
+        'title' => 'seo_title',
+        'keywords' => 'seo_keywords',
+        'description' => 'seo_description',
+        'canonical' => 'seo_canonical',
+        'robots' => 'seo_robots',
+    ] as $field => $key) {
+        $value = $view->shared($key);
+        if (null === $value) {
+            continue;
+        }
+
+        $context[$field] = (string) $value;
+    }
+
+    foreach ([
+        'open_graph' => 'seo_open_graph',
+        'twitter' => 'seo_twitter',
+    ] as $field => $key) {
+        $value = $view->shared($key);
+        if (\is_array($value)) {
+            $context[$field] = $value;
+        }
+    }
+
+    $structuredData = $view->shared('seo_structured_data');
+    if (\is_array($structuredData)) {
+        $context['structured_data'] = $structuredData;
+    }
+
+    return $context;
+}
+
+/**
+ * 共享当前页面 SEO 上下文。
+ *
+ * @param array<string, mixed> $context
+ *
+ * @return array<string, mixed>
+ */
+function share_seo_context(array $context, bool $merge = true): array
+{
+    if (!app()->bound('view')) {
+        return $context;
+    }
+
+    $normalized = $merge
+        ? array_replace_recursive(seo_context(), $context)
+        : $context;
+
+    app('view')->share('seo_context', $normalized);
+    app('view')->share('seo', $normalized);
+
+    foreach ([
+        'title' => 'seo_title',
+        'keywords' => 'seo_keywords',
+        'description' => 'seo_description',
+        'canonical' => 'seo_canonical',
+        'robots' => 'seo_robots',
+    ] as $field => $key) {
+        if (array_key_exists($field, $normalized)) {
+            app('view')->share($key, (string) $normalized[$field]);
+        }
+    }
+
+    if (\is_array($normalized['open_graph'] ?? null)) {
+        app('view')->share('seo_open_graph', $normalized['open_graph']);
+    }
+
+    if (\is_array($normalized['twitter'] ?? null)) {
+        app('view')->share('seo_twitter', $normalized['twitter']);
+    }
+
+    if (\is_array($normalized['structured_data'] ?? null)) {
+        app('view')->share('seo_structured_data', $normalized['structured_data']);
+    }
+
+    return $normalized;
+}
+
+/**
  * seo标题信息.
- * 自动基于模版提取站点标题 - 分类标题 - 文章标题.
  *
  * @return string
  */
-function seo_title(): string
+function seo_title(?string $value = null, array $options = []): string
 {
-    $str = app('view')->getSection('title');
-    if (null !== $str) {
-        return (string) $str;
+    if (app()->bound('view')) {
+        $str = app('view')->getSection('title');
+        if (null !== $str && null === $value && [] === $options) {
+            return trim((string) $str);
+        }
     }
 
-    $str = app('view')->shared('seo_title');
-    if (null !== $str) {
-        return (string) $str;
-    }
-    // 需要通过站点信息获取内容
-    return '';
+    return seo_resolve_scalar_value('title', $value, $options);
 }
 
 /**
@@ -907,19 +1002,16 @@ function seo_title(): string
  *
  * @return string
  */
-function seo_keywords(): string
+function seo_keywords(?string $value = null, array $options = []): string
 {
-    $str = app('view')->getSection('keywords');
-    if (null !== $str) {
-        return (string) $str;
+    if (app()->bound('view')) {
+        $str = app('view')->getSection('keywords');
+        if (null !== $str && null === $value && [] === $options) {
+            return trim((string) $str);
+        }
     }
 
-    $str = app('view')->shared('seo_keywords');
-    if (null !== $str) {
-        return (string) $str;
-    }
-    // 需要通过站点信息获取内容
-    return '';
+    return seo_resolve_scalar_value('keywords', $value, $options);
 }
 
 /**
@@ -927,17 +1019,290 @@ function seo_keywords(): string
  *
  * @return string
  */
-function seo_description(): string
+function seo_description(?string $value = null, array $options = []): string
 {
-    $str = app('view')->getSection('description');
-    if (null !== $str) {
-        return (string) $str;
+    if (app()->bound('view')) {
+        $str = app('view')->getSection('description');
+        if (null !== $str && null === $value && [] === $options) {
+            return trim((string) $str);
+        }
     }
 
-    $str = app('view')->shared('seo_description');
-    if (null !== $str) {
-        return (string) $str;
+    return seo_resolve_scalar_value('description', $value, $options);
+}
+
+/**
+ * seo canonical 地址.
+ */
+function seo_canonical(?string $value = null, array $options = []): string
+{
+    if (app()->bound('view')) {
+        $str = app('view')->getSection('canonical');
+        if (null !== $str && null === $value && [] === $options) {
+            return trim((string) $str);
+        }
     }
-    // 需要通过站点信息获取内容
-    return '';
+
+    return seo_resolve_scalar_value('canonical', $value, $options);
+}
+
+/**
+ * seo robots 指令.
+ */
+function seo_robots(?string $value = null, array $options = []): string
+{
+    if (app()->bound('view')) {
+        $str = app('view')->getSection('robots');
+        if (null !== $str && null === $value && [] === $options) {
+            return trim((string) $str);
+        }
+    }
+
+    return seo_resolve_scalar_value('robots', $value, $options);
+}
+
+/**
+ * 输出 keywords meta 标签。
+ */
+function seo_meta_keywords(?string $value = null, array $options = []): string
+{
+    $content = seo_keywords($value, $options);
+
+    return '' === $content ? '' : '<meta name="keywords" content="'.e($content).'">';
+}
+
+/**
+ * 输出 description meta 标签。
+ */
+function seo_meta_description(?string $value = null, array $options = []): string
+{
+    $content = seo_description($value, $options);
+
+    return '' === $content ? '' : '<meta name="description" content="'.e($content).'">';
+}
+
+/**
+ * 输出 canonical link 标签。
+ */
+function seo_link_canonical(?string $value = null, array $options = []): string
+{
+    $content = seo_canonical($value, $options);
+
+    return '' === $content ? '' : '<link rel="canonical" href="'.e($content).'">';
+}
+
+/**
+ * 输出 robots meta 标签。
+ */
+function seo_meta_robots(?string $value = null, array $options = []): string
+{
+    $content = seo_robots($value, $options);
+
+    return '' === $content ? '' : '<meta name="robots" content="'.e($content).'">';
+}
+
+/**
+ * 应用 SEO 覆盖并共享回视图上下文。
+ *
+ * @param array<string, mixed> $overrides
+ *
+ * @return array<string, mixed>
+ */
+function apply_seo_overrides(array $overrides, bool $share = true): array
+{
+    $context = seo_context_with_overrides($overrides);
+
+    if ($share) {
+        share_seo_context($context, false);
+    }
+
+    return $context;
+}
+
+/**
+ * 输出 Open Graph 与 Twitter 卡片标签。
+ */
+function seo_social(array $overrides = []): string
+{
+    $context = [] === $overrides ? seo_context() : seo_context_with_overrides($overrides);
+    $tags = [];
+
+    foreach ((array) ($context['open_graph'] ?? []) as $key => $value) {
+        $content = trim((string) $value);
+        if ('' === $content) {
+            continue;
+        }
+
+        $tags[] = '<meta property="og:'.e((string) $key).'" content="'.e($content).'">';
+    }
+
+    foreach ((array) ($context['twitter'] ?? []) as $key => $value) {
+        $content = trim((string) $value);
+        if ('' === $content) {
+            continue;
+        }
+
+        $tags[] = '<meta name="twitter:'.e((string) $key).'" content="'.e($content).'">';
+    }
+
+    return implode(PHP_EOL, $tags);
+}
+
+/**
+ * 输出 JSON-LD 结构化数据。
+ */
+function seo_jsonld(): string
+{
+    return seo_jsonld_render([]);
+}
+
+/**
+ * 输出 JSON-LD 结构化数据。
+ *
+ * @param array<string, mixed> $overrides
+ */
+function seo_jsonld_render(array $overrides = []): string
+{
+    $scripts = [];
+    $context = [] === $overrides ? seo_context() : seo_context_with_overrides($overrides);
+
+    foreach ((array) ($context['structured_data'] ?? []) as $schema) {
+        if (!\is_array($schema) || [] === $schema) {
+            continue;
+        }
+
+        $json = json_encode(
+            $schema,
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+
+        if (false === $json) {
+            continue;
+        }
+
+        $scripts[] = '<script type="application/ld+json">'.$json.'</script>';
+    }
+
+    return implode(PHP_EOL, $scripts);
+}
+
+/**
+ * @param array<string, mixed> $overrides
+ *
+ * @return array<string, mixed>
+ */
+function seo_context_with_overrides(array $overrides = []): array
+{
+    $context = seo_context();
+
+    foreach (['title', 'keywords', 'description', 'canonical', 'robots'] as $field) {
+        if (!array_key_exists($field, $overrides)) {
+            continue;
+        }
+
+        $context[$field] = seo_apply_scalar_mode(
+            $field,
+            trim((string) ($context[$field] ?? '')),
+            trim((string) $overrides[$field]),
+            (string) ($overrides[$field.'_mode'] ?? seo_default_mode($field))
+        );
+    }
+
+    foreach (['open_graph', 'twitter'] as $field) {
+        if (!\is_array($overrides[$field] ?? null)) {
+            continue;
+        }
+
+        $mode = (string) ($overrides[$field.'_mode'] ?? 'merge');
+        $current = \is_array($context[$field] ?? null) ? $context[$field] : [];
+        $incoming = (array) $overrides[$field];
+
+        $context[$field] = 'replace' === strtolower($mode)
+            ? $incoming
+            : array_replace_recursive($current, $incoming);
+    }
+
+    if (\is_array($overrides['structured_data'] ?? null)) {
+        $mode = (string) ($overrides['structured_data_mode'] ?? seo_default_mode('structured_data'));
+        $current = \is_array($context['structured_data'] ?? null) ? array_values($context['structured_data']) : [];
+        $incoming = array_values((array) $overrides['structured_data']);
+
+        $context['structured_data'] = 'replace' === strtolower($mode)
+            ? $incoming
+            : array_merge($current, $incoming);
+    }
+
+    return $context;
+}
+
+function seo_default_mode(string $field): string
+{
+    if (\in_array($field, ['keywords', 'structured_data'], true)) {
+        return 'append';
+    }
+
+    return 'replace';
+}
+
+/**
+ * @param array<string, mixed> $options
+ */
+function seo_resolve_scalar_value(string $field, ?string $value = null, array $options = []): string
+{
+    $context = seo_context();
+    $current = trim((string) ($context[$field] ?? ''));
+
+    if (null === $value) {
+        return $current;
+    }
+
+    return seo_apply_scalar_mode(
+        $field,
+        $current,
+        trim((string) $value),
+        (string) ($options['mode'] ?? seo_default_mode($field))
+    );
+}
+
+function seo_apply_scalar_mode(string $field, string $current, string $incoming, string $mode): string
+{
+    if ('' === $incoming) {
+        return $current;
+    }
+
+    $mode = strtolower(trim($mode));
+    if ('prepend' === $mode) {
+        return seo_join_scalar_values($field, $incoming, $current);
+    }
+
+    if ('append' === $mode) {
+        return seo_join_scalar_values($field, $current, $incoming);
+    }
+
+    return $incoming;
+}
+
+function seo_join_scalar_values(string $field, string $first, string $second): string
+{
+    if ('' === $first) {
+        return $second;
+    }
+
+    if ('' === $second) {
+        return $first;
+    }
+
+    if ('keywords' === $field) {
+        return trim($first, ', ').', '.trim($second, ', ');
+    }
+
+    return trim($first.' '.$second);
+}
+
+
+function setCommentTable(string $table, string $comment): void{
+    if ('mysql' !== \Illuminate\Support\Facades\DB::getDriverName()) {
+        return;
+    }
+    \Illuminate\Support\Facades\DB::statement('ALTER TABLE `'.get_table_name($table).'` COMMENT = "'.$comment.'"');
 }

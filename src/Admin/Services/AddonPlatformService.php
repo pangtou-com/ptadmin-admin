@@ -8,10 +8,12 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\AddonApi;
+use PTAdmin\Addon\Exception\AddonException;
 use PTAdmin\Addon\Service\Action\AddonAction;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
+use Throwable;
 
 class AddonPlatformService
 {
@@ -67,7 +69,7 @@ class AddonPlatformService
             $results[] = $this->normalizeLocalAddon((string) $code, $addonInfo);
         }
 
-        usort($results, static function (array $left, array $right): int {
+        usort($results, static function (array $left, array $right) {
             return strcmp((string) ($left['code'] ?? ''), (string) ($right['code'] ?? ''));
         });
 
@@ -116,7 +118,10 @@ class AddonPlatformService
      */
     public function initAddon(string $code, string $title = '', bool $force = false): array
     {
-        return (array) AddonAction::init($code, $title, $force);
+        $result = $this->performAddonInitialization($code, $title, $force);
+        $this->ensureAddonSettingsRegistrationScaffold($code, $title, $result);
+
+        return $result;
     }
 
     /**
@@ -127,6 +132,26 @@ class AddonPlatformService
     public function pullFrontend(string $code, string $template = 'vue3-admin', string $ref = 'main', string $source = '', bool $force = false): array
     {
         return (array) AddonAction::pullFrontend($code, $template, $ref, $source, $force);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function performAddonInitialization(string $code, string $title = '', bool $force = false): array
+    {
+        return (array) AddonAction::init($code, $title, $force);
+    }
+
+    /**
+     * 同步插件后台资源定义。
+     *
+     * @return array<string, mixed>
+     */
+    public function syncResources(string $code): array
+    {
+        AddonAction::syncResources($code);
+
+        return $this->status($code);
     }
 
     /**
@@ -152,7 +177,18 @@ class AddonPlatformService
     public function uninstall(string $code, bool $force = false): array
     {
         $addon = $this->status($code);
-        AddonAction::uninstall($code, $force);
+        $settingsRegistry = app(\PTAdmin\Admin\Services\Settings\SettingsRegistryService::class);
+        $settings = [];
+        if (Addon::hasInstalledAddon($code)) {
+            try {
+                $settings = $settingsRegistry->pluginSettingsRegistration($code);
+            } catch (Throwable $exception) {
+                $settings = [];
+            }
+        }
+        $this->assertAddonCanUninstall($code, $force);
+        AddonAction::uninstall($code, true);
+        $settingsRegistry->uninstallPluginSettings($code, $settings);
 
         return [
             'code' => $code,
@@ -300,7 +336,9 @@ class AddonPlatformService
     private function normalizeLocalAddon(string $code, array $addonInfo): array
     {
         $enabled = Addon::hasAddon($code);
-        $configurable = $this->hasAddonConfigSection($code) || [] !== $this->getAddonConfigDefaults($code);
+        $configurable = $this->hasAddonConfigSection($code)
+            || [] !== $this->getAddonConfigDefaults($code)
+            || $this->hasAddonSettingsRegistration($code);
 
         return [
             'code' => $code,
@@ -380,9 +418,44 @@ class AddonPlatformService
         return base_path('addons/'.$basePath.'/'.ltrim($relative, '/'));
     }
 
+    private function assertAddonCanUninstall(string $code, bool $force): void
+    {
+        if ($force) {
+            return;
+        }
+
+        foreach (Addon::getInstalledAddons() as $addonCode => $addonInfo) {
+            if ($addonCode === $code || !\is_array($addonInfo)) {
+                continue;
+            }
+
+            $required = (array) data_get($addonInfo, 'dependencies.plugins', $addonInfo['require'] ?? []);
+            foreach ($required as $dependencyCode => $version) {
+                if (\is_int($dependencyCode) && (string) $version === $code) {
+                    throw new AddonException(__('ptadmin-addon::messages.addon.dependency_uninstall_first', ['code' => $code]));
+                }
+
+                if (!$this->isMatchingAddonDependencyCode($dependencyCode, $code)) {
+                    continue;
+                }
+
+                throw new AddonException(__('ptadmin-addon::messages.addon.dependency_uninstall_first', ['code' => $code]));
+            }
+        }
+    }
+
+    /**
+     * @param int|string $dependencyCode
+     */
+    private function isMatchingAddonDependencyCode($dependencyCode, string $code): bool
+    {
+        return !\is_int($dependencyCode) && trim((string) $dependencyCode) === $code;
+    }
+
     private function ensureAddonConfigSection(string $code): ?SystemConfigGroup
     {
-        if (!Addon::hasInstalledAddon($code)) {
+        $installed = Addon::getInstalledAddons();
+        if (!isset($installed[$code]) || !\is_array($installed[$code])) {
             throw new BackgroundException(sprintf('插件[%s]不存在', $code));
         }
 
@@ -396,7 +469,7 @@ class AddonPlatformService
             return null;
         }
 
-        $addon = Addon::getInstalledAddons()[$code] ?? [];
+        $addon = $installed[$code];
         $root = SystemConfigGroup::query()->firstOrCreate(
             [
                 'addon_code' => $code,
@@ -437,7 +510,7 @@ class AddonPlatformService
         return $section->refresh();
     }
 
-    private function findAddonConfigSection(string $code): ?SystemConfigGroup
+    private function findAddonConfigSection(string $code)
     {
         if (!Schema::hasTable('system_config_groups')) {
             return null;
@@ -445,13 +518,42 @@ class AddonPlatformService
 
         return SystemConfigGroup::query()
             ->where('addon_code', $code)
-            ->where('name', 'basic')
-            ->first();
+            ->where('name', 'basic')->first();
     }
 
     private function hasAddonConfigSection(string $code): bool
     {
         return null !== $this->findAddonConfigSection($code);
+    }
+
+    private function hasAddonSettingsRegistration(string $code): bool
+    {
+        $path = addon_path($code, 'Config/settings.php');
+        if (!is_file($path)) {
+            return false;
+        }
+
+        $payload = require $path;
+        if (!\is_array($payload)) {
+            return false;
+        }
+
+        if (!(bool) ($payload['enabled'] ?? true)) {
+            return false;
+        }
+
+        $mode = (string) ($payload['mode'] ?? 'hosted');
+        if ('none' === $mode) {
+            return false;
+        }
+
+        if ('external_route' === $mode) {
+            return '' !== trim((string) ($payload['path'] ?? ''));
+        }
+
+        return [] !== array_values(array_filter((array) ($payload['sections'] ?? []), static function ($item): bool {
+            return \is_array($item);
+        }));
     }
 
     /**
@@ -489,7 +591,7 @@ class AddonPlatformService
         $serialized = $this->serializeConfigValue($value, $type);
         /** @var SystemConfig $config */
         $config = SystemConfig::query()->firstOrNew([
-            'system_config_group_id' => (int) $section->id,
+            'system_config_group_id' => $section->id,
             'name' => $name,
         ]);
 
@@ -546,6 +648,82 @@ class AddonPlatformService
     private function humanizeConfigName(string $name): string
     {
         return ucfirst(str_replace(['_', '-'], ' ', $name));
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function ensureAddonSettingsRegistrationScaffold(string $code, string $title, array $result): void
+    {
+        $basePath = trim((string) ($result['path'] ?? ''));
+        if ('' === $basePath) {
+            $basePath = addon_path($code);
+        }
+
+        if ('' === $basePath || !is_dir($basePath)) {
+            return;
+        }
+
+        $configDirectory = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'Config';
+        if (!is_dir($configDirectory)) {
+            mkdir($configDirectory, 0755, true);
+        }
+
+        $settingsPath = $configDirectory.DIRECTORY_SEPARATOR.'settings.php';
+        if (is_file($settingsPath)) {
+            return;
+        }
+
+        $resolvedTitle = '' !== trim($title) ? trim($title) : ucfirst($code);
+        $payload = [
+            'enabled' => true,
+            'mode' => 'hosted',
+            'managed_by' => 'system',
+            'injection' => [
+                'strategy' => 'merge',
+            ],
+            'cleanup' => [
+                'on_uninstall' => 'retain',
+            ],
+            'icon' => 'Setting',
+            'sections' => [
+                [
+                    'key' => 'basic',
+                    'title' => '基础配置',
+                    'description' => $resolvedTitle.'基础运行参数',
+                    'icon' => 'Setting',
+                    'order' => 10,
+                    'schema' => [
+                        'name' => strtolower($code).'_basic_settings',
+                        'title' => '基础配置',
+                        'layout' => [
+                            'mode' => 'block',
+                        ],
+                        'fields' => [
+                            [
+                                'name' => 'enabled',
+                                'type' => 'switch',
+                                'label' => '启用状态',
+                            ],
+                            [
+                                'name' => 'app_name',
+                                'type' => 'text',
+                                'label' => '应用名称',
+                            ],
+                        ],
+                    ],
+                    'defaults' => [
+                        'enabled' => true,
+                        'app_name' => $resolvedTitle,
+                    ],
+                ],
+            ],
+        ];
+
+        file_put_contents(
+            $settingsPath,
+            "<?php\n\ndeclare(strict_types=1);\n\nreturn ".var_export($payload, true).";\n"
+        );
     }
 
     private function rootGroupName(string $code): string

@@ -38,7 +38,6 @@ class AssetController extends AbstractBackgroundController
     public function __construct(AssetService $assetService)
     {
         $this->assetService = $assetService;
-        parent::__construct();
     }
 
     /**

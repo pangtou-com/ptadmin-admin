@@ -14,7 +14,6 @@ class AuthorizationController extends AbstractBackgroundController
 
     public function __construct(AuthorizationBootstrapService $bootstrapService)
     {
-        parent::__construct();
         $this->bootstrapService = $bootstrapService;
     }
 

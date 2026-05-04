@@ -65,7 +65,6 @@ return new class extends Migration
             $table->string('path', 255)->nullable()->comment('资源路径');
             $table->string('route', 150)->nullable()->comment('路由标识');
             $table->string('icon', 100)->nullable()->comment('图标');
-            $table->json('ability_hint_json')->nullable()->comment('推荐能力');
             $table->json('meta_json')->nullable()->comment('扩展信息');
             $table->unsignedTinyInteger('is_nav')->default(0)->comment('是否导航节点');
             $table->unsignedTinyInteger('status')->default(1)->comment('状态');

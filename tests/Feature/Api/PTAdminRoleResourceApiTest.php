@@ -86,12 +86,12 @@ class PTAdminRoleResourceApiTest extends TestCase
         self::assertSame(0, (int) $role->fresh()->status);
 
         $treeResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/resources');
+            ->getJson('/system/admin-resources');
         $treeResponse->assertOk()->assertJson([
             'code' => 0,
         ]);
 
-        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/resources', [
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/admin-resources', [
             'name' => 'custom.dashboard',
             'title' => '自定义看板',
             'module' => 'dashboard',
@@ -110,9 +110,10 @@ class PTAdminRoleResourceApiTest extends TestCase
         ]);
 
         $resource = AdminResource::query()->where('name', 'custom.dashboard')->firstOrFail();
+        self::assertNull($resource->meta_json);
 
         $detailResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/resources/'.$resource->id);
+            ->getJson('/system/admin-resources/'.$resource->id);
         $detailResponse->assertOk()->assertJson([
             'code' => 0,
             'data' => [
@@ -126,11 +127,11 @@ class PTAdminRoleResourceApiTest extends TestCase
                 'status' => 1,
                 'is_nav' => 1,
                 'icon' => 'HomeFilled',
-                'keep_alive' => 1,
+                'meta_json' => null,
             ],
         ]);
 
-        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/resources/'.$resource->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/admin-resources/'.$resource->id, [
             'name' => 'custom.dashboard',
             'title' => '自定义看板-已更新',
             'module' => 'dashboard',
@@ -142,8 +143,13 @@ class PTAdminRoleResourceApiTest extends TestCase
             'type' => 'nav',
             'status' => 1,
             'is_nav' => 1,
-            'controller' => 'UpdatedDashboardController',
             'parent_id' => 0,
+            'meta_json' => [
+                'note' => '测试资源已更新',
+                'controller' => 'UpdatedDashboardController',
+                'hidden' => 0,
+                'keep_alive' => 1,
+            ],
         ])->assertOk()->assertJson([
             'code' => 0,
         ]);
@@ -152,9 +158,15 @@ class PTAdminRoleResourceApiTest extends TestCase
         self::assertSame('custom.dashboard', $resource->name);
         self::assertSame('自定义看板-已更新', $resource->title);
         self::assertSame('/custom-dashboard', $resource->route);
+        self::assertSame([
+            'note' => '测试资源已更新',
+            'controller' => 'UpdatedDashboardController',
+            'hidden' => 0,
+            'keep_alive' => 1,
+        ], $resource->meta_json);
 
         $filteredTree = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/resources?'.http_build_query([
+            ->getJson('/system/admin-resources?'.http_build_query([
                 'filters' => [
                     ['field' => 'status', 'operator' => '=', 'value' => 1],
                     ['field' => 'title', 'operator' => 'like', 'value' => '%自定义看板%'],
@@ -167,6 +179,44 @@ class PTAdminRoleResourceApiTest extends TestCase
             'code' => 0,
         ]);
         self::assertSame('custom.dashboard', data_get($filteredTree->json(), 'data.results.0.name'));
+
+        $adminResourceTree = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/admin-resources?'.http_build_query([
+                'filters' => [
+                    ['field' => 'name', 'operator' => '=', 'value' => 'custom.dashboard'],
+                ],
+            ]));
+        $adminResourceTree->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'results' => [
+                    [
+                        'id' => $resource->id,
+                        'name' => 'custom.dashboard',
+                        'title' => '自定义看板-已更新',
+                        'module' => 'dashboard',
+                        'page_key' => 'custom.dashboard',
+                        'route' => '/custom-dashboard',
+                        'type' => 'nav',
+                        'status' => '1',
+                        'is_nav' => '1',
+                        'icon' => 'TrendCharts',
+                        'meta_json' => [
+                            'note' => '测试资源已更新',
+                            'controller' => 'UpdatedDashboardController',
+                            'hidden' => 0,
+                            'keep_alive' => 1,
+                        ],
+                        'note' => '测试资源已更新',
+                        'controller' => 'UpdatedDashboardController',
+                        'hidden' => 0,
+                        'keep_alive' => 1,
+                        'paths' => [],
+                        'parent_ids' => [],
+                    ],
+                ],
+            ],
+        ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
             ->getJson('/system/roles-resource/'.$role->id)
@@ -208,7 +258,7 @@ class PTAdminRoleResourceApiTest extends TestCase
         ]);
         self::assertContains($resource->id, (array) $roleAssignment->json('data.resource_ids'));
 
-        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/resources-admins/'.$member->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/resources-admin/'.$member->id, [
             'resource_ids' => [$resource->id],
         ])->assertOk()->assertJson([
             'code' => 0,
@@ -221,7 +271,7 @@ class PTAdminRoleResourceApiTest extends TestCase
         ]);
 
         $adminAssignment = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/resources-admins/'.$member->id);
+            ->getJson('/system/resources-admin/'.$member->id);
         $adminAssignment->assertOk()->assertJson([
             'code' => 0,
             'data' => [
@@ -234,7 +284,7 @@ class PTAdminRoleResourceApiTest extends TestCase
         self::assertContains($resource->id, (array) $adminAssignment->json('data.resource_ids'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/resources/'.$resource->id)
+            ->deleteJson('/system/admin-resources/'.$resource->id)
             ->assertOk()
             ->assertJson([
                 'code' => 0,

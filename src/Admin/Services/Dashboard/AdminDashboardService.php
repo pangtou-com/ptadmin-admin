@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services\Dashboard;
 
 use Illuminate\Support\Facades\Cache;
-use PTAdmin\Addon\Addon;
 use PTAdmin\Contracts\AdminDashboardWidgetActionHandlerInterface;
 use PTAdmin\Contracts\AdminDashboardWidgetHandlerInterface;
-use PTAdmin\Contracts\Auth\AuthorizationServiceInterface;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 
 class AdminDashboardService
 {
-    private AuthorizationServiceInterface $authorizationService;
+    private DashboardWidgetRegistryService $registry;
+    private DashboardComposerService $composer;
 
-    public function __construct(AuthorizationServiceInterface $authorizationService)
+    public function __construct(DashboardWidgetRegistryService $registry, DashboardComposerService $composer)
     {
-        $this->authorizationService = $authorizationService;
+        $this->registry = $registry;
+        $this->composer = $composer;
     }
 
     /**
@@ -30,7 +30,7 @@ class AdminDashboardService
      */
     public function widgets($user, array $search = array()): array
     {
-        $definitions = $this->collectDefinitions();
+        $definitions = $this->registry->visiblePublicFor($user);
         $group = trim((string) ($search['group'] ?? ''));
 
         if ('' !== $group) {
@@ -38,10 +38,6 @@ class AdminDashboardService
                 return $group === (string) ($definition['group'] ?? '');
             }));
         }
-
-        $definitions = array_values(array_filter($definitions, function (array $definition) use ($user): bool {
-            return $this->canViewWidget($user, $definition);
-        }));
 
         usort($definitions, static function (array $left, array $right): int {
             $sort = ((int) ($right['sort'] ?? 0)) <=> ((int) ($left['sort'] ?? 0));
@@ -52,9 +48,7 @@ class AdminDashboardService
             return strcmp((string) ($left['code'] ?? ''), (string) ($right['code'] ?? ''));
         });
 
-        return array_map(function (array $definition): array {
-            return $this->toPublicDefinition($definition);
-        }, $definitions);
+        return $definitions;
     }
 
     /**
@@ -65,19 +59,16 @@ class AdminDashboardService
      *
      * @return array<string, mixed>
      */
-    public function queryWidget($user, string $code, array $query = array()): array
+    public function queryWidget($user, string $code, array $query = array(), ?int $tenantId = null): array
     {
-        $definition = $this->findDefinition($code);
+        $definition = $this->registry->find($code);
+        $widget = $this->resolveAssignedWidget($user, $code, $tenantId);
 
-        if (!$this->canViewWidget($user, $definition)) {
-            throw new BackgroundException(__('ptadmin::background.dashboard_forbidden'));
-        }
-
-        $payload = array_merge((array) ($definition['default_query'] ?? array()), $query);
-        $context = $this->buildContext($user, $definition);
+        $payload = array_merge((array) ($widget['config'] ?? array()), $query);
+        $context = $this->buildContext($user, $definition, $widget, $tenantId);
 
         return array(
-            'widget' => $this->toPublicDefinition($definition),
+            'widget' => $widget,
             'data' => $this->executeQuery($definition, $payload, $context),
             'queried_at' => time(),
         );
@@ -91,161 +82,20 @@ class AdminDashboardService
      *
      * @return array<string, mixed>
      */
-    public function executeWidgetAction($user, string $code, string $actionCode, array $payload = array()): array
+    public function executeWidgetAction($user, string $code, string $actionCode, array $payload = array(), ?int $tenantId = null): array
     {
-        $definition = $this->findDefinition($code);
-
-        if (!$this->canViewWidget($user, $definition)) {
-            throw new BackgroundException(__('ptadmin::background.dashboard_forbidden'));
-        }
+        $definition = $this->registry->find($code);
+        $widget = $this->resolveAssignedWidget($user, $code, $tenantId);
 
         $actionDefinition = $this->findActionDefinition($definition, $actionCode);
-        $context = $this->buildContext($user, $definition);
+        $context = $this->buildContext($user, $definition, $widget, $tenantId);
 
         return array(
-            'widget' => $this->toPublicDefinition($definition),
+            'widget' => $widget,
             'action' => $this->toPublicActionDefinition($actionDefinition),
             'data' => $this->invokeActionHandler($definition, $actionDefinition, $payload, $context),
             'executed_at' => time(),
         );
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function collectDefinitions(): array
-    {
-        $results = array();
-
-        foreach (array_keys(Addon::getAddons()) as $addonCode) {
-            $bootstrap = Addon::getAddonBootstrap($addonCode);
-            if (null === $bootstrap || !method_exists($bootstrap, 'getAdminDashboardWidgetDefinitions')) {
-                continue;
-            }
-
-            $addonInfo = Addon::getAddon($addonCode)->getAddons();
-            $definitions = $bootstrap->getAdminDashboardWidgetDefinitions($addonCode, $addonInfo);
-            if (!\is_array($definitions)) {
-                continue;
-            }
-
-            foreach ($definitions as $definition) {
-                if (!\is_array($definition)) {
-                    continue;
-                }
-
-                $normalized = $this->normalizeDefinition($addonCode, $definition);
-                if ([] === $normalized) {
-                    continue;
-                }
-
-                $results[] = $normalized;
-            }
-        }
-
-        return $results;
-    }
-
-    /**
-     * @param array<string, mixed> $definition
-     *
-     * @return array<string, mixed>
-     */
-    private function normalizeDefinition(string $addonCode, array $definition): array
-    {
-        $code = trim((string) ($definition['code'] ?? ''));
-        $title = trim((string) ($definition['title'] ?? ''));
-        $handler = trim((string) ($definition['query_handler'] ?? ''));
-
-        if ('' === $code || '' === $title || '' === $handler) {
-            return array();
-        }
-
-        $capabilities = (array) ($definition['capabilities'] ?? array());
-
-        return array(
-            'code' => $code,
-            'title' => $title,
-            'type' => trim((string) ($definition['type'] ?? 'stat')),
-            'group' => trim((string) ($definition['group'] ?? 'default')),
-            'addon_code' => $addonCode,
-            'icon' => trim((string) ($definition['icon'] ?? '')),
-            'sort' => (int) ($definition['sort'] ?? 0),
-            'resource_code' => trim((string) ($definition['resource_code'] ?? '')),
-            'description' => trim((string) ($definition['description'] ?? '')),
-            'default_query' => (array) ($definition['default_query'] ?? array()),
-            'actions' => $this->normalizeActionDefinitions((array) ($definition['actions'] ?? array())),
-            'capabilities' => array(
-                'refresh' => (bool) ($capabilities['refresh'] ?? true),
-                'range' => (bool) ($capabilities['range'] ?? false),
-                'filters' => (bool) ($capabilities['filters'] ?? false),
-                'drilldown' => (bool) ($capabilities['drilldown'] ?? false),
-            ),
-            'query_handler' => $handler,
-            'action_handler' => trim((string) ($definition['action_handler'] ?? '')),
-            'cache_ttl' => max(0, (int) ($definition['cache_ttl'] ?? 0)),
-        );
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $actions
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function normalizeActionDefinitions(array $actions): array
-    {
-        $results = array();
-
-        foreach ($actions as $action) {
-            if (!\is_array($action)) {
-                continue;
-            }
-
-            $code = trim((string) ($action['code'] ?? ''));
-            $label = trim((string) ($action['label'] ?? ''));
-            if ('' === $code || '' === $label) {
-                continue;
-            }
-
-            $results[] = array(
-                'code' => $code,
-                'label' => $label,
-                'type' => trim((string) ($action['type'] ?? 'request')),
-                'target' => trim((string) ($action['target'] ?? '')),
-                'confirm_text' => trim((string) ($action['confirm_text'] ?? '')),
-                'payload_schema' => (array) ($action['payload_schema'] ?? array()),
-                'meta' => (array) ($action['meta'] ?? array()),
-            );
-        }
-
-        return array_values($results);
-    }
-
-    /**
-     * @param mixed                $user
-     * @param array<string, mixed> $definition
-     */
-    private function canViewWidget($user, array $definition): bool
-    {
-        $resourceCode = trim((string) ($definition['resource_code'] ?? ''));
-        if ('' === $resourceCode) {
-            return true;
-        }
-
-        if ($this->isFounder($user)) {
-            return true;
-        }
-
-        return $this->authorizationService->allows($user, 'access', $resourceCode);
-    }
-
-    /**
-     * @param mixed                $user
-     * @param array<string, mixed> $definition
-     */
-    private function isFounder($user): bool
-    {
-        return 1 === (int) data_get($user, 'is_founder', 0);
     }
 
     /**
@@ -313,6 +163,7 @@ class AdminDashboardService
             'code' => (string) $definition['code'],
             'payload' => $payload,
             'user_id' => (int) ($context['user_id'] ?? 0),
+            'tenant_id' => (int) ($context['tenant_id'] ?? 0),
             'resource_code' => (string) ($context['resource_code'] ?? ''),
         )));
     }
@@ -336,33 +187,49 @@ class AdminDashboardService
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    private function findDefinition(string $code): array
-    {
-        foreach ($this->collectDefinitions() as $definition) {
-            if ((string) ($definition['code'] ?? '') === $code) {
-                return $definition;
-            }
-        }
-
-        throw new BackgroundException(__('ptadmin::background.dashboard_widget_not_exists'));
-    }
-
-    /**
      * @param mixed                $user
      * @param array<string, mixed> $definition
      *
      * @return array<string, mixed>
      */
-    private function buildContext($user, array $definition): array
+    private function buildContext($user, array $definition, array $widget, ?int $tenantId = null): array
     {
         return array(
             'user_id' => (int) data_get($user, 'id', 0),
+            'tenant_id' => $tenantId,
             'is_founder' => $this->isFounder($user),
             'resource_code' => (string) ($definition['resource_code'] ?? ''),
             'addon_code' => (string) ($definition['addon_code'] ?? ''),
+            'widget_code' => (string) ($definition['code'] ?? ''),
+            'widget_type' => (string) ($definition['type'] ?? ''),
+            'widget_config' => (array) ($widget['config'] ?? array()),
+            'widget_layout' => (array) ($widget['layout'] ?? array()),
+            'widget_source' => (array) ($widget['source'] ?? array()),
         );
+    }
+
+    /**
+     * @param mixed $user
+     *
+     * @return array<string, mixed>
+     */
+    private function resolveAssignedWidget($user, string $widgetCode, ?int $tenantId = null): array
+    {
+        foreach ($this->composer->widgetsForUser($user, $tenantId) as $widget) {
+            if ((string) ($widget['code'] ?? '') === $widgetCode) {
+                return $widget;
+            }
+        }
+
+        throw new BackgroundException(__('ptadmin::background.dashboard_forbidden'));
+    }
+
+    /**
+     * @param mixed $user
+     */
+    private function isFounder($user): bool
+    {
+        return 1 === (int) data_get($user, 'is_founder', 0);
     }
 
     /**
@@ -379,31 +246,6 @@ class AdminDashboardService
         }
 
         throw new BackgroundException(__('ptadmin::background.dashboard_action_not_exists'));
-    }
-
-    /**
-     * @param array<string, mixed> $definition
-     *
-     * @return array<string, mixed>
-     */
-    private function toPublicDefinition(array $definition): array
-    {
-        return array(
-            'code' => (string) $definition['code'],
-            'title' => (string) $definition['title'],
-            'type' => (string) $definition['type'],
-            'group' => (string) $definition['group'],
-            'addon_code' => (string) $definition['addon_code'],
-            'icon' => (string) $definition['icon'],
-            'sort' => (int) $definition['sort'],
-            'resource_code' => (string) $definition['resource_code'],
-            'description' => (string) $definition['description'],
-            'default_query' => (array) $definition['default_query'],
-            'actions' => array_map(function (array $actionDefinition): array {
-                return $this->toPublicActionDefinition($actionDefinition);
-            }, array_values((array) $definition['actions'])),
-            'capabilities' => (array) $definition['capabilities'],
-        );
     }
 
     /**

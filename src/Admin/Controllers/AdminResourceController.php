@@ -28,16 +28,14 @@ use PTAdmin\Admin\Requests\AdminResourceRequest;
 use PTAdmin\Admin\Services\AdminResourceService;
 use PTAdmin\Admin\Support\Query\AdminListQuery;
 use PTAdmin\Foundation\Response\AdminResponse;
-use PTAdmin\Contracts\Auth\CapabilityServiceInterface;
 
 class AdminResourceController extends AbstractBackgroundController
 {
-    protected $adminResourceService;
+    protected AdminResourceService $adminResourceService;
 
     public function __construct(AdminResourceService $adminResourceService)
     {
         $this->adminResourceService = $adminResourceService;
-        parent::__construct();
     }
 
     public function index(Request $request): \Illuminate\Http\JsonResponse
@@ -78,29 +76,6 @@ class AdminResourceController extends AbstractBackgroundController
         $data = $this->adminResourceService->getOption();
 
         return AdminResponse::success($data);
-    }
-
-    public function editField(Request $request, $id): \Illuminate\Http\JsonResponse
-    {
-        if (!app(CapabilityServiceInterface::class)->enabled('field_acl')) {
-            return AdminResponse::fail(__('ptadmin::background.field_acl_not_enabled'));
-        }
-
-        $data = $request->validate([
-            'fields' => 'sometimes|array',
-            'fields.*.name' => 'required|string|max:100',
-            'fields.*.title' => 'nullable|string|max:100',
-            'fields.*.status' => 'sometimes|integer|min:0|max:1',
-            'fields.*.sort' => 'sometimes|integer|min:0',
-            'fields.*.weight' => 'sometimes|integer|min:0',
-            'fields.*.abilities' => 'sometimes|array',
-            'fields.*.abilities.*' => 'sometimes|string|max:50',
-            'fields.*.note' => 'nullable|string|max:255',
-        ]);
-
-        return AdminResponse::success([
-            'results' => $this->adminResourceService->syncFieldResources((int) $id, (array) ($data['fields'] ?? [])),
-        ]);
     }
 
     public function delete(): \Illuminate\Http\JsonResponse

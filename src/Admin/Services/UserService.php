@@ -113,7 +113,7 @@ class UserService
      */
     public function otherOauth($tag): array
     {
-        $config = SystemConfigService::byGroupName('oauth');
+        $config = SystemConfigService::group('oauth');
         if (!isset($config[$tag])) {
             throw new BackgroundException(__('ptadmin::background.oauth_config_required'));
         }
@@ -141,7 +141,7 @@ class UserService
      */
     public function otherOauthCallback($data, $tag): array
     {
-        $config = SystemConfigService::byGroupName('oauth');
+        $config = SystemConfigService::group('oauth');
         if (!isset($config[$tag])) {
             throw new BackgroundException(__('ptadmin::background.oauth_config_required'));
         }
@@ -228,7 +228,7 @@ class UserService
      */
     public function unbindOauth($user_id, $source): void
     {
-        $config = SystemConfigService::byGroupName('oauth');
+        $config = SystemConfigService::group('oauth');
         if (!isset($config[$source])) {
             throw new BackgroundException(__('ptadmin::background.oauth_config_invalid'));
         }
@@ -412,7 +412,7 @@ class UserService
     {
         $driver = config("auth.guards.{$guard}.driver", 'session');
         if ('ptadmin' === $driver) {
-            return $user->createToken('token', [$guard])->plainTextToken;
+            return $user->createToken($guard)->plainTextToken;
         }
 
         return null;

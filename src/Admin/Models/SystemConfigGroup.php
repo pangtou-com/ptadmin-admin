@@ -30,12 +30,14 @@ namespace PTAdmin\Admin\Models;
  * @property int    $parent_id
  * @property string $addon_code
  * @property string $intro
+ * @property array  $extra
  * @property int    $status
  */
 class SystemConfigGroup extends \PTAdmin\Foundation\Database\Models\AbstractModel
 {
     protected $table = 'system_config_groups';
-    protected $fillable = ['title', 'name', 'weight', 'parent_id', 'addon_code', 'intro', 'status'];
+    protected $fillable = ['title', 'name', 'weight', 'parent_id', 'addon_code', 'intro', 'extra', 'status'];
+    protected $casts = ['extra' => 'array'];
 
     public function configs(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

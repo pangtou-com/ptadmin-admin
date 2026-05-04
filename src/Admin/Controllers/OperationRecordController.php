@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Controllers;
 
 use Illuminate\Http\Request;
+use PTAdmin\Admin\Support\Query\AdminListQuery;
 use PTAdmin\Admin\Services\OperationRecordService;
 use PTAdmin\Foundation\Response\AdminResponse;
 
@@ -34,15 +35,14 @@ class OperationRecordController extends AbstractBackgroundController
     public function __construct(OperationRecordService $operationRecordService)
     {
         $this->operationRecordService = $operationRecordService;
-        parent::__construct();
     }
 
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::pages($this->operationRecordService->page($request->all()));
+        return AdminResponse::pages($this->operationRecordService->page(AdminListQuery::fromRequest($request)));
     }
 
-    public function details($id)
+    public function details($id): \Illuminate\Http\JsonResponse
     {
         return AdminResponse::success($this->operationRecordService->details($id));
     }

@@ -25,25 +25,41 @@ namespace PTAdmin\Admin\Models;
 
 /**
  * @property int $id
- * @property int $admin_id
+ * @property int|null $admin_id
+ * @property string $login_account
  * @property int $login_at
- * @property int $login_ip
- * @property int $status
+ * @property string|null $login_ip
+ * @property string $status
+ * @property string|null $reason
+ * @property string|null $user_agent
  */
 class AdminLoginLog extends \PTAdmin\Foundation\Database\Models\AbstractModel
 {
+    public const STATUS_SUCCESS = 'success';
+    public const STATUS_INVALID_CREDENTIALS = 'invalid_credentials';
+    public const STATUS_USER_NOT_FOUND = 'user_not_found';
+    public const STATUS_DISABLED = 'disabled';
+    public const STATUS_CAPTCHA_INVALID = 'captcha_invalid';
+    public const STATUS_BLOCKED = 'blocked';
+    public const STATUS_FAILED = 'failed';
+
     protected $table = 'admin_login_logs';
 
-    protected $fillable = ['admin_id', 'login_at', 'login_ip', 'status'];
+    protected $fillable = ['admin_id', 'login_account', 'login_at', 'login_ip', 'status', 'reason', 'user_agent'];
 
     public function getLoginAtAttribute()
     {
         return date('Y-m-d H:i:s', (int) $this->attributes['login_at']);
     }
 
-    public function getLoginIpAttribute(): string
+    public function getLoginIpAttribute(): ?string
     {
-        return long2ip((int) $this->attributes['login_ip']);
+        $value = $this->attributes['login_ip'] ?? null;
+        if (null === $value || '' === (string) $value) {
+            return null;
+        }
+
+        return (string) $value;
     }
 
     public function admin(): \Illuminate\Database\Eloquent\Relations\BelongsTo

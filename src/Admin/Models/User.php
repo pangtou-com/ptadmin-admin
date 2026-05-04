@@ -26,7 +26,6 @@ namespace PTAdmin\Admin\Models;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticate;
 use PTAdmin\Foundation\Auth\Concerns\HasApiTokens;
-use PTAdmin\Foundation\Database\Concerns\Searchable;
 
 /**
  * @property int    $id             ID
@@ -55,7 +54,6 @@ use PTAdmin\Foundation\Database\Concerns\Searchable;
 class User extends Authenticate
 {
     use HasApiTokens;
-    use Searchable;
     use SoftDeletes;
 
     protected $hidden = ['password', 'salt', 'remember_token'];

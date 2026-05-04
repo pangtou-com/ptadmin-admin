@@ -36,41 +36,26 @@ class UserController extends AbstractBackgroundController
     public function __construct(UserService $userService)
     {
         $this->userService = $userService;
-        parent::__construct();
     }
 
-    public function index(Request $request)
+    public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        if (request()->expectsJson()) {
-            $data = $this->userService->page($request->all());
+        $data = $this->userService->page($request->all());
 
-            return AdminResponse::pages($data);
-        }
-
-        return $this->view();
+        return AdminResponse::pages($data);
     }
 
-    public function store(UserRequest $request)
+    public function store(UserRequest $request): \Illuminate\Http\JsonResponse
     {
-        if ($request->expectsJson()) {
-            $this->userService->store($request->all());
+        $this->userService->store($request->all());
 
-            return AdminResponse::success();
-        }
-        $dao = new User();
-
-        return $this->view(compact('dao'));
+        return AdminResponse::success();
     }
 
-    public function edit($id, UserRequest $request)
+    public function edit($id, UserRequest $request): \Illuminate\Http\JsonResponse
     {
-        if ($request->expectsJson()) {
-            $this->userService->edit($id, $request->all());
-
-            return AdminResponse::success();
-        }
-        $dao = User::query()->findOrFail($id);
-
-        return $this->view(compact('dao'));
+        $this->userService->edit($id, $request->all());
+        
+        return AdminResponse::success();
     }
 }

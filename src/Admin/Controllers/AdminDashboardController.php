@@ -17,7 +17,6 @@ class AdminDashboardController extends AbstractBackgroundController
 
     public function __construct(AdminDashboardService $adminDashboardService)
     {
-        parent::__construct();
         $this->adminDashboardService = $adminDashboardService;
     }
 
@@ -31,8 +30,15 @@ class AdminDashboardController extends AbstractBackgroundController
     public function query(string $code, Request $request): JsonResponse
     {
         try {
+            $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;
+
             return AdminResponse::success(
-                $this->adminDashboardService->queryWidget(AdminAuth::user(), $code, (array) $request->input('query', $request->all()))
+                $this->adminDashboardService->queryWidget(
+                    AdminAuth::user(),
+                    $code,
+                    (array) $request->input('query', $request->all()),
+                    $tenantId
+                )
             );
         } catch (BackgroundException $exception) {
             return AdminResponse::fail($exception->getMessage());
@@ -42,12 +48,15 @@ class AdminDashboardController extends AbstractBackgroundController
     public function action(string $code, string $action, Request $request): JsonResponse
     {
         try {
+            $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;
+
             return AdminResponse::success(
                 $this->adminDashboardService->executeWidgetAction(
                     AdminAuth::user(),
                     $code,
                     $action,
-                    (array) $request->input('payload', $request->all())
+                    (array) $request->input('payload', $request->all()),
+                    $tenantId
                 )
             );
         } catch (BackgroundException $exception) {

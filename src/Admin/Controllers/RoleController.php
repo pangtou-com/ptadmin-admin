@@ -37,7 +37,6 @@ class RoleController extends AbstractBackgroundController
 
     public function __construct(AdminResourceService $adminResourceService, AdminRoleServiceInterface $adminRoleService)
     {
-        parent::__construct();
         $this->adminResourceService = $adminResourceService;
         $this->adminRoleService = $adminRoleService;
     }
@@ -61,12 +60,7 @@ class RoleController extends AbstractBackgroundController
 
     public function edit(RoleRequest $request, $id): \Illuminate\Http\JsonResponse
     {
-        $this->adminRoleService->update((int) $id, [
-            'code' => (string) $request->get('code'),
-            'name' => (string) $request->get('name'),
-            'description' => $request->get('description'),
-            'status' => (int) $request->get('status', 1),
-        ]);
+        $this->adminRoleService->update((int) $id, $request->all());
 
         return AdminResponse::success();
     }

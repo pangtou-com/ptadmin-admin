@@ -79,6 +79,16 @@ class PTAdminSystemApiTest extends TestCase
                             'id' => $admin->id,
                             'username' => 'operator',
                             'nickname' => 'Operator',
+                            'role_id' => $roleA->id,
+                            'role_ids' => [$roleA->id],
+                            'role_names' => ['运维A'],
+                            'roles' => [
+                                [
+                                    'id' => $roleA->id,
+                                    'title' => '运维A',
+                                    'code' => 'ops_a',
+                                ],
+                            ],
                         ],
                     ],
                 ],
@@ -142,5 +152,93 @@ class PTAdminSystemApiTest extends TestCase
             ]);
 
         self::assertNotNull(Admin::withTrashed()->findOrFail($admin->id)->deleted_at);
+    }
+
+    public function test_admin_update_ignores_display_login_at_payload_from_frontend(): void
+    {
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount([
+            'username' => 'founder_login_at_edit',
+            'nickname' => 'Founder',
+            'is_founder' => 1,
+        ]);
+        $member = $this->createAdminAccount([
+            'username' => 'member_login_at_edit',
+            'nickname' => 'Before Update',
+        ]);
+        $member->login_at = 1234567890;
+        $member->save();
+        $member = $member->refresh();
+
+        $token = $this->issueAdminToken($founder);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->putJson('/system/admins/'.$member->id, [
+                'username' => 'member_login_at_edit',
+                'nickname' => 'After Update',
+                'login_at' => '2026-04-29 14:27:59',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'code' => 0,
+            ]);
+
+        $member = $member->refresh();
+
+        self::assertSame('After Update', $member->nickname);
+        self::assertSame('2009-02-13 23:31:30', $member->login_at);
+        self::assertSame(1234567890, (int) $member->getRawOriginal('login_at'));
+    }
+
+    public function test_admin_list_returns_founder_role_display_information(): void
+    {
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount([
+            'username' => 'founder_role_display',
+            'nickname' => 'Founder Role Display',
+            'is_founder' => 1,
+        ]);
+        $token = $this->issueAdminToken($founder);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/admins?'.http_build_query([
+                'filters' => [
+                    ['field' => 'id', 'operator' => '=', 'value' => $founder->id],
+                ],
+                'limit' => 1,
+                'page' => 1,
+            ]));
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'total' => 1,
+                'results' => [
+                    [
+                        'id' => $founder->id,
+                        'username' => 'founder_role_display',
+                        'nickname' => 'Founder Role Display',
+                        'role_id' => null,
+                        'role_ids' => [],
+                        'role_names' => ['创始人'],
+                        'roles' => [
+                            [
+                                'id' => 0,
+                                'title' => '创始人',
+                                'code' => 'founder',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
     }
 }

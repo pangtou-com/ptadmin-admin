@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use PTAdmin\Admin\Services\Auth\Resolvers\BasicGrantResolver;
 use PTAdmin\Admin\Services\Auth\Resolvers\DataScopeResolver;
-use PTAdmin\Admin\Services\Auth\Resolvers\FieldAclResolver;
 use PTAdmin\Admin\Services\Auth\Resolvers\OrganizationResolver;
 use PTAdmin\Admin\Services\Auth\Resolvers\TenantGrantResolver;
 use PTAdmin\Admin\Services\Auth\Resolvers\WorkflowGuardResolver;
@@ -26,7 +25,6 @@ return [
         'organization' => false,
         'tenant' => false,
         'data_scope' => false,
-        'field_acl' => false,
         'workflow' => false,
     ],
 
@@ -35,7 +33,6 @@ return [
         TenantGrantResolver::class,
         OrganizationResolver::class,
         DataScopeResolver::class,
-        FieldAclResolver::class,
         WorkflowGuardResolver::class,
     ],
 ];

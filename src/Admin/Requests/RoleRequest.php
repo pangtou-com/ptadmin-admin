@@ -38,6 +38,7 @@ class RoleRequest extends FormRequest
             'name' => ['required', 'max:255', Rule::unique(AdminRole::class, 'name')->ignore($id)],
             'note' => 'max:200',
             'status' => 'in:0,1',
+            'sort' => 'integer',
         ];
     }
 }

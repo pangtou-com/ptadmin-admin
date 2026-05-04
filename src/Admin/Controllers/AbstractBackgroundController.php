@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Controllers;
 
+
 use PTAdmin\Foundation\Http\Controllers\AbstractAdminController;
 
 abstract class AbstractBackgroundController extends AbstractAdminController

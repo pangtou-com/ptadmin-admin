@@ -34,17 +34,20 @@ class AdminRequest extends FormRequest
         $id = (int) $this->route('id');
 
         return [
-            'username' => ['required', 'max:255', Rule::unique(Admin::class)->ignore($id)],
-            'nickname' => ['required', 'max:255'],
-            'role_id' => ['integer'],
+            'username' => ['required', 'string', 'max:255', Rule::unique(Admin::class)->whereNull('deleted_at')->ignore($id)],
+            'nickname' => ['required', 'string', 'max:255'],
+            'role_id' => ['nullable', 'integer'],
             'password' => [
                 Rule::requiredIf(function () use ($id) {
                     return 0 === $id;
                 }),
-                'max: 255',
+                'nullable',
+                'string',
+                'max:255',
             ],
-            'mobile' => 'max:20',
-            'avatar' => 'max:255',
+            'mobile' => ['nullable', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'avatar' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

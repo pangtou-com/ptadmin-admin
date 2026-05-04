@@ -27,7 +27,6 @@ use Illuminate\Auth\GuardHelpers;
 use Illuminate\Contracts\Auth\Factory as AuthFactory;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Macroable;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
@@ -206,16 +205,11 @@ class AddonGuard implements Guard
         }
         $created_at = (int) $accessToken->getRawOriginal('created_at');
 
-        // 自定义过期时间
         $expires_at = (int) $accessToken->getRawOriginal('expires_at');
-        
-        if (0 !== $expires_at) {
-            // 如果为一个有效的时间戳则判断是否大于当前时间
-            if (Carbon::make($expires_at)->isValid()) {
-                return $expires_at > now()->getTimestamp();
-            }
 
-            return $created_at < now()->subSeconds($expires_at)->getTimestamp();
+        // 自定义过期时间统一使用绝对时间戳语义。
+        if (0 !== $expires_at) {
+            return $expires_at > now()->getTimestamp();
         }
 
         // 默认过期时间24小时

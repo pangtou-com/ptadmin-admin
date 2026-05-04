@@ -43,13 +43,19 @@ class LoginService
      */
     public function login(array $data): array
     {
-        $this->checkCode();
+        $loginAccount = trim((string) ($data['username'] ?? ''));
+        $this->checkCode($loginAccount);
         /** @var Admin|null $admin */
-        $admin = Admin::query()->where('username', $data['username'])->first();
-        $this->attempt();
+        $admin = Admin::query()->where('username', $loginAccount)->first();
+        $this->attempt($admin, $loginAccount);
         if (!$admin || !Hash::check($data['password'], $admin->password)) {
             $this->addAttempt();
-            $this->log($admin);
+            $this->log(
+                $admin,
+                $admin ? AdminLoginLog::STATUS_INVALID_CREDENTIALS : AdminLoginLog::STATUS_USER_NOT_FOUND,
+                $admin ? 'password_mismatch' : 'account_not_found',
+                $loginAccount
+            );
 
             throw new BackgroundException(__('ptadmin::background.login.fail'));
         }
@@ -57,7 +63,7 @@ class LoginService
         // 登录锁定验证
         if (StatusEnum::ENABLE !== $admin->status) {
             $this->addAttempt();
-            $this->log($admin);
+            $this->log($admin, AdminLoginLog::STATUS_DISABLED, 'account_disabled', $loginAccount);
 
             throw new BackgroundException(__('ptadmin::background.login.limit'));
         }
@@ -66,7 +72,8 @@ class LoginService
         $admin->login_ip = request()->getClientIp();
         $admin->login_at = time();
         $admin->save();
-        $this->log($admin, StatusEnum::ENABLE);
+        $this->clearAttempt();
+        $this->log($admin, AdminLoginLog::STATUS_SUCCESS, 'login_success', $loginAccount);
 
         return [
             'token' => $token,
@@ -86,11 +93,12 @@ class LoginService
     /**
      * 校验登录尝试次数.
      */
-    private function attempt(): void
+    private function attempt(?Admin $admin = null, string $loginAccount = ''): void
     {
-        $key = request()->fingerprint();
-        $num = Cache::get('login_'.$key);
+        $num = Cache::get($this->attemptKey(), 0);
         if ($num > 10) {
+            $this->log($admin, AdminLoginLog::STATUS_BLOCKED, 'too_many_attempts', $loginAccount);
+
             throw new BackgroundException(__('ptadmin::background.login.attempt', ['seconds' => 10]));
         }
     }
@@ -100,35 +108,51 @@ class LoginService
      */
     private function addAttempt(): void
     {
-        $key = request()->fingerprint();
+        $key = $this->attemptKey();
         $num = Cache::get($key, 0);
         ++$num;
         Cache::put($key, $num, now()->addMinutes(10));
+    }
+
+    private function clearAttempt(): void
+    {
+        Cache::forget($this->attemptKey());
     }
 
     /**
      * 记录登录日志.
      *
      * @param Admin|null $admin
-     * @param int $status
      */
-    private function log(?Admin $admin, int $status = StatusEnum::DISABLE): void
+    private function log(?Admin $admin, string $status, string $reason, string $loginAccount = ''): void
     {
-        if (!$admin) {
-            return;
-        }
         $log = new AdminLoginLog();
-        $log->admin_id = $admin->id;
+        $log->admin_id = $admin ? (int) $admin->id : null;
+        $log->login_account = '' !== $loginAccount ? $loginAccount : (string) ($admin->username ?? '');
         $log->login_at = time();
-        $log->login_ip = (int) ip2long(request()->getClientIp());
+        $log->login_ip = request()->getClientIp();
         $log->status = $status;
+        $log->reason = $reason;
+        $log->user_agent = $this->normalizeUserAgent(request()->userAgent());
         $log->save();
     }
 
     /**
      * 校验验证码
      */
-    private function checkCode(): void
+    private function checkCode(string $loginAccount = ''): void
     {
+    }
+
+    private function attemptKey(): string
+    {
+        return 'login_'.request()->fingerprint();
+    }
+
+    private function normalizeUserAgent(?string $userAgent): ?string
+    {
+        $userAgent = trim((string) $userAgent);
+
+        return '' === $userAgent ? null : mb_substr($userAgent, 0, 255);
     }
 }

@@ -15,7 +15,7 @@ return new class() extends Migration {
             $table->string('md5', 32)->default('');
             $table->string('mime', 100)->default('');
             $table->string('suffix', 20)->default('');
-            $table->string('driver', 50)->default('public');
+            $table->string('driver', 50)->default('local');
             $table->unsignedBigInteger('size')->default(0);
             $table->string('path', 255)->default('');
             $table->string('groups', 50)->default('default');

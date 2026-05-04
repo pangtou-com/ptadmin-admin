@@ -59,14 +59,19 @@ return new class extends Migration
     {
         Schema::create('admin_login_logs', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('admin_id');
+            $table->unsignedBigInteger('admin_id')->nullable();
+            $table->string('login_account', 100)->default('');
             $table->unsignedInteger('login_at')->default(0);
-            $table->unsignedInteger('login_ip')->default(0);
-            $table->unsignedTinyInteger('status')->default(0);
+            $table->string('login_ip', 45)->nullable();
+            $table->string('status', 50)->default('failed');
+            $table->string('reason', 100)->nullable();
+            $table->string('user_agent', 255)->nullable();
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
 
             $table->index('admin_id', 'idx_admin_login_logs_admin_id');
+            $table->index('login_account', 'idx_admin_login_logs_login_account');
+            $table->index('status', 'idx_admin_login_logs_status');
         });
 
         $this->commentTable('admin_login_logs', '后台管理员登录日志表');
@@ -97,23 +102,31 @@ return new class extends Migration
     {
         Schema::create('operation_records', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('admin_id')->default(0);
+            $table->unsignedBigInteger('admin_id')->nullable();
+            $table->string('admin_username', 100)->default('');
             $table->string('nickname', 50)->default('');
-            $table->unsignedInteger('ip')->default(0);
+            $table->string('ip', 45)->nullable();
+            $table->string('user_agent', 255)->nullable();
             $table->string('url', 255)->default('');
             $table->string('title', 255)->default('');
+            $table->string('resource_name', 150)->nullable();
             $table->string('method', 20)->default('');
             $table->string('controller', 255)->default('');
             $table->string('action', 100)->default('');
+            $table->string('trace_id', 100)->nullable();
+            $table->string('target_type', 100)->nullable();
+            $table->string('target_id', 150)->nullable();
+            $table->string('status', 50)->default('success');
             $table->text('request')->nullable();
-            $table->text('response')->nullable();
-            $table->text('sql_param')->nullable();
+            $table->text('error_message')->nullable();
             $table->unsignedSmallInteger('response_code')->default(200);
             $table->decimal('response_time', 10, 2)->default(0);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
 
             $table->index('admin_id', 'idx_operation_records_admin_id');
+            $table->index('admin_username', 'idx_operation_records_admin_username');
+            $table->index('status', 'idx_operation_records_status');
             $table->index('created_at', 'idx_operation_records_created_at');
         });
 
@@ -130,6 +143,7 @@ return new class extends Migration
             $table->unsignedBigInteger('parent_id')->default(0);
             $table->string('addon_code', 50)->nullable();
             $table->string('intro', 255)->nullable();
+            $table->json('extra')->nullable();
             $table->unsignedTinyInteger('status')->default(1);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
@@ -152,9 +166,9 @@ return new class extends Migration
             $table->unsignedInteger('weight')->default(0);
             $table->string('type', 20)->default('text');
             $table->string('intro', 255)->nullable();
-            $table->text('extra')->nullable();
-            $table->text('value')->nullable();
-            $table->text('default_val')->nullable();
+            $table->json('extra')->nullable();
+            $table->string('value', 500)->nullable();
+            $table->string('default_val', 500)->nullable();
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();
