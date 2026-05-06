@@ -13,8 +13,8 @@
         "php": "^7.4 || ^8.0",
         "ext-json": "*",
         "laravel/framework": "^8.75",
-        "ptadmin/addon": "^1.0",
-        "ptadmin/easy": "^1.0",
+        "ptadmin/addon": "^1.0.10",
+        "ptadmin/easy": "^1.0.9",
         "ext-curl": "*",
         "ext-zip": "*"
     },
@@ -53,5 +53,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "version": "1.0.22"
+    "version": "1.0.23"
 }
