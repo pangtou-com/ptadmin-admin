@@ -457,61 +457,6 @@ if (!function_exists('is_active')) {
     }
 }
 
-if (!function_exists('_asset')) {
-    /**
-     * 生成资源访问路径.如设置了CDN访问将返回CND地址.
-     *
-     * @param string $path   资源路径
-     * @param mixed  $secure 设置是否生成安全访问地址
-     *
-     * @return string
-     */
-    function _asset(string $path, $secure = null): string
-    {
-        if (true === config('app.debug')) {
-            $path = $path.'?time='.time();
-        }
-
-        return asset($path, $secure);
-    }
-}
-
-if (!function_exists('addon_asset')) {
-    /**
-     * 插件的静态资源访问路径.
-     *
-     * @param mixed $addon_code 所属插件code
-     * @param mixed $path       资源路径
-     * @param bool  $force      是否强制更新
-     * @param mixed $secure     设置是否生成安全访问地址
-     *
-     * @return string
-     */
-    function addon_asset($addon_code, $path, bool $force = false, $secure = null): string
-    {
-        $path = ltrim($path, '/');
-        // 当不启用debug模式时，直接返回资源地址
-        if (true !== config('app.debug') && false === $force) {
-            return asset("addons/{$addon_code}/{$path}", $secure);
-        }
-        // 判断应用目录下是否存在资源信息
-        $addon_path = addon_path($addon_code, 'Assets'.\DIRECTORY_SEPARATOR.$path);
-        if (!file_exists($addon_path)) {
-            throw new \PTAdmin\Foundation\Exceptions\BackgroundException(__('ptadmin::background.path_not_exists', ['path' => $path]));
-        }
-        // 拷贝资源至访问目录
-        $addon_storage_path = addon_storage_path($addon_code, $path);
-        $storageExists = file_exists($addon_storage_path);
-        if (!$storageExists || (filemtime($addon_path) > filemtime($addon_storage_path))) {
-            $filesystem = new \Illuminate\Filesystem\Filesystem();
-            $filesystem->ensureDirectoryExists($filesystem->dirname($addon_storage_path));
-            $filesystem->copy($addon_path, $addon_storage_path);
-        }
-
-        return asset("addons/{$addon_code}/{$path}?a=".time(), $secure);
-    }
-}
-
 if (!function_exists('addon_setting')) {
     /**
      * 获取插件配置信息.
@@ -946,9 +891,7 @@ function share_seo_context(array $context, bool $merge = true): array
         return $context;
     }
 
-    $normalized = $merge
-        ? array_replace_recursive(seo_context(), $context)
-        : $context;
+    $normalized = $merge ? array_replace_recursive(seo_context(), $context) : $context;
 
     app('view')->share('seo_context', $normalized);
     app('view')->share('seo', $normalized);
@@ -983,6 +926,8 @@ function share_seo_context(array $context, bool $merge = true): array
 /**
  * seo标题信息.
  *
+ * @param string|null $value
+ * @param array $options
  * @return string
  */
 function seo_title(?string $value = null, array $options = []): string
@@ -1000,6 +945,8 @@ function seo_title(?string $value = null, array $options = []): string
 /**
  * seo关键词.
  *
+ * @param string|null $value
+ * @param array $options
  * @return string
  */
 function seo_keywords(?string $value = null, array $options = []): string
@@ -1017,6 +964,8 @@ function seo_keywords(?string $value = null, array $options = []): string
 /**
  * seo描述信息.
  *
+ * @param string|null $value
+ * @param array $options
  * @return string
  */
 function seo_description(?string $value = null, array $options = []): string

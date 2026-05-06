@@ -28,4 +28,13 @@ abstract class AbstractWebController
     protected function getViewTemplate(): void
     {
     }
+    
+    /**
+     * 获取当前激活在使用的前端模块目录
+     * @return string
+     */
+    protected function getActiveTemplate(): string
+    {
+        return "default";
+    }
 }

@@ -21,7 +21,11 @@ class SettingsController extends AbstractBackgroundController
         $this->systemSettingsService = $systemSettingsService;
         $this->settingsRegistryService = $settingsRegistryService;
     }
-
+    
+    /**
+     * 获取配置一级目录
+     * @return JsonResponse
+     */
     public function systemCatalog(): JsonResponse
     {
         try {
@@ -30,7 +34,12 @@ class SettingsController extends AbstractBackgroundController
             return AdminResponse::fail($exception->getMessage(), (int) ($exception->getCode() ?: 10000));
         }
     }
-
+    
+    /**
+     * 获取配置节点信息
+     * @param string $sectionKey
+     * @return JsonResponse
+     */
     public function systemSection(string $sectionKey): JsonResponse
     {
         try {

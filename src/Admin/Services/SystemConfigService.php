@@ -317,6 +317,13 @@ class SystemConfigService
      */
     public static function updateSystemConfigCache(): ?array
     {
+        if (
+            !DB::getSchemaBuilder()->hasTable('system_config_groups')
+            || !DB::getSchemaBuilder()->hasTable('system_configs')
+        ) {
+            return null;
+        }
+
         $configGroups = SystemConfigGroup::query()
             ->where('status', StatusEnum::ENABLE)
             ->with('configs')->orderBy('parent_id')->get()->toArray();
@@ -599,6 +606,7 @@ class SystemConfigService
 
             case 'checkbox':
             case 'json':
+            case 'key-value':
             case 'cascader':
                 if (null === $value || '' === $value) {
                     return json_encode([], JSON_UNESCAPED_UNICODE);
@@ -665,6 +673,7 @@ class SystemConfigService
                 return;
 
             case 'json':
+            case 'key-value':
             case 'cascader':
                 if (\is_array($value)) {
                     return;
@@ -865,7 +874,8 @@ class SystemConfigService
             case 'json':
             case 'cascader':
                 return [];
-
+            case 'key-value':
+                return (object)[];
             default:
                 return '';
         }

@@ -12,6 +12,9 @@ use Throwable;
 
 class ExceptionResponseMiddleware
 {
+    /**
+     * @throws Throwable
+     */
     public function handle($request, Closure $next)
     {
         try {
@@ -33,7 +36,7 @@ class ExceptionResponseMiddleware
             || $request->is(admin_route_prefix().'/*');
     }
 
-    private function formatException(Throwable $e)
+    private function formatException(Throwable $e): \Illuminate\Http\JsonResponse
     {
         $data = ['code' => (int) $e->getCode()];
 

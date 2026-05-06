@@ -162,7 +162,7 @@ class AdminResourceService
     {
         $results = $this->byAdminIdResources($member->id);
 
-        return infinite_tree($results);
+        return infinite_tree($results, self::TOP_RESOURCE_NAME, 'parent_name', 'name');
     }
 
     public function byAdminIdResources($adminId): array
@@ -171,7 +171,7 @@ class AdminResourceService
         $admin = Admin::query()->findOrFail($adminId);
         $resources = $this->resourceRows(['status' => StatusEnum::ENABLE]);
 
-        if (1 === $admin->is_founder) {
+        if (1 === (int) $admin->is_founder) {
             return $this->mergeDevelopAddonResources($resources, true);
         }
 

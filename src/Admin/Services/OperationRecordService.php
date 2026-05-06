@@ -39,7 +39,10 @@ class OperationRecordService
         /** @var OperationRecord $dao */
         $dao = OperationRecord::query()->findOrFail($id);
 
-        return $dao->toArray();
+        $data = $dao->toArray();
+        $data['request'] = $this->decodeJsonPayload($data['request'] ?? null);
+
+        return $data;
     }
 
     public function page(array $query = []): array
@@ -274,6 +277,26 @@ class OperationRecordService
         }
 
         return mb_substr($json, 0, 5000);
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return mixed
+     */
+    private function decodeJsonPayload($value)
+    {
+        if (null === $value || '' === $value || \is_array($value)) {
+            return $value;
+        }
+
+        if (!\is_string($value)) {
+            return $value;
+        }
+
+        $decoded = @json_decode($value, true);
+
+        return \is_array($decoded) ? $decoded : $value;
     }
 
     /**

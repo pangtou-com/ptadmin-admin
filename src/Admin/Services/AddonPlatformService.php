@@ -254,7 +254,7 @@ class AddonPlatformService
             ];
         }
 
-        $payload = $this->systemConfigService->section((int) $section->id);
+        $payload = $this->systemConfigService->section($section->id);
         $payload['code'] = $code;
         $payload['supported'] = true;
 

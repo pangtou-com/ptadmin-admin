@@ -131,6 +131,7 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     admin_audit_route(Route::delete('user/{id?}', [Admin\UserController::class, 'delete']), 'user.users');
 
     // 配置管理模块
+    admin_audit_route(Route::get('settings/catalog', [Admin\SettingsController::class, 'systemCatalog']), 'system.config');
     admin_audit_route(Route::get('settings/system/catalog', [Admin\SettingsController::class, 'systemCatalog']), 'system.config');
     admin_audit_route(Route::get('settings/system/sections/{sectionKey}', [Admin\SettingsController::class, 'systemSection']), 'system.config');
     admin_audit_route(Route::put('settings/system/sections/{sectionKey}', [Admin\SettingsController::class, 'saveSystemSection']), 'system.config');

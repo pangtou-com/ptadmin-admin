@@ -94,7 +94,7 @@ class SystemSettingsService
             'meta' => $this->buildUpdateMeta(),
         ];
     }
-
+    
     private function resolveSection(string $sectionKey): SystemConfigGroup
     {
         [$rootName, $resolvedSectionKey] = $this->parseSectionKey($sectionKey);

@@ -39,14 +39,11 @@ class AuthenticateMiddleware
 
     protected function shouldReturnJsonResponse(Request $request): bool
     {
-        $adminApiPrefix = trim((string) admin_api_prefix(), '/');
-    
         return 'api' === $request->header('X-Method')
             || $request->expectsJson()
             || $request->wantsJson()
             || $request->ajax()
             || $request->isXmlHttpRequest()
-            || $request->is('api/*')
-            || ('' !== $adminApiPrefix && $request->is($adminApiPrefix.'/*'));
+            || $request->is('api/*');
     }
 }

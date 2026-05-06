@@ -127,6 +127,7 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->mapInstallRoutes();
         $this->mapFrontendRoutes();
         $this->mapSystemRoutes();
+        $this->registerTemplateActive();
     }
 
     protected function extendGuard(): void
@@ -143,6 +144,18 @@ class PTAdminServiceProvider extends ServiceProvider
     protected function createGuard($auth, $guard_name, $config): AddonGuard
     {
         return new AddonGuard($auth, $guard_name, request(), $auth->createUserProvider($config['provider'] ?? null));
+    }
+    
+    /**
+     * 注册激活的活动模板，未设置的情况下将default注册为活动模版
+     * @return void
+     */
+    protected function registerTemplateActive(){
+        $active = system_config("system.theme.template", "default");
+        $path = base_path("templates".DIRECTORY_SEPARATOR.$active);
+        if (is_dir($path)) {
+            $this->loadViewsFrom($path, "pt");
+        }
     }
 
     /**
