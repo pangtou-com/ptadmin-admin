@@ -51,28 +51,21 @@ class SystemConfigService
      */
     public function section(int $id): array
     {
-        [$group, $section] = $this->resolveSectionContext($id);
+        [, $section] = $this->resolveSectionContext($id);
         $configs = $section->configs()
             ->orderBy('weight', 'desc')
             ->orderBy('id')
             ->get();
 
         return [
-            'group' => [
-                'id' => $group->id,
-                'name' => $group->name,
-                'title' => $group->title,
-                'intro' => $group->intro,
-                'extra' => (array) ($group->extra ?? []),
-            ],
             'section' => [
                 'id' => $section->id,
                 'name' => $section->name,
                 'title' => $section->title,
                 'intro' => $section->intro,
-                'extra' => (array) ($section->extra ?? []),
+                'extra' => $section->extra,
             ],
-            'schema' => $this->buildSectionBlueprint($group, $section, $configs->all()),
+            'schema' => $this->buildSectionBlueprint($section, $configs->all()),
             'values' => $this->resolveSectionValues($configs->all()),
         ];
     }
@@ -160,18 +153,6 @@ class SystemConfigService
         }
 
         return $data;
-    }
-
-    /**
-     * 兼容旧命名，后续请使用 group()。
-     *
-     * @param mixed $default
-     *
-     * @return array|mixed
-     */
-    public static function byGroupName(string $name, $default = null)
-    {
-        return self::group($name, $default);
     }
 
     /**
@@ -281,19 +262,6 @@ class SystemConfigService
     }
 
     /**
-     * 兼容旧命名，后续请使用 valueByPath()。
-     *
-     * @param string $key
-     * @param null   $default
-     *
-     * @return array|mixed
-     */
-    public static function config(string $key, $default = null)
-    {
-        return self::valueByPath($key, $default);
-    }
-
-    /**
      * 获取系统配置缓存.
      *
      * @return null|array|mixed
@@ -317,13 +285,6 @@ class SystemConfigService
      */
     public static function updateSystemConfigCache(): ?array
     {
-        if (
-            !DB::getSchemaBuilder()->hasTable('system_config_groups')
-            || !DB::getSchemaBuilder()->hasTable('system_configs')
-        ) {
-            return null;
-        }
-
         $configGroups = SystemConfigGroup::query()
             ->where('status', StatusEnum::ENABLE)
             ->with('configs')->orderBy('parent_id')->get()->toArray();
@@ -371,20 +332,11 @@ class SystemConfigService
             throw new ServiceException(__('ptadmin::background.config_group_not_exists'));
         }
 
-        if (0 === (int) $section->parent_id) {
+        if (0 === $section->parent_id) {
             throw new ServiceException(__('ptadmin::background.config_section_required'));
         }
-
-        /** @var SystemConfigGroup|null $group */
-        $group = SystemConfigGroup::query()
-            ->where('status', StatusEnum::ENABLE)
-            ->find((int) $section->parent_id);
-
-        if (null === $group) {
-            throw new ServiceException(__('ptadmin::background.config_parent_group_not_exists'));
-        }
-
-        return [$group, $section];
+        
+        return [null, $section];
     }
 
     /**
@@ -398,46 +350,15 @@ class SystemConfigService
      *
      * @return array<string, mixed>
      */
-    private function buildSectionBlueprint(SystemConfigGroup $group, SystemConfigGroup $section, array $settings): array
+    private function buildSectionBlueprint(SystemConfigGroup $section, array $settings): array
     {
-        if (0 === \count($settings)) {
-            return [
-                'resource' => [
-                    'name' => $this->resolveSchemaName($group->name, $section->name),
-                    'title' => $section->title,
-                    'module' => 'ptadmin_admin',
-                    'table' => [],
-                    'primary_key' => 'id',
-                    'comment' => $section->intro ?? '',
-                ],
-                'views' => [
-                    'table' => [],
-                    'form' => [
-                        'layout' => 'vertical',
-                    ],
-                ],
-                'layout' => $this->resolveSectionLayout($group, $section),
-                'fields' => [],
-                'relations' => [],
-                'permissions' => [],
-                'charts' => [],
-            ];
-        }
-
-        $schema = [
-            'name' => $this->resolveSchemaName($group->name, $section->name),
+        return [
+            'name' => $section->name,
             'title' => $section->title,
-            'module' => 'ptadmin_admin',
-            'form' => [
-                'layout' => 'vertical',
-            ],
-            'layout' => $this->resolveSectionLayout($group, $section),
             'fields' => array_map(function (SystemConfig $config): array {
                 return $this->buildFieldSchema($config);
             }, $settings),
         ];
-
-        return Easy::schema($schema)->blueprint();
     }
 
     /**
@@ -450,7 +371,7 @@ class SystemConfigService
      */
     private function buildFieldSchema(SystemConfig $config): array
     {
-        $type = $this->normalizeFieldType((string) $config->type);
+        $type = $this->normalizeFieldType($config->type);
         $field = [
             'name' => $config->name,
             'type' => $type,
@@ -474,25 +395,6 @@ class SystemConfigService
         }
 
         return $field;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function resolveSectionLayout(SystemConfigGroup $group, SystemConfigGroup $section): array
-    {
-        $groupExtra = (array) ($group->extra ?? []);
-        $sectionExtra = (array) ($section->extra ?? []);
-        $layout = (array) ($sectionExtra['layout'] ?? $groupExtra['layout'] ?? []);
-
-        $mode = strtolower(trim((string) ($layout['mode'] ?? 'block')));
-        if (!\in_array($mode, ['tab', 'block'], true)) {
-            $mode = 'block';
-        }
-
-        $layout['mode'] = $mode;
-
-        return $layout;
     }
 
     /**
@@ -523,7 +425,7 @@ class SystemConfigService
     {
         $values = [];
         foreach ($settings as $setting) {
-            $values[$setting->name] = self::resolveRuntimeValue((string) $setting->type, $setting->value);
+            $values[$setting->name] = self::resolveRuntimeValue($setting->type, $setting->value);
         }
 
         return $values;
@@ -559,7 +461,7 @@ class SystemConfigService
             case 'radio':
             case 'number':
                 if ('' === $stringValue) {
-                    return 'number' === $normalizedType ? 0 : 0;
+                    return 'number' === $normalizedType ? 0 : "";
                 }
 
                 return false !== strpos($stringValue, '.') ? (float) $stringValue : (int) $stringValue;
@@ -590,7 +492,7 @@ class SystemConfigService
      */
     private function serializeSystemConfigValue(SystemConfig $setting, $value): string
     {
-        $type = $this->normalizeFieldType((string) $setting->type);
+        $type = $this->normalizeFieldType($setting->type);
 
         switch ($type) {
             case 'switch':
@@ -605,7 +507,6 @@ class SystemConfigService
                 return (string) $value;
 
             case 'checkbox':
-            case 'json':
             case 'key-value':
             case 'cascader':
                 if (null === $value || '' === $value) {
@@ -637,7 +538,7 @@ class SystemConfigService
      */
     private function assertSystemConfigValueAllowed(SystemConfig $setting, $value): void
     {
-        $type = $this->normalizeFieldType((string) $setting->type);
+        $type = $this->normalizeFieldType($setting->type);
 
         switch ($type) {
             case 'switch':
@@ -673,7 +574,6 @@ class SystemConfigService
                 return;
 
             case 'json':
-            case 'key-value':
             case 'cascader':
                 if (\is_array($value)) {
                     return;
@@ -825,7 +725,7 @@ class SystemConfigService
         $stringValue = null === $value ? '' : (\is_scalar($value) ? (string) $value : '');
         $trimmedValue = trim($stringValue);
 
-        if ((bool) ($meta['required'] ?? false) && '' === $trimmedValue) {
+        if ( ($meta['required'] ?? false) && '' === $trimmedValue) {
             throw new ServiceException(__('ptadmin::background.config_field_required', ['name' => $setting->name]));
         }
 
@@ -845,14 +745,6 @@ class SystemConfigService
         if ('' !== $pattern && 1 !== @preg_match($pattern, $stringValue)) {
             throw new ServiceException(__('ptadmin::background.config_field_pattern_invalid', ['name' => $setting->name]));
         }
-    }
-
-    /**
-     * 构造一个稳定的 schema 名称，避免和业务资源命名冲突。
-     */
-    private function resolveSchemaName(string $group, string $section): string
-    {
-        return "{$group}_{$section}_settings";
     }
 
     /**

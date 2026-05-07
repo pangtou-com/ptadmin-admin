@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services\Settings;
 
+use Illuminate\Database\Eloquent\Collection;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Foundation\Auth\AdminAuth;
@@ -19,53 +20,19 @@ class SystemSettingsService
     }
 
     /**
-     * @return array<string, mixed>
+     * @return \Illuminate\Support\Collection
      */
-    public function catalog(): array
+    public function catalog(): \Illuminate\Support\Collection
     {
-        /** @var SystemConfigGroup|null $systemRoot */
-        $systemRoot = SystemConfigGroup::query()
-            ->whereNull('addon_code')
-            ->where('parent_id', 0)
-            ->where('name', 'system')
-            ->where('status', 1)
-            ->first();
-
-        $sections = [];
         /** @var \Illuminate\Support\Collection<int, SystemConfigGroup> $roots */
         $roots = SystemConfigGroup::query()
             ->whereNull('addon_code')
             ->where('parent_id', 0)
             ->where('status', 1)
             ->orderBy('weight', 'desc')
-            ->orderBy('id')
-            ->get();
-
-        /** @var SystemConfigGroup $root */
-        foreach ($roots as $root) {
-            /** @var \Illuminate\Support\Collection<int, SystemConfigGroup> $children */
-            $children = SystemConfigGroup::query()
-                ->whereNull('addon_code')
-                ->where('parent_id', (int) $root->id)
-                ->where('status', 1)
-                ->orderBy('weight', 'desc')
-                ->orderBy('id')
-                ->get();
-
-            /** @var SystemConfigGroup $section */
-            foreach ($children as $section) {
-                $sections[] = $this->formatCatalogSectionItem($root, $section);
-            }
-        }
-
-        return [
-            'scope' => 'system',
-            'owner' => [
-                'code' => 'system',
-                'name' => null !== $systemRoot ? (string) $systemRoot->title : '系统设置',
-            ],
-            'sections' => $sections,
-        ];
+            ->orderBy('id')->get();
+        
+        return $roots;
     }
 
     /**
@@ -74,9 +41,12 @@ class SystemSettingsService
     public function section(string $sectionKey): array
     {
         $section = $this->resolveSection($sectionKey);
-        $payload = $this->systemConfigService->section((int) $section->id);
-
-        return $this->formatSectionPayload($payload);
+        $results = [];
+        foreach ($section as $item) {
+            $results[] = $this->systemConfigService->section((int) $item->id);
+        }
+    
+        return $results;
     }
 
     /**
@@ -86,8 +56,9 @@ class SystemSettingsService
      */
     public function saveSection(string $sectionKey, array $input): array
     {
-        $section = $this->resolveSection($sectionKey);
-        $values = $this->systemConfigService->saveSection((int) $section->id, $input);
+        /** @var SystemConfigGroup $section */
+        $section = SystemConfigGroup::query()->where("name", $sectionKey)->firstOrFail();
+        $values = $this->systemConfigService->saveSection($section->id, $input);
 
         return [
             'values' => $values,
@@ -95,29 +66,31 @@ class SystemSettingsService
         ];
     }
     
-    private function resolveSection(string $sectionKey): SystemConfigGroup
+    /**
+     * 根据key 解析出场景表单信息
+     * @param string $sectionKey
+     * @return Collection<SystemConfigGroup>
+     */
+    private function resolveSection(string $sectionKey): Collection
     {
-        [$rootName, $resolvedSectionKey] = $this->parseSectionKey($sectionKey);
 
         /** @var SystemConfigGroup|null $root */
         $root = SystemConfigGroup::query()
             ->whereNull('addon_code')
             ->where('parent_id', 0)
-            ->where('name', $rootName)
+            ->where('name', $sectionKey)
             ->where('status', 1)
             ->first();
-
         if (null === $root) {
-            throw new BackgroundException(sprintf('系统设置根分组[%s]不存在', $rootName));
+            throw new BackgroundException(sprintf('系统设置根分组[%s]不存在', $sectionKey));
         }
 
-        /** @var SystemConfigGroup|null $section */
+        /** @var Collection<SystemConfigGroup> $section */
         $section = SystemConfigGroup::query()
             ->whereNull('addon_code')
-            ->where('parent_id', (int) $root->id)
-            ->where('name', $resolvedSectionKey)
+            ->where('parent_id', $root->id)
             ->where('status', 1)
-            ->first();
+            ->get();
 
         if (null === $section) {
             throw new BackgroundException(sprintf('系统设置分组[%s]不存在', $sectionKey));
@@ -181,21 +154,15 @@ class SystemSettingsService
      */
     private function formatCatalogSectionItem(SystemConfigGroup $root, SystemConfigGroup $section): array
     {
-        $title = 'system' === (string) $root->name
-            ? (string) $section->title
-            : sprintf('%s / %s', (string) $root->title, (string) $section->title);
+        $title = 'system' ===  $root->name ? $section->title : sprintf('%s / %s', $root->title, $section->title);
 
         return [
-            'key' => $this->buildSectionKey((string) $root->name, (string) $section->name),
+            'key' => $this->buildSectionKey($root->name, $section->name),
             'title' => $title,
-            'description' => (string) ($section->intro ?: $root->intro ?: ''),
+            'description' => ($section->intro ?: $root->intro ?: ''),
             'icon' => (string) data_get($section->extra, 'icon', data_get($root->extra, 'icon', '')),
-            'order' => (int) $section->weight,
-            'mode' => 'hosted',
-            'render' => [
-                'engine' => 'pt-render',
-                'version' => '1.0',
-            ],
+            'order' => $section->weight,
+            'mode' => 'hosted'
         ];
     }
 

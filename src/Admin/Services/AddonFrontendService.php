@@ -186,7 +186,7 @@ class AddonFrontendService
      */
     protected function normalizeFrontendDefinition(string $addonCode, array $definition, array $addonInfo): array
     {
-        $enabled = isset($definition['enabled']) ? (bool) $definition['enabled'] : true;
+        $enabled = !isset($definition['enabled']) || (bool)$definition['enabled'];
         if (!$enabled) {
             return [];
         }
