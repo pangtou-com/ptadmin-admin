@@ -26,10 +26,8 @@ namespace PTAdmin\Admin\Services;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use PTAdmin\Easy\Easy;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
-use PTAdmin\Admin\Support\ConfigRuleValidator;
 use PTAdmin\Foundation\Exceptions\ServiceException;
 use PTAdmin\Support\Enums\StatusEnum;
 
@@ -220,18 +218,6 @@ class SystemConfigService
     }
 
     /**
-     * 兼容旧命名，后续请使用 value()。
-     *
-     * @param mixed $default
-     *
-     * @return null|array|mixed
-     */
-    public static function getSystemConfig($key, $default = null)
-    {
-        return self::value($key, $default);
-    }
-
-    /**
      * 根据 key 路径获取指定系统配置信息.
      *
      * @param string $key
@@ -402,7 +388,7 @@ class SystemConfigService
      */
     private function resolveFieldMetadata(SystemConfig $config): array
     {
-        $extra = (array) ($config->extra ?? []);
+        $extra = $config->extra;
         $meta = (array) ($extra['meta'] ?? []);
 
         if ([] !== (array) ($extra['options'] ?? [])) {
@@ -534,6 +520,7 @@ class SystemConfigService
     }
 
     /**
+     * TODO 这个是临时解决方案，后期使用正式规则处理器来解决类型和赋值的问题
      * @param mixed $value
      */
     private function assertSystemConfigValueAllowed(SystemConfig $setting, $value): void
@@ -684,7 +671,7 @@ class SystemConfigService
 
     private function assertValueInFieldOptions(SystemConfig $setting, string $value): void
     {
-        $extra = (array) ($setting->extra ?? []);
+        $extra = $setting->extra;
         $options = $extra['options'] ?? [];
         if (!\is_array($options) || [] === $options) {
             return;
@@ -716,7 +703,7 @@ class SystemConfigService
             }
         }
 
-        $extra = (array) ($setting->extra ?? []);
+        $extra = $setting->extra;
         $meta = (array) ($extra['meta'] ?? []);
         if ([] === $meta) {
             return;
