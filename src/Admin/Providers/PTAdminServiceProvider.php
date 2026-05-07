@@ -125,7 +125,6 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->extendGuard();
         $this->registerAuthorizationGate();
         $this->mapInstallRoutes();
-        $this->mapFrontendRoutes();
         $this->mapSystemRoutes();
         $this->registerTemplateActive();
     }
@@ -182,11 +181,6 @@ class PTAdminServiceProvider extends ServiceProvider
     private function mapSystemRoutes(): void
     {
         Route::middleware(['api', 'ptadmin.response', 'ptadmin.operation.record'])->group(__DIR__.'/../../../routes/admin.php');
-    }
-
-    private function mapFrontendRoutes(): void
-    {
-        Route::middleware(['web', 'ptadmin.install'])->group(__DIR__.'/../../../routes/web.php');
     }
 
     private function mapInstallRoutes(): void
