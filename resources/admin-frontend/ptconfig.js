@@ -113,9 +113,9 @@ window.ptconfig = {
 
     // 接口与路由
     // 为空时，运行时会按当前访问地址推导接口前缀
-    baseURL: '',
+    baseURL: undefined,
     // 为空时，运行时会按 {baseURL}/upload 自动推导上传地址
-    uploadURL: '',
+    uploadURL: undefined,
     // 仅请求真实后端
     requestMode: 'http',
     bootstrap: {
