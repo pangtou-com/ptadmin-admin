@@ -45,16 +45,11 @@ class Complete
                 return;
             }
 
-            $this->process(__('ptadmin::install.logs.marker_writing'));
-            $written = File::put(storage_path('installed'), date('Y-m-d H:i:s', time()));
-            if (false === $written || !File::exists(storage_path('installed'))) {
-                throw new \RuntimeException(__('ptadmin::background.install_marker_write_failed'));
-            }
-            $installedMarkerWritten = true;
-
-            $this->persistEnvFile($data);
             $this->publishAdminFrontend($data);
             $this->resetRuntimeCaches();
+            $this->persistEnvFile($data);
+            $this->writeInstalledMarker();
+            $installedMarkerWritten = true;
             $this->success(__('ptadmin::install.logs.install_success'));
 
             $next($data);
@@ -63,6 +58,15 @@ class Complete
                 File::delete(storage_path('installed'));
             }
             $this->error(__('ptadmin::install.logs.install_finalize_failed', ['message' => $throwable->getMessage()]));
+        }
+    }
+
+    private function writeInstalledMarker(): void
+    {
+        $this->process(__('ptadmin::install.logs.marker_writing'));
+        $written = File::put(storage_path('installed'), date('Y-m-d H:i:s', time()));
+        if (false === $written || !File::exists(storage_path('installed'))) {
+            throw new \RuntimeException(__('ptadmin::background.install_marker_write_failed'));
         }
     }
 

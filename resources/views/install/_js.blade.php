@@ -211,6 +211,10 @@
                     return read();
                 })
                 .catch(function (error) {
+                    if (eventAction.receivedSuccess) {
+                        eventAction.success();
+                        return;
+                    }
                     eventAction.process({type: 'error', message: error.toString()});
                     eventAction.fail();
                 });
@@ -237,6 +241,10 @@
             };
 
             xhr.onerror = function () {
+                if (eventAction.receivedSuccess) {
+                    eventAction.success();
+                    return;
+                }
                 eventAction.process({type: 'error', message: i18n.sendFailed});
                 eventAction.fail();
             };
