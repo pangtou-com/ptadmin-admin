@@ -28,6 +28,7 @@ use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use ReflectionClass;
 use PTAdmin\Admin\Commands\AdminBootstrapAuthCommand;
@@ -150,7 +151,14 @@ class PTAdminServiceProvider extends ServiceProvider
      * @return void
      */
     protected function registerTemplateActive(){
-        $active = system_config("system.theme.template", "default");
+        $active = 'default';
+        try {
+            if (Schema::hasTable('system_config_groups')) {
+                $active = system_config("system.theme.template", "default");
+            }
+        } catch (\Throwable) {
+            $active = 'default';
+        }
         $path = base_path("templates".DIRECTORY_SEPARATOR.$active);
         if (is_dir($path)) {
             $this->loadViewsFrom($path, "pt");
