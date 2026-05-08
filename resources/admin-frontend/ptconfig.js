@@ -164,5 +164,18 @@ window.ptconfig = {
     },
 
     // 微前端插件配置
-    addons: [],
+    addons: [
+        // {
+        //     name: 'partner-center',
+        //     title: '合作伙伴中心',
+        //     entry: 'https://partner.example.com/',
+        //     activeRule: '/partner-center',
+        //     container: '#ptadmin-addon-root',
+        //     preload: true,
+        //     auth: true,
+        //     props: {
+        //         baseURL: 'https://api.example.com/',
+        //     },
+        // },
+    ],
 }
