@@ -177,8 +177,8 @@ class PTAdminAddonFrontendApiTest extends TestCase
                         'entry' => [
                             'local' => [
                                 'type' => 'module',
-                                'js' => '/addons/cms/dist/admin/index.js',
-                                'css' => ['/addons/cms/dist/admin/index.css'],
+                                'js' => '/admin/modules/cms/dist/admin/index.js',
+                                'css' => ['/admin/modules/cms/dist/admin/index.css'],
                             ],
                         ],
                         'pages' => [

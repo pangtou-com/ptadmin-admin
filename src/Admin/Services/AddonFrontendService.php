@@ -159,6 +159,8 @@ class AddonFrontendService
             return [];
         }
 
+        $isDevelop = (bool) data_get($definition, 'meta.develop', false);
+
         return [
             'key' => $key,
             'title' => (string) ($definition['title'] ?? $addonInfo['title'] ?? $key),
@@ -171,9 +173,11 @@ class AddonFrontendService
                 'icon' => $this->normalizeNullableString(data_get($definition, 'meta.icon')),
                 'order' => (int) data_get($definition, 'meta.order', 0),
                 'preload' => (bool) data_get($definition, 'meta.preload', false),
-                'develop' => (bool) data_get($definition, 'meta.develop', false),
+                'develop' => $isDevelop,
             ],
-            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $addonCode, $addonInfo),
+            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $addonCode, array_replace($addonInfo, [
+                'develop' => $isDevelop,
+            ])),
             'pages' => $pages,
         ];
     }
@@ -203,6 +207,8 @@ class AddonFrontendService
             $routeBase = '/'.$code;
         }
 
+        $isDevelop = (bool) data_get($definition, 'meta.develop', !empty($addonInfo['develop']));
+
         return [
             'id' => trim((string) ($definition['id'] ?? $code)),
             'key' => trim((string) ($definition['key'] ?? $code)),
@@ -220,9 +226,11 @@ class AddonFrontendService
                 'icon' => $this->normalizeNullableString(data_get($definition, 'meta.icon')),
                 'order' => (int) data_get($definition, 'meta.order', 0),
                 'preload' => (bool) data_get($definition, 'meta.preload', false),
-                'develop' => (bool) data_get($definition, 'meta.develop', !empty($addonInfo['develop'])),
+                'develop' => $isDevelop,
             ],
-            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $code, $addonInfo),
+            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $code, array_replace($addonInfo, [
+                'develop' => $isDevelop,
+            ])),
             'capabilities' => $this->normalizeCapabilities((array) ($definition['capabilities'] ?? [])),
             'pages' => $this->normalizePages((array) ($definition['pages'] ?? []), $routeBase),
             'compatibility' => \is_array($definition['compatibility'] ?? null) ? $definition['compatibility'] : [],
@@ -295,7 +303,7 @@ class AddonFrontendService
             return [
                 'wujie' => [
                     'name' => (string) ($wujie['name'] ?? $addonCode),
-                    'url' => (string) ($wujie['url'] ?? ''),
+                    'url' => $this->normalizeMicroAppUrl((string) ($wujie['url'] ?? ''), $addonCode, $addonInfo),
                     'alive' => (bool) ($wujie['alive'] ?? false),
                     'sync' => (bool) ($wujie['sync'] ?? false),
                     'degrade' => (bool) ($wujie['degrade'] ?? false),
@@ -328,6 +336,10 @@ class AddonFrontendService
             return $this->defaultFederationEntry($addonCode);
         }
 
+        if (0 === strpos($entry, '/addons/'.$addonCode.'/')) {
+            return $this->addonPublicModuleUrl($addonCode, substr($entry, \strlen('/addons/'.$addonCode.'/')));
+        }
+
         if ($this->isAbsoluteUrl($entry) || '/' === $entry[0]) {
             return $entry;
         }
@@ -337,7 +349,28 @@ class AddonFrontendService
 
     protected function defaultFederationEntry(string $addonCode): string
     {
-        return '/addons/'.$addonCode.'/dist/admin/assets/remoteEntry.js';
+        return $this->addonPublicModuleUrl($addonCode, 'dist/admin/assets/remoteEntry.js');
+    }
+
+    /**
+     * @param array<string, mixed> $addonInfo
+     */
+    protected function normalizeMicroAppUrl(string $url, string $addonCode, array $addonInfo): string
+    {
+        $url = trim($url);
+        if (!empty($addonInfo['develop'])) {
+            return $url;
+        }
+
+        if ('' === $url || $this->isLocalDevelopmentUrl($url)) {
+            return $this->addonPublicModuleUrl($addonCode, 'dist/admin/');
+        }
+
+        if (0 === strpos($url, '/addons/'.$addonCode.'/')) {
+            return $this->addonPublicModuleUrl($addonCode, substr($url, \strlen('/addons/'.$addonCode.'/')));
+        }
+
+        return $url;
     }
 
     protected function isLocalDevelopmentUrl(string $value): bool
@@ -363,11 +396,22 @@ class AddonFrontendService
             return '';
         }
 
+        if (0 === strpos($path, '/addons/'.$addonCode.'/')) {
+            return $this->addonPublicModuleUrl($addonCode, substr($path, \strlen('/addons/'.$addonCode.'/')));
+        }
+
         if ($this->isAbsoluteUrl($path) || '/' === $path[0]) {
             return $path;
         }
 
-        return '/addons/'.$addonCode.'/'.ltrim($path, '/');
+        return $this->addonPublicModuleUrl($addonCode, $path);
+    }
+
+    protected function addonPublicModuleUrl(string $addonCode, string $path = ''): string
+    {
+        $url = admin_web_url('modules/'.$addonCode.'/'.ltrim($path, '/'));
+
+        return '' !== $path && '/' === substr($path, -1) ? $url.'/' : $url;
     }
 
     /**
