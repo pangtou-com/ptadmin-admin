@@ -15,7 +15,7 @@ use PTAdmin\Addon\Addon;
  */
 class AddonFrontendService
 {
-    private const MANIFEST_NORMALIZER_VERSION = 'admin-modules-v2';
+    private const MANIFEST_NORMALIZER_VERSION = 'admin-modules-v3';
 
     /**
      * 获取公开可读的后台模块清单。
@@ -352,7 +352,7 @@ class AddonFrontendService
 
     protected function defaultFederationEntry(string $addonCode): string
     {
-        return $this->addonPublicModuleUrl($addonCode, 'dist/admin/assets/remoteEntry.js');
+        return $this->addonPublicModuleUrl($addonCode, 'dist/assets/remoteEntry.js');
     }
 
     /**
@@ -382,7 +382,7 @@ class AddonFrontendService
         }
 
         if ('' === $url || $this->isLocalDevelopmentUrl($url)) {
-            return $this->addonPublicModuleUrl($addonCode, 'dist/admin/');
+            return $this->addonPublicModuleUrl($addonCode, 'dist/');
         }
 
         if (0 === strpos($url, '/addons/'.$addonCode.'/')) {

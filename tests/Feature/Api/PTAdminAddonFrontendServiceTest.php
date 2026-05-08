@@ -102,7 +102,7 @@ class PTAdminAddonFrontendServiceTest extends TestCase
             'entry' => [
                 'wujie' => [
                     'name' => 'test_micro',
-                    'url' => 'https://demo.example.com/admin/modules/test/dist/admin/',
+                    'url' => 'https://demo.example.com/admin/modules/test/dist/',
                     'alive' => true,
                     'sync' => true,
                     'degrade' => false,
@@ -131,7 +131,7 @@ class PTAdminAddonFrontendServiceTest extends TestCase
         self::assertCount(1, $results);
         self::assertSame('wujie', $results[0]['runtime']);
         self::assertSame('/test', $results[0]['routeBase']);
-        self::assertSame('https://demo.example.com/admin/modules/test/dist/admin/', data_get($results[0], 'entry.wujie.url'));
+        self::assertSame('https://demo.example.com/admin/modules/test/dist/', data_get($results[0], 'entry.wujie.url'));
     }
 
     public function test_deploy_federation_manifest_rewrites_local_entry_to_public_addon_asset_url(): void
@@ -167,7 +167,7 @@ class PTAdminAddonFrontendServiceTest extends TestCase
         $results = app(AddonFrontendService::class)->manifests();
 
         self::assertCount(1, $results);
-        self::assertSame('/admin/modules/test/dist/admin/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
+        self::assertSame('/admin/modules/test/dist/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
     }
 
     public function test_deploy_addon_ignores_frontend_manifest_develop_flag_when_rewriting_local_entry(): void
@@ -207,7 +207,7 @@ class PTAdminAddonFrontendServiceTest extends TestCase
 
         self::assertCount(1, $results);
         self::assertFalse((bool) data_get($results[0], 'meta.develop'));
-        self::assertSame('/admin/modules/test/dist/admin/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
+        self::assertSame('/admin/modules/test/dist/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
     }
 
     /**

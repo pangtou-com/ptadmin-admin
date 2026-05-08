@@ -73,8 +73,8 @@ class PTAdminAddonFrontendApiTest extends TestCase
                     'entry' => [
                         'local' => [
                             'type' => 'module',
-                            'js' => 'dist/admin/index.js',
-                            'css' => ['dist/admin/index.css'],
+                            'js' => 'dist/index.js',
+                            'css' => ['dist/index.css'],
                         ],
                     ],
                     'pages' => [
@@ -177,8 +177,8 @@ class PTAdminAddonFrontendApiTest extends TestCase
                         'entry' => [
                             'local' => [
                                 'type' => 'module',
-                                'js' => '/admin/modules/cms/dist/admin/index.js',
-                                'css' => ['/admin/modules/cms/dist/admin/index.css'],
+                                'js' => '/admin/modules/cms/dist/index.js',
+                                'css' => ['/admin/modules/cms/dist/index.css'],
                             ],
                         ],
                         'pages' => [
@@ -199,7 +199,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
                         'entry' => [
                             'wujie' => [
                                 'name' => 'pangtou_workspace_micro',
-                                'url' => '/admin/modules/workspace/dist/admin/',
+                                'url' => '/admin/modules/workspace/dist/',
                                 'alive' => true,
                                 'sync' => true,
                                 'degrade' => false,
