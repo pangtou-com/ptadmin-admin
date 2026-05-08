@@ -25,6 +25,7 @@ namespace PTAdmin\Admin\Services\Install\Pipe;
 
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use PTAdmin\Admin\Services\AdminFrontendBuildService;
 use PTAdmin\Admin\Support\Concerns\FormatInstallOutput;
 
 class Complete
@@ -52,6 +53,7 @@ class Complete
             $installedMarkerWritten = true;
 
             $this->persistEnvFile($data);
+            $this->publishAdminFrontend($data);
             $this->resetRuntimeCaches();
             $this->success(__('ptadmin::install.logs.install_success'));
 
@@ -81,6 +83,19 @@ class Complete
         if (false === $saved || !File::exists($envPath)) {
             throw new \RuntimeException(__('ptadmin::background.env_write_failed', ['path' => $envPath]));
         }
+    }
+
+    private function publishAdminFrontend($data): void
+    {
+        $this->process(__('ptadmin::install.logs.frontend_publishing'));
+        $result = (new AdminFrontendBuildService())->installBundled(dirname(__DIR__, 5), base_path(), [
+            'app_name' => (string) ($data['app_name'] ?? config('app.name', 'PTAdmin')),
+            'app_url' => (string) ($data['app_url'] ?? config('app.url', '')),
+            'api_prefix' => (string) ($data['ptadmin_api_prefix'] ?? admin_api_prefix()),
+            'web_prefix' => (string) ($data['ptadmin_web_prefix'] ?? admin_web_prefix()),
+        ]);
+
+        $this->success(__('ptadmin::install.logs.frontend_published', ['path' => $result['public_path']]));
     }
 
     /**

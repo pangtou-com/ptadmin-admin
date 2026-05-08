@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use ReflectionClass;
 use PTAdmin\Admin\Commands\AdminBootstrapAuthCommand;
+use PTAdmin\Admin\Commands\AdminFrontendPullCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
 use PTAdmin\Admin\Commands\AdminInitCommand;
 use PTAdmin\Admin\Http\Middleware\AuthorizationMiddleware;
@@ -81,6 +82,7 @@ class PTAdminServiceProvider extends ServiceProvider
     {
         $this->commands([
             AdminBootstrapAuthCommand::class,
+            AdminFrontendPullCommand::class,
             AdminInitCommand::class,
         ]);
 
@@ -102,7 +104,7 @@ class PTAdminServiceProvider extends ServiceProvider
                 __DIR__.'/../../../lang' => resource_path('lang/vendor/ptadmin'),
             ];
             $assetPaths = [
-                __DIR__.'/../../../resources/dist' => public_path(admin_web_asset_path()),
+                __DIR__.'/../../../resources/admin-frontend' => storage_path('app/ptadmin/frontend/admin/current'),
             ];
 
             $this->publishes($configPaths, 'ptadmin');

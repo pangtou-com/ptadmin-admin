@@ -111,6 +111,8 @@ return [
         'admin_create_failed' => '创建管理员失败: :message',
         'marker_writing' => '写入安装标记',
         'config_saving' => '保存配置文件',
+        'frontend_publishing' => '发布后台前端资源',
+        'frontend_published' => '后台前端资源已发布：:path',
         'install_success' => '安装成功',
         'install_finalize_failed' => '安装收尾失败: :message',
     ],

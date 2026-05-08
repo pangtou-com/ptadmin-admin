@@ -111,6 +111,8 @@ return [
         'admin_create_failed' => 'Failed to create administrator: :message',
         'marker_writing' => 'Writing installation marker',
         'config_saving' => 'Saving configuration file',
+        'frontend_publishing' => 'Publishing admin frontend assets',
+        'frontend_published' => 'Admin frontend assets published: :path',
         'install_success' => 'Installation completed successfully',
         'install_finalize_failed' => 'Installation finalize failed: :message',
     ],

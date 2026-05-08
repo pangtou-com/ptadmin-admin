@@ -87,4 +87,9 @@ class PTAdminConsoleCommandTest extends TestCase
 
         self::assertSame(0, Admin::query()->count());
     }
+
+    public function test_admin_frontend_pull_command_is_registered(): void
+    {
+        self::assertArrayHasKey('admin:frontend:pull', \Illuminate\Support\Facades\Artisan::all());
+    }
 }

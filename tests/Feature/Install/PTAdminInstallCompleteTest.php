@@ -77,6 +77,10 @@ class PTAdminInstallCompleteTest extends TestCase
         $pipe->handle([
             'username' => 'admin',
             'password' => 'secret123',
+            'app_name' => 'PTAdmin',
+            'app_url' => 'http://example.test',
+            'ptadmin_web_prefix' => 'admin-web',
+            'ptadmin_api_prefix' => 'admin-api',
             '__install_env_path' => $envPath,
             '__install_env_content' => "APP_NAME=PTAdmin\nAPP_ENV=local\n",
         ], function () use (&$nextCalled): void {
@@ -87,6 +91,11 @@ class PTAdminInstallCompleteTest extends TestCase
         self::assertTrue($nextCalled);
         self::assertFileExists($this->installedMarkerPath());
         self::assertFileExists($envPath);
+        $lock = json_decode((string) file_get_contents(dirname(__DIR__, 3).'/resources/admin-frontend/.release-lock.json'), true);
+        $frontendVersion = (string) ($lock['version'] ?? 'bundled');
+        self::assertFileExists(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/index.html'));
+        self::assertTrue(is_link(public_path('admin-web')) || is_dir(public_path('admin-web')));
+        self::assertStringContainsString('admin-api', (string) file_get_contents(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/ptconfig.js')));
         self::assertSame("APP_NAME=PTAdmin\nAPP_ENV=local\n", file_get_contents($envPath));
         self::assertStringContainsString('安装成功', $output);
         self::assertStringContainsString('保存配置文件', $output);
@@ -101,6 +110,8 @@ class PTAdminInstallCompleteTest extends TestCase
         ], $commands);
 
         @unlink($envPath);
+        $this->deletePath(public_path('admin-web'));
+        $this->deletePath(storage_path('app/ptadmin/frontend/admin'));
     }
 
     public function test_complete_skips_permission_cache_reset_when_command_is_unavailable(): void
@@ -143,6 +154,27 @@ class PTAdminInstallCompleteTest extends TestCase
 
         @unlink($envPath);
         @unlink($this->installedMarkerPath());
+    }
+
+    private function deletePath(string $path): void
+    {
+        if (is_link($path) || is_file($path)) {
+            @unlink($path);
+
+            return;
+        }
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($iterator as $item) {
+            $item->isDir() && !$item->isLink() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+        }
+        @rmdir($path);
     }
 
     private function installedMarkerPath(): string

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="shortcut icon" href="./favicon.svg" type="image/svg+xml" />
+        <title>Pangtou Console</title>
+        <script>
+            window.ptconfig = window.ptconfig || {}
+            window.__PTADMIN_PTCONFIG_LOADED__ = false
+            window.__PTADMIN_PTCONFIG_READY__ = new Promise((resolve) => {
+                const script = document.createElement('script')
+                script.src = `./ptconfig.js?v=${Date.now()}`
+                script.async = false
+                script.onload = () => {
+                    window.__PTADMIN_PTCONFIG_LOADED__ = true
+                    resolve()
+                }
+                script.onerror = () => {
+                    window.__PTADMIN_PTCONFIG_LOADED__ = false
+                    resolve()
+                }
+                document.head.appendChild(script)
+            })
+        </script>
+        <style>
+            .ptadmin-loader-container {
+                position: fixed;
+                inset: 0;
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                background:
+                    radial-gradient(circle at top, rgba(34, 116, 255, 0.28), transparent 32%),
+                    linear-gradient(180deg, #0f172a 0%, #111827 100%);
+                color: #ffffff;
+            }
+
+            .ptadmin-loader-ring {
+                position: relative;
+                width: 78px;
+                height: 78px;
+            }
+
+            .ptadmin-loader-ring::before,
+            .ptadmin-loader-ring::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                border-radius: 50%;
+                border: 4px solid transparent;
+            }
+
+            .ptadmin-loader-ring::before {
+                border-top-color: #4da3ff;
+                border-right-color: #21c2c2;
+                animation: ptadmin-loader-spin 1.35s linear infinite;
+            }
+
+            .ptadmin-loader-ring::after {
+                inset: 14%;
+                border-bottom-color: #ff8a3d;
+                border-left-color: #4da3ff;
+                animation: ptadmin-loader-spin 1s linear reverse infinite;
+            }
+
+            .ptadmin-loader-text {
+                margin-top: 18px;
+                font-size: 13px;
+                letter-spacing: 0.08em;
+                color: rgba(255, 255, 255, 0.82);
+            }
+
+            @keyframes ptadmin-loader-spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+      <script type="module" crossorigin src="./assets/index-D8l2Ebeo.js"></script>
+      <link rel="stylesheet" crossorigin href="./assets/index-Ciuj1zYi.css">
+    </head>
+    <body>
+        <div id="__ptadmin_loader__" class="ptadmin-loader-container">
+            <div class="ptadmin-loader-ring"></div>
+            <div class="ptadmin-loader-text">PTAdmin HTML Booted...</div>
+        </div>
+        <div id="app"></div>
+    </body>
+</html>
