@@ -1,4 +1,4 @@
-import{i as U}from"./vendor-editor-sbHrhnY2.js";import{_ as Be}from"./index-CGDfJSQP.js";const de="pangtou-cloud-platform-user";function yt(e,n,l){const t=e.slice(0,4),r=`
+import{i as U}from"./vendor-editor-sbHrhnY2.js";import{_ as Be}from"./index-B4Wb5eKZ.js";const de="pangtou-cloud-platform-user";function yt(e,n,l){const t=e.slice(0,4),r=`
         <svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
             <defs>
                 <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
