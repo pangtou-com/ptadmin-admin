@@ -54,11 +54,36 @@ trait FormatInstallOutput
          * data: message \n\n
          * 这个是标准的输出方式，我不需要这种标准输出，直接输出一个json字符串即可
          */
-        echo app()->runningInConsole() ? $message."\n" : json_encode($data)."\n\n";
+        echo app()->runningInConsole()
+            ? $message."\n"
+            : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n".$this->streamPadding();
+        $this->flushOutput();
         /*
          * echo 'event:'.$type."\n";
          * echo 'data:'.$message."\n\n";
          */
         usleep(100000);
+    }
+
+    private function flushOutput(): void
+    {
+        if (app()->runningInConsole()) {
+            return;
+        }
+
+        if (ob_get_level() > 0) {
+            @ob_flush();
+        }
+
+        flush();
+    }
+
+    private function streamPadding(): string
+    {
+        if (app()->runningInConsole()) {
+            return '';
+        }
+
+        return str_repeat(' ', 4096)."\n";
     }
 }

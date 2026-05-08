@@ -178,13 +178,18 @@ class InstallController
      */
     private function sendStreamMessage(array $payload): void
     {
-        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n";
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)."\n\n".$this->streamPadding();
 
         if (ob_get_level() > 0) {
-            ob_flush();
+            @ob_flush();
         }
 
         flush();
+    }
+
+    private function streamPadding(): string
+    {
+        return str_repeat(' ', 4096)."\n";
     }
 
     private function hasAcceptedAgreementRecently(): bool
