@@ -52,7 +52,7 @@ return new class extends Migration
             $table->index('status', 'idx_admins_status');
         });
 
-        $this->commentTable('admins', '后台管理员表');
+        setCommentTable('admins', '后台管理员表');
     }
 
     private function createAdminLoginLogsTable(): void
@@ -74,7 +74,7 @@ return new class extends Migration
             $table->index('status', 'idx_admin_login_logs_status');
         });
 
-        $this->commentTable('admin_login_logs', '后台管理员登录日志表');
+        setCommentTable('admin_login_logs', '后台管理员登录日志表');
     }
 
     private function createUserTokensTable(): void
@@ -95,7 +95,7 @@ return new class extends Migration
             $table->index('guard_name', 'idx_user_tokens_guard_name');
         });
 
-        $this->commentTable('user_tokens', '访问令牌表');
+        setCommentTable('user_tokens', '访问令牌表');
     }
 
     private function createOperationRecordsTable(): void
@@ -130,7 +130,7 @@ return new class extends Migration
             $table->index('created_at', 'idx_operation_records_created_at');
         });
 
-        $this->commentTable('operation_records', '操作日志表');
+        setCommentTable('operation_records', '操作日志表');
     }
 
     private function createSystemConfigGroupsTable(): void
@@ -153,7 +153,7 @@ return new class extends Migration
             $table->unique(['addon_code', 'name'], 'uniq_system_config_groups_addon_name');
         });
 
-        $this->commentTable('system_config_groups', '系统配置分组表');
+        setCommentTable('system_config_groups', '系统配置分组表');
     }
 
     private function createSystemConfigsTable(): void
@@ -177,15 +177,6 @@ return new class extends Migration
             $table->unique(['system_config_group_id', 'name'], 'uniq_system_configs_group_name');
         });
 
-        $this->commentTable('system_configs', '系统配置项表');
-    }
-
-    private function commentTable(string $table, string $comment): void
-    {
-        if ('mysql' !== DB::getDriverName()) {
-            return;
-        }
-
-        DB::statement('ALTER TABLE `'.get_table_name($table).'` COMMENT = "'.$comment.'"');
+        setCommentTable('system_configs', '系统配置项表');
     }
 };

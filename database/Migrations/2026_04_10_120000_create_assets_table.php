@@ -24,6 +24,8 @@ return new class() extends Migration {
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();
         });
+    
+        setCommentTable("assets", "平台资源管理表");
     }
 
     public function down(): void

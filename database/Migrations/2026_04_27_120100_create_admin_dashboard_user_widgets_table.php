@@ -28,20 +28,11 @@ return new class extends Migration
             $table->index('widget_code', 'idx_admin_dashboard_user_widgets_widget_code');
         });
 
-        $this->commentTable('admin_dashboard_user_widgets', '用户仪表盘组件表');
+        setCommentTable('admin_dashboard_user_widgets', '用户仪表盘组件表');
     }
 
     public function down(): void
     {
         Schema::dropIfExists('admin_dashboard_user_widgets');
-    }
-
-    private function commentTable(string $table, string $comment): void
-    {
-        if ('mysql' !== DB::getDriverName()) {
-            return;
-        }
-
-        DB::statement('ALTER TABLE `'.get_table_name($table).'` COMMENT = "'.$comment.'"');
     }
 };

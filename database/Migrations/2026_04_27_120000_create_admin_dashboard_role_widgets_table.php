@@ -27,21 +27,12 @@ return new class extends Migration
             $table->index('role_id', 'idx_admin_dashboard_role_widgets_role_id');
             $table->index('widget_code', 'idx_admin_dashboard_role_widgets_widget_code');
         });
-
-        $this->commentTable('admin_dashboard_role_widgets', '角色默认仪表盘组件表');
+    
+        setCommentTable('admin_dashboard_role_widgets', '角色默认仪表盘组件表');
     }
 
     public function down(): void
     {
         Schema::dropIfExists('admin_dashboard_role_widgets');
-    }
-
-    private function commentTable(string $table, string $comment): void
-    {
-        if ('mysql' !== DB::getDriverName()) {
-            return;
-        }
-
-        DB::statement('ALTER TABLE `'.get_table_name($table).'` COMMENT = "'.$comment.'"');
     }
 };

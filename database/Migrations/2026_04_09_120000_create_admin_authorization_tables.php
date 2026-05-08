@@ -47,7 +47,7 @@ return new class extends Migration
             $table->index('is_system', 'idx_admin_roles_is_system');
         });
 
-        $this->commentTable('admin_roles', '后台角色表');
+        setCommentTable('admin_roles', '后台角色表');
     }
 
     private function createAdminResourcesTable(): void
@@ -81,7 +81,7 @@ return new class extends Migration
             $table->index('status', 'idx_admin_resources_status');
         });
 
-        $this->commentTable('admin_resources', '后台资源表');
+        setCommentTable('admin_resources', '后台资源表');
     }
 
     private function createAdminUserRolesTable(): void
@@ -98,7 +98,7 @@ return new class extends Migration
             $table->index('role_id', 'idx_admin_user_roles_role');
         });
 
-        $this->commentTable('admin_user_roles', '后台用户角色关系表');
+        setCommentTable('admin_user_roles', '后台用户角色关系表');
     }
 
     private function createAdminGrantsTable(): void
@@ -125,15 +125,6 @@ return new class extends Migration
             $table->index('expires_at', 'idx_admin_grants_expires_at');
         });
 
-        $this->commentTable('admin_grants', '后台授权关系表');
-    }
-
-    private function commentTable(string $table, string $comment): void
-    {
-        if ('mysql' !== DB::getDriverName()) {
-            return;
-        }
-
-        DB::statement('ALTER TABLE `'.get_table_name($table).'` COMMENT = "'.$comment.'"');
+        setCommentTable('admin_grants', '后台授权关系表');
     }
 };

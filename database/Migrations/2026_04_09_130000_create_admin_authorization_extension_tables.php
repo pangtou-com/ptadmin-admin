@@ -24,7 +24,7 @@ return new class extends Migration
             $table->index('status', 'idx_admin_tenants_status');
             $table->engine = 'InnoDB';
         });
-        $this->commentTable('admin_tenants', '后台租户表');
+        setCommentTable('admin_tenants', '后台租户表');
 
         Schema::create('admin_organizations', function (Blueprint $table): void {
             $table->id();
@@ -43,7 +43,7 @@ return new class extends Migration
             $table->index('status', 'idx_admin_organizations_status');
             $table->engine = 'InnoDB';
         });
-        $this->commentTable('admin_organizations', '后台组织表');
+        setCommentTable('admin_organizations', '后台组织表');
 
         Schema::create('admin_departments', function (Blueprint $table): void {
             $table->id();
@@ -63,7 +63,7 @@ return new class extends Migration
             $table->index('status', 'idx_admin_departments_status');
             $table->engine = 'InnoDB';
         });
-        $this->commentTable('admin_departments', '后台部门表');
+        setCommentTable('admin_departments', '后台部门表');
 
         Schema::create('admin_user_org_relations', function (Blueprint $table): void {
             $table->id();
@@ -79,7 +79,7 @@ return new class extends Migration
             $table->index(['organization_id', 'department_id'], 'idx_admin_user_org_org');
             $table->engine = 'InnoDB';
         });
-        $this->commentTable('admin_user_org_relations', '后台用户组织关系表');
+        setCommentTable('admin_user_org_relations', '后台用户组织关系表');
     }
 
     public function down(): void
@@ -88,14 +88,5 @@ return new class extends Migration
         Schema::dropIfExists('admin_departments');
         Schema::dropIfExists('admin_organizations');
         Schema::dropIfExists('admin_tenants');
-    }
-
-    private function commentTable(string $table, string $comment): void
-    {
-        if ('mysql' !== DB::getDriverName()) {
-            return;
-        }
-
-        DB::statement('ALTER TABLE `'.get_table_name($table).'` COMMENT = "'.$comment.'"');
     }
 };
