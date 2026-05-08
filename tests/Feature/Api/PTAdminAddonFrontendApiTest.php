@@ -172,7 +172,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
                             'icon' => 'Document',
                             'order' => 40,
                             'preload' => false,
-                            'develop' => true,
+                            'develop' => false,
                         ],
                         'entry' => [
                             'local' => [
@@ -199,7 +199,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
                         'entry' => [
                             'wujie' => [
                                 'name' => 'pangtou_workspace_micro',
-                                'url' => 'http://localhost:5181/',
+                                'url' => '/admin/modules/workspace/dist/admin/',
                                 'alive' => true,
                                 'sync' => true,
                                 'degrade' => false,

@@ -15,6 +15,8 @@ use PTAdmin\Addon\Addon;
  */
 class AddonFrontendService
 {
+    private const MANIFEST_NORMALIZER_VERSION = 'admin-modules-v2';
+
     /**
      * 获取公开可读的后台模块清单。
      *
@@ -66,7 +68,7 @@ class AddonFrontendService
 
     protected function buildCacheKey(): string
     {
-        return 'ptadmin:admin:module-manifests:'.$this->buildManifestFingerprint();
+        return 'ptadmin:admin:module-manifests:'.self::MANIFEST_NORMALIZER_VERSION.':'.$this->buildManifestFingerprint();
     }
 
     protected function buildManifestFingerprint(): string
@@ -77,6 +79,7 @@ class AddonFrontendService
             $fingerprints[] = [
                 'code' => (string) ($addonInfo['code'] ?? $addonCode),
                 'version' => (string) ($addonInfo['version'] ?? ''),
+                'develop' => !empty($addonInfo['develop']),
                 'modules' => array_values($this->extractModuleDefinitions((string) $addonCode, $addonInfo)),
             ];
         }
@@ -159,7 +162,7 @@ class AddonFrontendService
             return [];
         }
 
-        $isDevelop = (bool) data_get($definition, 'meta.develop', false);
+        $isDevelop = $this->isFrontendDevelopMode($definition, $addonInfo, false);
 
         return [
             'key' => $key,
@@ -207,7 +210,7 @@ class AddonFrontendService
             $routeBase = '/'.$code;
         }
 
-        $isDevelop = (bool) data_get($definition, 'meta.develop', !empty($addonInfo['develop']));
+        $isDevelop = $this->isFrontendDevelopMode($definition, $addonInfo, true);
 
         return [
             'id' => trim((string) ($definition['id'] ?? $code)),
@@ -350,6 +353,22 @@ class AddonFrontendService
     protected function defaultFederationEntry(string $addonCode): string
     {
         return $this->addonPublicModuleUrl($addonCode, 'dist/admin/assets/remoteEntry.js');
+    }
+
+    /**
+     * frontend.json 可能来自开发构建，不能单独用 meta.develop 决定是否返回 localhost。
+     * 只有插件自身处于 develop 模式时，前端模块才允许输出开发入口。
+     *
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $addonInfo
+     */
+    protected function isFrontendDevelopMode(array $definition, array $addonInfo, bool $default): bool
+    {
+        if (empty($addonInfo['develop'])) {
+            return false;
+        }
+
+        return (bool) data_get($definition, 'meta.develop', $default);
     }
 
     /**
