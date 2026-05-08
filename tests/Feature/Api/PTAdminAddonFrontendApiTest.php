@@ -54,6 +54,8 @@ class PTAdminAddonFrontendApiTest extends TestCase
 
     public function test_module_manifests_endpoint_returns_normalized_manifest_payload(): void
     {
+        config()->set('app.url', 'https://demo.example.com');
+
         $this->writeAddonModuleManifest('Cms', [
             'modules' => [
                 [
@@ -177,8 +179,8 @@ class PTAdminAddonFrontendApiTest extends TestCase
                         'entry' => [
                             'local' => [
                                 'type' => 'module',
-                                'js' => '/admin/modules/cms/dist/index.js',
-                                'css' => ['/admin/modules/cms/dist/index.css'],
+                                'js' => 'https://demo.example.com/admin/modules/cms/dist/index.js',
+                                'css' => ['https://demo.example.com/admin/modules/cms/dist/index.css'],
                             ],
                         ],
                         'pages' => [
@@ -199,7 +201,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
                         'entry' => [
                             'wujie' => [
                                 'name' => 'pangtou_workspace_micro',
-                                'url' => '/admin/modules/workspace/dist/',
+                                'url' => 'https://demo.example.com/admin/modules/workspace/dist/',
                                 'alive' => true,
                                 'sync' => true,
                                 'degrade' => false,
@@ -478,6 +480,57 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $response->assertOk();
         self::assertSame('deploy-root', $response->json('data.0.key'));
         self::assertSame('Deploy Root Manifest', $response->json('data.0.title'));
+    }
+
+    public function test_module_manifests_endpoint_returns_absolute_federation_entry_for_deploy_addon(): void
+    {
+        config()->set('app.url', 'https://demo.example.com');
+
+        $this->writeAddonModuleManifest('Cms', [
+            'modules' => [
+                [
+                    'id' => 'cms',
+                    'code' => 'cms',
+                    'name' => 'CMS',
+                    'enabled' => true,
+                    'kind' => 'module',
+                    'runtime' => 'federation',
+                    'routeBase' => '/cms',
+                    'entry' => [
+                        'federation' => [
+                            'remote' => 'cms_remote',
+                            'entry' => 'http://localhost:4179/assets/remoteEntry.js',
+                            'expose' => './module',
+                        ],
+                    ],
+                    'pages' => [
+                        [
+                            'key' => 'cms.index',
+                            'path' => '/cms',
+                            'title' => 'CMS',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        Addon::swap(new FakeAddonFrontendManager([
+            'cms' => [
+                'code' => 'cms',
+                'title' => 'CMS',
+                'version' => '1.0.0',
+                'base_path' => 'Cms',
+                'develop' => false,
+            ],
+        ]));
+
+        $token = $this->issueFrontendToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends');
+
+        $response->assertOk();
+        self::assertSame('https://demo.example.com/admin/modules/cms/dist/assets/remoteEntry.js', $response->json('data.0.entry.federation.entry'));
     }
 
     /**

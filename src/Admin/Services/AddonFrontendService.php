@@ -15,7 +15,7 @@ use PTAdmin\Addon\Addon;
  */
 class AddonFrontendService
 {
-    private const MANIFEST_NORMALIZER_VERSION = 'admin-modules-v3';
+    private const MANIFEST_NORMALIZER_VERSION = 'admin-modules-v4';
 
     /**
      * 获取公开可读的后台模块清单。
@@ -343,8 +343,12 @@ class AddonFrontendService
             return $this->addonPublicModuleUrl($addonCode, substr($entry, \strlen('/addons/'.$addonCode.'/')));
         }
 
-        if ($this->isAbsoluteUrl($entry) || '/' === $entry[0]) {
+        if ($this->isAbsoluteUrl($entry)) {
             return $entry;
+        }
+
+        if ('/' === $entry[0]) {
+            return $this->makeAbsoluteUrl($entry);
         }
 
         return $this->normalizeAssetUrl($entry, $addonCode);
@@ -389,6 +393,10 @@ class AddonFrontendService
             return $this->addonPublicModuleUrl($addonCode, substr($url, \strlen('/addons/'.$addonCode.'/')));
         }
 
+        if ('/' === $url[0]) {
+            return $this->makeAbsoluteUrl($url);
+        }
+
         return $url;
     }
 
@@ -419,18 +427,41 @@ class AddonFrontendService
             return $this->addonPublicModuleUrl($addonCode, substr($path, \strlen('/addons/'.$addonCode.'/')));
         }
 
-        if ($this->isAbsoluteUrl($path) || '/' === $path[0]) {
+        if ($this->isAbsoluteUrl($path)) {
             return $path;
         }
 
+        if ('/' === $path[0]) {
+            return $this->makeAbsoluteUrl($path);
+        }
+
         return $this->addonPublicModuleUrl($addonCode, $path);
+    }
+
+    protected function makeAbsoluteUrl(string $path): string
+    {
+        $baseUrl = rtrim((string) config('app.url', ''), '/');
+        if ('' === $baseUrl) {
+            $requestBaseUrl = request()->getSchemeAndHttpHost();
+            if ('' !== trim((string) $requestBaseUrl)) {
+                $baseUrl = rtrim((string) $requestBaseUrl, '/');
+            }
+        }
+
+        if ('' === $baseUrl) {
+            return $path;
+        }
+
+        return $baseUrl.$path;
     }
 
     protected function addonPublicModuleUrl(string $addonCode, string $path = ''): string
     {
         $url = admin_web_url('modules/'.$addonCode.'/'.ltrim($path, '/'));
 
-        return '' !== $path && '/' === substr($path, -1) ? $url.'/' : $url;
+        $url = '' !== $path && '/' === substr($path, -1) ? $url.'/' : $url;
+
+        return $this->makeAbsoluteUrl($url);
     }
 
     /**

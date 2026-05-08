@@ -136,6 +136,8 @@ class PTAdminAddonFrontendServiceTest extends TestCase
 
     public function test_deploy_federation_manifest_rewrites_local_entry_to_public_addon_asset_url(): void
     {
+        config()->set('app.url', 'https://demo.example.com');
+
         $this->writeManifest('Test', [
             'id' => 'test',
             'code' => 'test',
@@ -167,11 +169,13 @@ class PTAdminAddonFrontendServiceTest extends TestCase
         $results = app(AddonFrontendService::class)->manifests();
 
         self::assertCount(1, $results);
-        self::assertSame('/admin/modules/test/dist/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
+        self::assertSame('https://demo.example.com/admin/modules/test/dist/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
     }
 
     public function test_deploy_addon_ignores_frontend_manifest_develop_flag_when_rewriting_local_entry(): void
     {
+        config()->set('app.url', 'https://demo.example.com');
+
         $this->writeManifest('Test', [
             'id' => 'test',
             'code' => 'test',
@@ -207,7 +211,7 @@ class PTAdminAddonFrontendServiceTest extends TestCase
 
         self::assertCount(1, $results);
         self::assertFalse((bool) data_get($results[0], 'meta.develop'));
-        self::assertSame('/admin/modules/test/dist/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
+        self::assertSame('https://demo.example.com/admin/modules/test/dist/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
     }
 
     /**
