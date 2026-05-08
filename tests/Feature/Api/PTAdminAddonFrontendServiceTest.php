@@ -134,6 +134,42 @@ class PTAdminAddonFrontendServiceTest extends TestCase
         self::assertSame('https://demo.example.com/addons/test/dist/admin/', data_get($results[0], 'entry.wujie.url'));
     }
 
+    public function test_deploy_federation_manifest_rewrites_local_entry_to_public_addon_asset_url(): void
+    {
+        $this->writeManifest('Test', [
+            'id' => 'test',
+            'code' => 'test',
+            'name' => 'Test',
+            'version' => '0.1.2',
+            'enabled' => true,
+            'kind' => 'module',
+            'runtime' => 'federation',
+            'routeBase' => '/test',
+            'entry' => [
+                'federation' => [
+                    'remote' => 'test_remote',
+                    'entry' => 'http://localhost:4179/assets/remoteEntry.js',
+                    'expose' => './module',
+                ],
+            ],
+        ]);
+
+        Addon::swap(new FakeAddonFrontendServiceManager([
+            'test' => [
+                'code' => 'test',
+                'title' => 'Test',
+                'version' => '1.0.0',
+                'develop' => false,
+                'base_path' => 'Test',
+            ],
+        ]));
+
+        $results = app(AddonFrontendService::class)->manifests();
+
+        self::assertCount(1, $results);
+        self::assertSame('/addons/test/dist/admin/assets/remoteEntry.js', data_get($results[0], 'entry.federation.entry'));
+    }
+
     /**
      * @param array<string, mixed> $payload
      */

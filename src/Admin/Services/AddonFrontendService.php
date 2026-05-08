@@ -173,7 +173,7 @@ class AddonFrontendService
                 'preload' => (bool) data_get($definition, 'meta.preload', false),
                 'develop' => (bool) data_get($definition, 'meta.develop', false),
             ],
-            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $addonCode),
+            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $addonCode, $addonInfo),
             'pages' => $pages,
         ];
     }
@@ -222,7 +222,7 @@ class AddonFrontendService
                 'preload' => (bool) data_get($definition, 'meta.preload', false),
                 'develop' => (bool) data_get($definition, 'meta.develop', !empty($addonInfo['develop'])),
             ],
-            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $code),
+            'entry' => $this->normalizeEntry($definition['entry'] ?? [], $runtime, $code, $addonInfo),
             'capabilities' => $this->normalizeCapabilities((array) ($definition['capabilities'] ?? [])),
             'pages' => $this->normalizePages((array) ($definition['pages'] ?? []), $routeBase),
             'compatibility' => \is_array($definition['compatibility'] ?? null) ? $definition['compatibility'] : [],
@@ -266,12 +266,12 @@ class AddonFrontendService
     }
 
     /**
-     * @param mixed  $entry
-     * @param string $runtime
+     * @param mixed                $entry
+     * @param array<string, mixed> $addonInfo
      *
      * @return array<string, mixed>
      */
-    protected function normalizeEntry($entry, string $runtime, string $addonCode): array
+    protected function normalizeEntry($entry, string $runtime, string $addonCode, array $addonInfo = []): array
     {
         if (!\is_array($entry)) {
             return [];
@@ -283,7 +283,7 @@ class AddonFrontendService
             return [
                 'federation' => [
                     'remote' => (string) ($federation['remote'] ?? $addonCode),
-                    'entry' => (string) ($federation['entry'] ?? ''),
+                    'entry' => $this->normalizeFederationEntry((string) ($federation['entry'] ?? ''), $addonCode, $addonInfo),
                     'expose' => (string) ($federation['expose'] ?? './module'),
                 ],
             ];
@@ -312,6 +312,48 @@ class AddonFrontendService
                 'css' => $this->normalizeAssetList((array) ($local['css'] ?? []), $addonCode),
             ],
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $addonInfo
+     */
+    protected function normalizeFederationEntry(string $entry, string $addonCode, array $addonInfo): string
+    {
+        $entry = trim($entry);
+        if (!empty($addonInfo['develop'])) {
+            return $entry;
+        }
+
+        if ('' === $entry || $this->isLocalDevelopmentUrl($entry)) {
+            return $this->defaultFederationEntry($addonCode);
+        }
+
+        if ($this->isAbsoluteUrl($entry) || '/' === $entry[0]) {
+            return $entry;
+        }
+
+        return $this->normalizeAssetUrl($entry, $addonCode);
+    }
+
+    protected function defaultFederationEntry(string $addonCode): string
+    {
+        return '/addons/'.$addonCode.'/dist/admin/assets/remoteEntry.js';
+    }
+
+    protected function isLocalDevelopmentUrl(string $value): bool
+    {
+        if (!$this->isAbsoluteUrl($value)) {
+            return false;
+        }
+
+        $host = parse_url($value, PHP_URL_HOST);
+        if (!\is_string($host)) {
+            return false;
+        }
+
+        $host = strtolower($host);
+
+        return \in_array($host, ['localhost', '127.0.0.1', '0.0.0.0', '::1'], true);
     }
 
     protected function normalizeAssetUrl(string $path, string $addonCode): string
