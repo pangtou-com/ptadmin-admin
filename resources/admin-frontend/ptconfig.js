@@ -4,9 +4,6 @@ window.ptconfig = {
     title: 'PTAdmin Console',
     shortTitle: 'PTAdmin',
     description: 'PTAdmin 后台管理控制台',
-    version: '0.1.0',
-    coreVersion: '0.1.0',
-    core_version: '0.1.0',
     locale: 'zh-CN',
     logo: '',
     favicon: '',
@@ -116,7 +113,7 @@ window.ptconfig = {
 
     // 接口与路由
     // 为空时，运行时会按当前访问地址推导接口前缀
-    baseURL: 'http://127.0.0.1:8000/CDIepxAe/',
+    baseURL: '',
     // 为空时，运行时会按 {baseURL}/upload 自动推导上传地址
     uploadURL: '',
     // 仅请求真实后端
@@ -162,20 +159,4 @@ window.ptconfig = {
         organization: false,
         data_scope: false,
     },
-
-    // 微前端插件配置
-    addons: [
-        // {
-        //     name: 'partner-center',
-        //     title: '合作伙伴中心',
-        //     entry: 'https://partner.example.com/',
-        //     activeRule: '/partner-center',
-        //     container: '#ptadmin-addon-root',
-        //     preload: true,
-        //     auth: true,
-        //     props: {
-        //         baseURL: 'https://api.example.com/',
-        //     },
-        // },
-    ],
 }
