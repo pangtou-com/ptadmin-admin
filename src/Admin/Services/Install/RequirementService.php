@@ -153,19 +153,45 @@ class RequirementService
     private function checkFolders(array $folders): array
     {
         $results = [];
-        foreach ($folders as $folder => $permission) {
-            if (!file_exists(base_path($folder))) {
-                @mkdir(base_path($folder), 0755, true);
+        foreach ($folders as $folder => $requirement) {
+            [$permission, $description] = $this->normalizeFolderRequirement($requirement);
+            $path = base_path($folder);
+
+            if (!file_exists($path)) {
+                @mkdir($path, 0755, true);
             }
-            $perm = substr(sprintf('%o', @fileperms(base_path($folder))), -4);
+
+            $fileperms = @fileperms($path);
+            $perm = false === $fileperms ? '0000' : substr(sprintf('%o', $fileperms), -4);
+
             $results[] = [
                 'title' => $folder,
                 'config' => $perm,
-                'state' => $perm >= $permission,
+                'description' => $description,
+                'state' => is_dir($path) && is_writable($path) && $this->folderPermissionSatisfies($perm, (string) $permission),
             ];
         }
 
         return $results;
+    }
+
+    private function normalizeFolderRequirement($requirement): array
+    {
+        if (!\is_array($requirement)) {
+            return [(string) $requirement, ''];
+        }
+
+        $description = (string) ($requirement['description'] ?? '');
+
+        return [
+            (string) ($requirement['permission'] ?? '755'),
+            '' === $description ? '' : __($description),
+        ];
+    }
+
+    private function folderPermissionSatisfies(string $actual, string $expected): bool
+    {
+        return (int) ltrim($actual, '0') >= (int) ltrim($expected, '0');
     }
 
     /**

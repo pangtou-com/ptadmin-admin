@@ -74,6 +74,18 @@ return [
     'creatable' => 'Creatable',
     'readable' => 'Readable',
     'current_version' => 'Current',
+    'validation' => [
+        'required_incomplete' => 'Please fill in all required fields before starting installation.',
+    ],
+    'requirement_descriptions' => [
+        'folders' => [
+            'addons' => 'Stores downloaded addon backend code and must be writable during addon install and update.',
+            'templates' => 'Stores downloaded project templates and must be writable when creating or syncing templates.',
+            'public' => 'Publishes admin frontend assets and other publicly accessible files.',
+            'storage' => 'Stores the install marker, cache, logs, and admin frontend assets.',
+            'bootstrap_cache' => 'Stores Laravel bootstrap cache files.',
+        ],
+    ],
     'stream' => [
         'agreement_required' => 'Please read and accept the agreement before continuing.',
         'requirements_failed' => 'Environment check failed. Please fix the failed items before continuing.',

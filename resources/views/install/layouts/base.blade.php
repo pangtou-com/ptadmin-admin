@@ -281,6 +281,12 @@
             gap: 8px;
         }
 
+        .install-field.is-invalid .install-input,
+        .install-field.is-invalid .install-select {
+            border-color: var(--install-error);
+            box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.1);
+        }
+
         .install-field-label {
             font-size: 14px;
             font-weight: 600;
@@ -340,6 +346,13 @@
         .install-table-row.is-error {
             border-color: rgba(192, 57, 43, 0.3);
             background: rgba(192, 57, 43, 0.08);
+        }
+
+        .install-table-item-description {
+            margin-top: 4px;
+            color: var(--install-muted);
+            font-size: 12px;
+            line-height: 1.5;
         }
 
         .install-status {

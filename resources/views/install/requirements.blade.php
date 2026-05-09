@@ -25,7 +25,12 @@
                 @if(isset($result['results']) && $result['results'])
                     @foreach($result['results'] as $item)
                         <div class="install-table-row @if(!$item['state']) is-error @endif">
-                            <div>{{ $item['title'] }}</div>
+                            <div>
+                                <div>{{ $item['title'] }}</div>
+                                @if(!empty($item['description']))
+                                    <div class="install-table-item-description">{{ $item['description'] }}</div>
+                                @endif
+                            </div>
                             <div>{{ $item['config'] }}</div>
                             <div>
                                 @if($item['state'])

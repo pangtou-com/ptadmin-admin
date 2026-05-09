@@ -36,10 +36,26 @@ return [
     |
     */
     'folders' => [
-        'addons' => '755',
-        'public' => '755',
-        'storage' => '755',
-        'bootstrap/cache/' => '755',
+        'addons' => [
+            'permission' => '755',
+            'description' => 'ptadmin::install.requirement_descriptions.folders.addons',
+        ],
+        'templates' => [
+            'permission' => '755',
+            'description' => 'ptadmin::install.requirement_descriptions.folders.templates',
+        ],
+        'public' => [
+            'permission' => '755',
+            'description' => 'ptadmin::install.requirement_descriptions.folders.public',
+        ],
+        'storage' => [
+            'permission' => '755',
+            'description' => 'ptadmin::install.requirement_descriptions.folders.storage',
+        ],
+        'bootstrap/cache/' => [
+            'permission' => '755',
+            'description' => 'ptadmin::install.requirement_descriptions.folders.bootstrap_cache',
+        ],
     ],
     'files' => [
         '.env' => 'write',

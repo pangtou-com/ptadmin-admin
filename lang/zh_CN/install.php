@@ -74,6 +74,18 @@ return [
     'creatable' => '可创建',
     'readable' => '可读取',
     'current_version' => '当前',
+    'validation' => [
+        'required_incomplete' => '请先填写所有必填项后再提交安装。',
+    ],
+    'requirement_descriptions' => [
+        'folders' => [
+            'addons' => '用于下载和存放插件后端代码，插件安装和更新时需要写入。',
+            'templates' => '用于下载和存放项目模板，创建项目或同步模板时需要写入。',
+            'public' => '用于发布后台前端资源和公开访问文件。',
+            'storage' => '用于写入安装标记、缓存、日志和后台资源存储。',
+            'bootstrap_cache' => '用于写入 Laravel 启动缓存文件。',
+        ],
+    ],
     'stream' => [
         'agreement_required' => '请先阅读并同意使用协议后再继续安装。',
         'requirements_failed' => '环境检查未通过，请先修复失败项后再继续安装。',

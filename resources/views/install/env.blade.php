@@ -2,24 +2,25 @@
 
 @section('content')
     <form id="install-form">
+        <div id="install-form-alert" class="install-alert install-alert-warning" style="display: none;"></div>
         <div class="install-section">
             <h2 class="install-section-title">{{ __('ptadmin::install.sections.basic') }}</h2>
             <div class="install-form-grid">
                 <label class="install-field">
                     <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.app_url') }}</span>
-                    <input type="text" name="app_url" value="{{ $url }}" placeholder="{{ __('ptadmin::install.placeholders.app_url') }}" autocomplete="off" class="install-input">
+                    <input type="text" name="app_url" value="{{ $url }}" placeholder="{{ __('ptadmin::install.placeholders.app_url') }}" autocomplete="off" class="install-input" required>
                 </label>
                 <label class="install-field">
                     <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.app_name') }}</span>
-                    <input type="text" name="app_name" value="PTAdmin" placeholder="{{ __('ptadmin::install.placeholders.app_name') }}" autocomplete="off" class="install-input">
+                    <input type="text" name="app_name" value="PTAdmin" placeholder="{{ __('ptadmin::install.placeholders.app_name') }}" autocomplete="off" class="install-input" required>
                 </label>
                 <label class="install-field">
                     <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.username') }}</span>
-                    <input type="text" name="username" placeholder="{{ __('ptadmin::install.placeholders.username') }}" autocomplete="off" class="install-input">
+                    <input type="text" name="username" placeholder="{{ __('ptadmin::install.placeholders.username') }}" autocomplete="off" class="install-input" required>
                 </label>
                 <label class="install-field">
                     <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.password') }}</span>
-                    <input type="password" name="password" placeholder="{{ __('ptadmin::install.placeholders.password') }}" autocomplete="off" class="install-input">
+                    <input type="password" name="password" placeholder="{{ __('ptadmin::install.placeholders.password') }}" autocomplete="off" class="install-input" required minlength="6">
                 </label>
                 <label class="install-field">
                     <span class="install-field-label">{{ __('ptadmin::install.fields.web_prefix') }}</span>
@@ -36,27 +37,27 @@
             <h2 class="install-section-title">{{ __('ptadmin::install.sections.database') }}</h2>
             <div class="install-form-grid">
                 <label class="install-field">
-                    <span class="install-field-label">{{ __('ptadmin::install.fields.db_connection') }}</span>
-                    <select name="db_connection" class="install-select">
+                    <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.db_connection') }}</span>
+                    <select name="db_connection" class="install-select" required>
                         <option value="">{{ __('ptadmin::install.placeholders.db_connection') }}</option>
                         <option value="mysql" selected>{{ __('ptadmin::install.database_options.mysql') }}</option>
                     </select>
                 </label>
                 <label class="install-field">
-                    <span class="install-field-label">{{ __('ptadmin::install.fields.db_host') }}</span>
-                    <input type="text" name="db_host" placeholder="{{ __('ptadmin::install.placeholders.db_host') }}" value="127.0.0.1" class="install-input">
+                    <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.db_host') }}</span>
+                    <input type="text" name="db_host" placeholder="{{ __('ptadmin::install.placeholders.db_host') }}" value="127.0.0.1" class="install-input" required>
                 </label>
                 <label class="install-field">
-                    <span class="install-field-label">{{ __('ptadmin::install.fields.db_port') }}</span>
-                    <input type="text" name="db_port" placeholder="{{ __('ptadmin::install.placeholders.db_port') }}" value="3306" class="install-input">
+                    <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.db_port') }}</span>
+                    <input type="text" name="db_port" placeholder="{{ __('ptadmin::install.placeholders.db_port') }}" value="3306" class="install-input" required>
                 </label>
                 <label class="install-field">
-                    <span class="install-field-label">{{ __('ptadmin::install.fields.db_database') }}</span>
-                    <input type="text" name="db_database" value="pang_tou" placeholder="{{ __('ptadmin::install.placeholders.db_database') }}" autocomplete="off" class="install-input">
+                    <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.db_database') }}</span>
+                    <input type="text" name="db_database" value="pang_tou" placeholder="{{ __('ptadmin::install.placeholders.db_database') }}" autocomplete="off" class="install-input" required>
                 </label>
                 <label class="install-field">
-                    <span class="install-field-label">{{ __('ptadmin::install.fields.db_username') }}</span>
-                    <input type="text" name="db_username" placeholder="{{ __('ptadmin::install.placeholders.db_username') }}" autocomplete="off" class="install-input">
+                    <span class="install-field-label"><span class="required">*</span> {{ __('ptadmin::install.fields.db_username') }}</span>
+                    <input type="text" name="db_username" placeholder="{{ __('ptadmin::install.placeholders.db_username') }}" autocomplete="off" class="install-input" required>
                 </label>
                 <label class="install-field">
                     <span class="install-field-label">{{ __('ptadmin::install.fields.db_password') }}</span>

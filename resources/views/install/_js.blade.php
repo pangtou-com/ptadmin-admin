@@ -11,10 +11,12 @@
         const successUrl = @json(url('/'));
         const form = document.getElementById('install-form');
         const submitButton = document.getElementById('submit');
+        const formAlert = document.getElementById('install-form-alert');
         const dialogMask = document.getElementById('install-dialog-mask');
         const consoleBox = document.getElementById('install-console');
         const dialogActions = document.getElementById('install-dialog-actions');
         const i18n = {
+            requiredIncomplete: @json(__('ptadmin::install.validation.required_incomplete')),
             requestSent: @json(__('ptadmin::install.stream.request_sent')),
             parseFailed: @json(__('ptadmin::install.stream.parse_failed', ['message' => '__MESSAGE__'])),
             generalFailed: @json(__('ptadmin::install.stream.general_failed')),
@@ -51,8 +53,7 @@
                 dialogActions.style.display = 'none';
                 dialogMask.classList.remove('is-visible');
                 dialogMask.setAttribute('aria-hidden', 'true');
-                submitButton.disabled = false;
-                submitButton.classList.remove('is-disabled');
+                updateSubmitState();
             },
             open: function () {
                 dialogMask.classList.add('is-visible');
@@ -140,7 +141,73 @@
             }
         };
 
+        const requiredFields = Array.prototype.slice.call(form.querySelectorAll('[required]'));
+
+        function getEmptyRequiredFields() {
+            return requiredFields.filter(function (field) {
+                return String(field.value || '').trim() === '';
+            });
+        }
+
+        function updateSubmitState() {
+            const hasEmptyRequired = getEmptyRequiredFields().length > 0;
+            submitButton.disabled = hasEmptyRequired;
+            submitButton.classList.toggle('is-disabled', hasEmptyRequired);
+            return !hasEmptyRequired;
+        }
+
+        function clearFieldError(field) {
+            const wrapper = field.closest('.install-field');
+            if (wrapper) {
+                wrapper.classList.remove('is-invalid');
+            }
+        }
+
+        function showRequiredAlert(fields) {
+            fields.forEach(function (field) {
+                const wrapper = field.closest('.install-field');
+                if (wrapper) {
+                    wrapper.classList.add('is-invalid');
+                }
+            });
+
+            if (formAlert) {
+                formAlert.textContent = i18n.requiredIncomplete;
+                formAlert.style.display = 'block';
+            }
+
+            if (fields[0]) {
+                fields[0].focus();
+            }
+        }
+
+        requiredFields.forEach(function (field) {
+            field.addEventListener('input', function () {
+                clearFieldError(field);
+                if (formAlert && getEmptyRequiredFields().length === 0) {
+                    formAlert.style.display = 'none';
+                }
+                updateSubmitState();
+            });
+            field.addEventListener('change', function () {
+                clearFieldError(field);
+                if (formAlert && getEmptyRequiredFields().length === 0) {
+                    formAlert.style.display = 'none';
+                }
+                updateSubmitState();
+            });
+        });
+
+        updateSubmitState();
+
         submitButton.addEventListener('click', function () {
+            const emptyFields = getEmptyRequiredFields();
+            if (emptyFields.length > 0) {
+                showRequiredAlert(emptyFields);
+                updateSubmitState();
+                return;
+            }
+
             eventAction.reset();
             eventAction.open();
             eventAction.state = 1;

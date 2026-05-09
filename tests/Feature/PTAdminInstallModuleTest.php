@@ -68,7 +68,36 @@ class PTAdminInstallModuleTest extends TestCase
             ->assertOk()
             ->assertSee('环境检测')
             ->assertSee('PHP版本')
+            ->assertSee('addons')
+            ->assertSee('用于下载和存放插件后端代码')
+            ->assertSee('templates')
+            ->assertSee('用于下载和存放项目模板')
             ->assertSee('.env');
+    }
+
+    public function test_environment_form_requires_mandatory_fields_before_install_submit(): void
+    {
+        $this->app->instance(RequirementService::class, new class() extends RequirementService {
+            public function getCheckResults(): array
+            {
+                return [[
+                    'title' => 'PHP版本',
+                    'results' => [[
+                        'title' => 'PHP',
+                        'config' => '>= 7.4',
+                        'state' => true,
+                    ]],
+                ]];
+            }
+        });
+
+        file_put_contents($this->agreementMarkerPath(), (string) time());
+
+        $this->get('/install/env')
+            ->assertOk()
+            ->assertSee('required', false)
+            ->assertSee('install-form-alert', false)
+            ->assertSee('requiredIncomplete', false);
     }
 
     public function test_environment_step_redirects_back_to_requirements_when_requirement_check_has_failures(): void
@@ -98,6 +127,23 @@ class PTAdminInstallModuleTest extends TestCase
             ->assertOk()
             ->assertSee('环境检查未通过')
             ->assertSee('disabled');
+    }
+
+    public function test_requirement_check_includes_writable_addon_and_template_directories(): void
+    {
+        $results = (new RequirementService())->getCheckResults();
+        $folderResults = collect($results)->firstWhere('title', __('ptadmin::install.sections.folders'))['results'] ?? [];
+
+        $addons = collect($folderResults)->firstWhere('title', 'addons');
+        $templates = collect($folderResults)->firstWhere('title', 'templates');
+
+        self::assertIsArray($addons);
+        self::assertTrue($addons['state']);
+        self::assertStringContainsString('插件', (string) $addons['description']);
+
+        self::assertIsArray($templates);
+        self::assertTrue($templates['state']);
+        self::assertStringContainsString('模板', (string) $templates['description']);
     }
 
     public function test_accepting_protocol_can_continue_to_original_target_step(): void
