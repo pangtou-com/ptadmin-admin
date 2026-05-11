@@ -92,4 +92,9 @@ class PTAdminConsoleCommandTest extends TestCase
     {
         self::assertArrayHasKey('admin:frontend:pull', \Illuminate\Support\Facades\Artisan::all());
     }
+
+    public function test_project_frontend_pull_command_is_registered(): void
+    {
+        self::assertArrayHasKey('admin:project-frontend:pull', \Illuminate\Support\Facades\Artisan::all());
+    }
 }

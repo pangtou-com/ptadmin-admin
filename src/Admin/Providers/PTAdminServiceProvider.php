@@ -35,6 +35,8 @@ use PTAdmin\Admin\Commands\AdminBootstrapAuthCommand;
 use PTAdmin\Admin\Commands\AdminFrontendPullCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
 use PTAdmin\Admin\Commands\AdminInitCommand;
+use PTAdmin\Admin\Commands\ProjectFrontendPullCommand;
+use PTAdmin\Admin\Commands\ProjectFrontendPublishCommand;
 use PTAdmin\Admin\Http\Middleware\AuthorizationMiddleware;
 use PTAdmin\Admin\Http\Middleware\CanInstallMiddleware;
 use PTAdmin\Admin\Http\Middleware\ExceptionResponseMiddleware;
@@ -84,6 +86,8 @@ class PTAdminServiceProvider extends ServiceProvider
             AdminBootstrapAuthCommand::class,
             AdminFrontendPullCommand::class,
             AdminInitCommand::class,
+            ProjectFrontendPullCommand::class,
+            ProjectFrontendPublishCommand::class,
         ]);
 
         if ($this->app->runningInConsole()) {

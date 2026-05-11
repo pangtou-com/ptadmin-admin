@@ -16,6 +16,7 @@ use PTAdmin\Addon\Addon;
 class AddonFrontendService
 {
     private const MANIFEST_NORMALIZER_VERSION = 'admin-modules-v4';
+    private const PROJECT_FRONTEND_DEFAULT_CODE = '__app__';
 
     /**
      * 获取公开可读的后台模块清单。
@@ -42,6 +43,15 @@ class AddonFrontendService
     protected function buildManifestPayload(): array
     {
         $results = [];
+
+        foreach ($this->extractProjectModuleDefinitions() as $definition) {
+            $normalized = $this->normalizeModuleManifest($this->projectFrontendCode(), (array) $definition, $this->projectFrontendInfo());
+            if ([] === $normalized) {
+                continue;
+            }
+
+            $results[] = $normalized;
+        }
 
         foreach ($this->getAvailableAddons() as $addonCode => $addonInfo) {
             foreach ($this->extractModuleDefinitions((string) $addonCode, $addonInfo) as $definition) {
@@ -74,6 +84,16 @@ class AddonFrontendService
     protected function buildManifestFingerprint(): string
     {
         $fingerprints = [];
+
+        $projectDefinitions = $this->extractProjectModuleDefinitions();
+        if ([] !== $projectDefinitions) {
+            $fingerprints[] = [
+                'code' => $this->projectFrontendCode(),
+                'version' => (string) data_get($projectDefinitions, '0.version', ''),
+                'develop' => $this->projectFrontendDevelop(),
+                'modules' => array_values($projectDefinitions),
+            ];
+        }
 
         foreach ($this->getAvailableAddons() as $addonCode => $addonInfo) {
             $fingerprints[] = [
@@ -120,6 +140,44 @@ class AddonFrontendService
         return array_values(array_filter($payload, static function ($item): bool {
             return \is_array($item);
         }));
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function extractProjectModuleDefinitions(): array
+    {
+        $file = $this->projectFrontendManifestPath();
+        if (null === $file || !is_file($file)) {
+            return [];
+        }
+
+        $content = @file_get_contents($file);
+        if (false === $content || '' === trim($content)) {
+            return [];
+        }
+
+        $payload = @json_decode($content, true);
+        if (!\is_array($payload)) {
+            return [];
+        }
+
+        $definitions = [];
+        if (isset($payload['modules']) && \is_array($payload['modules'])) {
+            $definitions = array_values(array_filter($payload['modules'], static function ($item): bool {
+                return \is_array($item);
+            }));
+        } elseif ($this->looksLikeManifestDefinition($payload)) {
+            $definitions = [$payload];
+        } else {
+            $definitions = array_values(array_filter($payload, static function ($item): bool {
+                return \is_array($item);
+            }));
+        }
+
+        return array_values(array_map(function (array $definition): array {
+            return $this->normalizeProjectDefinition($definition);
+        }, $definitions));
     }
 
     /**
@@ -238,6 +296,50 @@ class AddonFrontendService
             'pages' => $this->normalizePages((array) ($definition['pages'] ?? []), $routeBase),
             'compatibility' => \is_array($definition['compatibility'] ?? null) ? $definition['compatibility'] : [],
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $definition
+     *
+     * @return array<string, mixed>
+     */
+    protected function normalizeProjectDefinition(array $definition): array
+    {
+        $projectCode = $this->projectFrontendCode();
+        $definition['id'] = trim((string) ($definition['id'] ?? '')) ?: $projectCode;
+        $definition['key'] = trim((string) ($definition['key'] ?? '')) ?: $projectCode;
+        $definition['code'] = $projectCode;
+        $definition['kind'] = trim((string) ($definition['kind'] ?? '')) ?: 'project-app';
+        $definition['runtime'] = trim((string) ($definition['runtime'] ?? '')) ?: 'wujie';
+
+        if (!isset($definition['name']) && !isset($definition['title'])) {
+            $definition['name'] = (string) config('app.name', 'Application');
+        }
+        if (!isset($definition['name']) && isset($definition['title'])) {
+            $definition['name'] = (string) $definition['title'];
+        }
+
+        if (!isset($definition['routeBase']) && !isset($definition['route_base'])) {
+            $definition['routeBase'] = '/';
+        }
+
+        $entry = \is_array($definition['entry'] ?? null) ? $definition['entry'] : [];
+        if ('wujie' === $definition['runtime'] && !isset($entry['wujie'])) {
+            $entry['wujie'] = [];
+        }
+        if ('wujie' === $definition['runtime'] && \is_array($entry['wujie'] ?? null) && !isset($entry['wujie']['url'])) {
+            $devUrl = trim((string) config('ptadmin-auth.project_frontend_dev_url', ''));
+            $entry['wujie']['url'] = '' !== $devUrl ? $devUrl : $this->addonPublicModuleUrl($projectCode, 'dist/');
+        }
+        $definition['entry'] = $entry;
+
+        $meta = \is_array($definition['meta'] ?? null) ? $definition['meta'] : [];
+        if (!isset($meta['develop'])) {
+            $meta['develop'] = $this->projectFrontendDevelop();
+        }
+        $definition['meta'] = $meta;
+
+        return $definition;
     }
 
     /**
@@ -462,6 +564,57 @@ class AddonFrontendService
         $url = '' !== $path && '/' === substr($path, -1) ? $url.'/' : $url;
 
         return $this->makeAbsoluteUrl($url);
+    }
+
+    protected function projectFrontendCode(): string
+    {
+        $code = trim((string) config('ptadmin-auth.project_frontend_code', self::PROJECT_FRONTEND_DEFAULT_CODE));
+
+        return '' === $code ? self::PROJECT_FRONTEND_DEFAULT_CODE : $code;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function projectFrontendInfo(): array
+    {
+        $code = $this->projectFrontendCode();
+        $definitions = $this->extractProjectModuleDefinitions();
+        $version = (string) data_get($definitions, '0.version', config('app.version', ''));
+
+        return [
+            'code' => $code,
+            'title' => (string) config('app.name', 'Application'),
+            'description' => '',
+            'version' => $version,
+            'develop' => $this->projectFrontendDevelop(),
+            'base_path' => '',
+        ];
+    }
+
+    protected function projectFrontendDevelop(): bool
+    {
+        return (bool) config('app.debug', false);
+    }
+
+    protected function projectFrontendManifestPath(): ?string
+    {
+        $path = trim((string) config('ptadmin-auth.project_frontend_manifest', ''));
+        if ('' === $path) {
+            return null;
+        }
+
+        if ($this->isAbsoluteFilesystemPath($path)) {
+            return $path;
+        }
+
+        return base_path($path);
+    }
+
+    protected function isAbsoluteFilesystemPath(string $path): bool
+    {
+        return '' !== $path
+            && ('/' === $path[0] || '\\' === $path[0] || (bool) preg_match('/^[A-Za-z]:[\\\\\\/]/', $path));
     }
 
     /**

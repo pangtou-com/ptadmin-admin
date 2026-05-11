@@ -18,6 +18,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
 
         Cache::flush();
         File::deleteDirectory(base_path('addons'));
+        File::deleteDirectory(base_path('resources/ptadmin'));
     }
 
     protected function tearDown(): void
@@ -25,6 +26,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         Cache::flush();
         Addon::swap(new FakeAddonFrontendManager([]));
         File::deleteDirectory(base_path('addons'));
+        File::deleteDirectory(base_path('resources/ptadmin'));
 
         parent::tearDown();
     }
@@ -533,6 +535,63 @@ class PTAdminAddonFrontendApiTest extends TestCase
         self::assertSame('https://demo.example.com/admin/modules/cms/dist/assets/remoteEntry.js', $response->json('data.0.entry.federation.entry'));
     }
 
+    public function test_module_manifests_endpoint_returns_project_frontend_manifest(): void
+    {
+        config()->set('app.url', 'https://demo.example.com');
+        config()->set('app.debug', false);
+
+        $this->writeProjectFrontendManifest([
+            'name' => '项目二开',
+            'enabled' => true,
+            'kind' => 'project-app',
+            'runtime' => 'wujie',
+            'routeBase' => '/',
+            'entry' => [
+                'wujie' => [
+                    'name' => 'ptadmin_project_app',
+                    'url' => 'http://localhost:4180/',
+                    'alive' => true,
+                    'sync' => true,
+                    'degrade' => false,
+                ],
+            ],
+            'capabilities' => [
+                'pages' => true,
+            ],
+        ]);
+
+        Addon::swap(new FakeAddonFrontendManager([]));
+
+        $token = $this->issueFrontendToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/frontends');
+
+        $response->assertOk()
+            ->assertJson([
+                'code' => 0,
+                'data' => [
+                    [
+                        'key' => '__app__',
+                        'code' => '__app__',
+                        'name' => '项目二开',
+                        'kind' => 'project-app',
+                        'runtime' => 'wujie',
+                        'routeBase' => '/',
+                        'entry' => [
+                            'wujie' => [
+                                'name' => 'ptadmin_project_app',
+                                'url' => 'https://demo.example.com/admin/modules/__app__/dist/',
+                                'alive' => true,
+                                'sync' => true,
+                                'degrade' => false,
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+    }
+
     /**
      * @param array<string, mixed> $payload
      */
@@ -540,6 +599,17 @@ class PTAdminAddonFrontendApiTest extends TestCase
     {
         $directory = base_path('addons/'.$basePath);
         $targetPath = $directory.'/'.ltrim($relativePath, '/');
+
+        File::ensureDirectoryExists(dirname($targetPath));
+        File::put($targetPath, (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function writeProjectFrontendManifest(array $payload): void
+    {
+        $targetPath = base_path('resources/ptadmin/frontend/frontend.json');
 
         File::ensureDirectoryExists(dirname($targetPath));
         File::put($targetPath, (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
