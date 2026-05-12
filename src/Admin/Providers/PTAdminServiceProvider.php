@@ -132,6 +132,7 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->extendGuard();
         $this->registerAuthorizationGate();
         $this->mapInstallRoutes();
+        $this->mapWebRoutes();
         $this->mapSystemRoutes();
         $this->registerTemplateActive();
     }
@@ -157,12 +158,12 @@ class PTAdminServiceProvider extends ServiceProvider
      * @return void
      */
     protected function registerTemplateActive(){
-        $active = 'default';
+        $active = '';
         try {
             if (Schema::hasTable('system_config_groups')) {
                 $active = system_config("system.theme.template", "default");
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
             $active = 'default';
         }
         $path = base_path("templates".DIRECTORY_SEPARATOR.$active);
@@ -195,6 +196,11 @@ class PTAdminServiceProvider extends ServiceProvider
     private function mapSystemRoutes(): void
     {
         Route::middleware(['api', 'ptadmin.response', 'ptadmin.operation.record'])->group(__DIR__.'/../../../routes/admin.php');
+    }
+
+    private function mapWebRoutes(): void
+    {
+        Route::middleware(['web'])->group(__DIR__.'/../../../routes/web.php');
     }
 
     private function mapInstallRoutes(): void

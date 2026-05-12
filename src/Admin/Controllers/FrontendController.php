@@ -59,6 +59,6 @@ class FrontendController
             return $published;
         }
 
-        return __DIR__.'/../../../resources/dist/'.$file;
+        return __DIR__.'/../../../resources/admin-frontend/'.$file;
     }
 }

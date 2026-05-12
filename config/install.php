@@ -26,7 +26,7 @@ return [
     //  定义需要加载的模块
     'extend' => ['openssl', 'pdo', 'pdo_mysql', 'mbstring', 'json', 'curl', 'fileinfo', 'xml', 'gd', 'zip'],
     // 定义需要开启的函数
-    'func' => ['curl_init', 'proc_open', 'putenv'],
+    'func' => ['curl_init', 'proc_open', 'putenv', 'symlink'],
 
     /*
     |--------------------------------------------------------------------------

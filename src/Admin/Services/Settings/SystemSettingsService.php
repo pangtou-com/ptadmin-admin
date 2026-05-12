@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services\Settings;
 
-use Illuminate\Database\Eloquent\Collection;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Foundation\Auth\AdminAuth;
@@ -20,19 +19,41 @@ class SystemSettingsService
     }
 
     /**
-     * @return \Illuminate\Support\Collection
+     * @return array<string, mixed>
      */
-    public function catalog(): \Illuminate\Support\Collection
+    public function catalog(): array
     {
         /** @var \Illuminate\Support\Collection<int, SystemConfigGroup> $roots */
         $roots = SystemConfigGroup::query()
             ->whereNull('addon_code')
             ->where('parent_id', 0)
             ->where('status', 1)
+            ->with(['children' => static function ($query): void {
+                $query->where('status', 1)
+                    ->orderBy('weight', 'desc')
+                    ->orderBy('id');
+            }])
             ->orderBy('weight', 'desc')
-            ->orderBy('id')->get();
-        
-        return $roots;
+            ->orderBy('id')
+            ->get();
+
+        $sections = [];
+        /** @var SystemConfigGroup $root */
+        foreach ($roots as $root) {
+            /** @var SystemConfigGroup $section */
+            foreach ($root->children as $section) {
+                $sections[] = $this->formatCatalogSectionItem($root, $section);
+            }
+        }
+
+        return [
+            'scope' => 'system',
+            'owner' => [
+                'code' => 'system',
+                'name' => '系统设置',
+            ],
+            'sections' => $sections,
+        ];
     }
 
     /**
@@ -40,13 +61,9 @@ class SystemSettingsService
      */
     public function section(string $sectionKey): array
     {
-        $section = $this->resolveSection($sectionKey);
-        $results = [];
-        foreach ($section as $item) {
-            $results[] = $this->systemConfigService->section((int) $item->id);
-        }
-    
-        return $results;
+        [, $section] = $this->resolveSection($sectionKey);
+
+        return $this->formatSectionPayload($this->systemConfigService->section((int) $section->id));
     }
 
     /**
@@ -56,8 +73,7 @@ class SystemSettingsService
      */
     public function saveSection(string $sectionKey, array $input): array
     {
-        /** @var SystemConfigGroup $section */
-        $section = SystemConfigGroup::query()->where("name", $sectionKey)->firstOrFail();
+        [, $section] = $this->resolveSection($sectionKey);
         $values = $this->systemConfigService->saveSection($section->id, $input);
 
         return [
@@ -69,34 +85,36 @@ class SystemSettingsService
     /**
      * 根据key 解析出场景表单信息
      * @param string $sectionKey
-     * @return Collection<SystemConfigGroup>
+     * @return array{0: SystemConfigGroup, 1: SystemConfigGroup}
      */
-    private function resolveSection(string $sectionKey): Collection
+    private function resolveSection(string $sectionKey): array
     {
+        [$rootName, $childName] = $this->parseSectionKey($sectionKey);
 
         /** @var SystemConfigGroup|null $root */
         $root = SystemConfigGroup::query()
             ->whereNull('addon_code')
             ->where('parent_id', 0)
-            ->where('name', $sectionKey)
+            ->where('name', $rootName)
             ->where('status', 1)
             ->first();
         if (null === $root) {
-            throw new BackgroundException(sprintf('系统设置根分组[%s]不存在', $sectionKey));
+            throw new BackgroundException(sprintf('系统设置根分组[%s]不存在', $rootName));
         }
 
-        /** @var Collection<SystemConfigGroup> $section */
+        /** @var SystemConfigGroup|null $section */
         $section = SystemConfigGroup::query()
             ->whereNull('addon_code')
             ->where('parent_id', $root->id)
+            ->where('name', $childName)
             ->where('status', 1)
-            ->get();
+            ->first();
 
         if (null === $section) {
             throw new BackgroundException(sprintf('系统设置分组[%s]不存在', $sectionKey));
         }
 
-        return $section;
+        return [$root, $section];
     }
 
     /**

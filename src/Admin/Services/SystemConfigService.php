@@ -322,7 +322,10 @@ class SystemConfigService
             throw new ServiceException(__('ptadmin::background.config_section_required'));
         }
         
-        return [null, $section];
+        /** @var SystemConfigGroup|null $group */
+        $group = SystemConfigGroup::query()->find((int) $section->parent_id);
+
+        return [$group, $section];
     }
 
     /**
