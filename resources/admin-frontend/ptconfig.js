@@ -19,7 +19,7 @@ window.ptconfig = {
         // 是否显示消息通知
         showMessage: true,
         // 是否显示语言切换
-        showLanguage: true,
+        showLanguage: false,
         // 是否显示明暗模式切换
         showThemeSwitch: true,
         // 是否显示全屏切换
@@ -100,9 +100,9 @@ window.ptconfig = {
     user: {
         nickname: '管理员',
         avatar: '',
-        profilePath: '',
+        profilePath: '/_account/profile',
         themePath: '',
-        showProfile: false,
+        showProfile: true,
         showThemeEntry: true,
         showAvatar: false,
         showName: true,
@@ -118,6 +118,8 @@ window.ptconfig = {
     uploadURL: undefined,
     // 仅请求真实后端
     requestMode: 'http',
+    // 云平台入口开关。显式配置为 true 时禁用；未配置或为 false 时，创始人可见。
+    // cloud_disabled: true,
     bootstrap: {
         loginEndpoint: '/login',
         profileEndpoint: '/auth/profile',
