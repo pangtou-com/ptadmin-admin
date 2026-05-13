@@ -479,7 +479,7 @@ class SystemConfigService
      *
      * @param mixed $value
      */
-    private function serializeSystemConfigValue(SystemConfig $setting, $value): string
+    private function serializeSystemConfigValue(SystemConfig $setting, $value)
     {
         $type = $this->normalizeFieldType($setting->type);
 
