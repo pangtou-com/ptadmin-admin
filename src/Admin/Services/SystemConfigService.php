@@ -26,8 +26,10 @@ namespace PTAdmin\Admin\Services;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use PTAdmin\Easy\Easy;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
+use PTAdmin\Admin\Support\ConfigRuleValidator;
 use PTAdmin\Foundation\Exceptions\ServiceException;
 use PTAdmin\Support\Enums\StatusEnum;
 
@@ -95,7 +97,7 @@ class SystemConfigService
         if (!\is_array($payload)) {
             throw new ServiceException(__('ptadmin::background.config_value_invalid'));
         }
-
+        
         DB::transaction(function () use ($configs, $payload): void {
             /** @var SystemConfig $config */
             foreach ($configs as $config) {
@@ -322,10 +324,7 @@ class SystemConfigService
             throw new ServiceException(__('ptadmin::background.config_section_required'));
         }
         
-        /** @var SystemConfigGroup|null $group */
-        $group = SystemConfigGroup::query()->find((int) $section->parent_id);
-
-        return [$group, $section];
+        return [null, $section];
     }
 
     /**
@@ -448,6 +447,7 @@ class SystemConfigService
         switch ($normalizedType) {
             case 'switch':
             case 'radio':
+                return $value;
             case 'number':
                 if ('' === $stringValue) {
                     return 'number' === $normalizedType ? 0 : "";
@@ -486,7 +486,7 @@ class SystemConfigService
         switch ($type) {
             case 'switch':
             case 'radio':
-                return (string) (int) $value;
+                return $value;
 
             case 'number':
                 if (null === $value || '' === $value) {

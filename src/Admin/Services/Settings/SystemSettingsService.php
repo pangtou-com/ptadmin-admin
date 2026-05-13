@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services\Settings;
 
+use Illuminate\Database\Eloquent\Collection;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Foundation\Auth\AdminAuth;
@@ -19,41 +20,19 @@ class SystemSettingsService
     }
 
     /**
-     * @return array<string, mixed>
+     * @return \Illuminate\Support\Collection
      */
-    public function catalog(): array
+    public function catalog(): \Illuminate\Support\Collection
     {
         /** @var \Illuminate\Support\Collection<int, SystemConfigGroup> $roots */
         $roots = SystemConfigGroup::query()
             ->whereNull('addon_code')
             ->where('parent_id', 0)
             ->where('status', 1)
-            ->with(['children' => static function ($query): void {
-                $query->where('status', 1)
-                    ->orderBy('weight', 'desc')
-                    ->orderBy('id');
-            }])
             ->orderBy('weight', 'desc')
-            ->orderBy('id')
-            ->get();
-
-        $sections = [];
-        /** @var SystemConfigGroup $root */
-        foreach ($roots as $root) {
-            /** @var SystemConfigGroup $section */
-            foreach ($root->children as $section) {
-                $sections[] = $this->formatCatalogSectionItem($root, $section);
-            }
-        }
-
-        return [
-            'scope' => 'system',
-            'owner' => [
-                'code' => 'system',
-                'name' => '系统设置',
-            ],
-            'sections' => $sections,
-        ];
+            ->orderBy('id')->get();
+        
+        return $roots;
     }
 
     /**
@@ -61,9 +40,14 @@ class SystemSettingsService
      */
     public function section(string $sectionKey): array
     {
-        [, $section] = $this->resolveSection($sectionKey);
-
-        return $this->formatSectionPayload($this->systemConfigService->section((int) $section->id));
+        $section = $this->resolveSection($sectionKey);
+        
+        $results = [];
+        foreach ($section as $item) {
+            $results[] = $this->systemConfigService->section((int) $item->id);
+        }
+    
+        return $results;
     }
 
     /**
@@ -73,7 +57,11 @@ class SystemSettingsService
      */
     public function saveSection(string $sectionKey, array $input): array
     {
-        [, $section] = $this->resolveSection($sectionKey);
+        $section = SystemConfigGroup::query()
+            ->whereNull('addon_code')
+            ->where('name', $sectionKey)
+            ->where('status', 1)->firstOrFail();
+        
         $values = $this->systemConfigService->saveSection($section->id, $input);
 
         return [
@@ -85,36 +73,34 @@ class SystemSettingsService
     /**
      * 根据key 解析出场景表单信息
      * @param string $sectionKey
-     * @return array{0: SystemConfigGroup, 1: SystemConfigGroup}
+     * @return Collection<SystemConfigGroup>
      */
-    private function resolveSection(string $sectionKey): array
+    private function resolveSection(string $sectionKey): Collection
     {
-        [$rootName, $childName] = $this->parseSectionKey($sectionKey);
 
         /** @var SystemConfigGroup|null $root */
         $root = SystemConfigGroup::query()
             ->whereNull('addon_code')
             ->where('parent_id', 0)
-            ->where('name', $rootName)
+            ->where('name', $sectionKey)
             ->where('status', 1)
             ->first();
         if (null === $root) {
-            throw new BackgroundException(sprintf('系统设置根分组[%s]不存在', $rootName));
+            throw new BackgroundException(sprintf('系统设置根分组[%s]不存在', $sectionKey));
         }
-
-        /** @var SystemConfigGroup|null $section */
+        
+        /** @var Collection<SystemConfigGroup> $section */
         $section = SystemConfigGroup::query()
             ->whereNull('addon_code')
             ->where('parent_id', $root->id)
-            ->where('name', $childName)
             ->where('status', 1)
-            ->first();
+            ->get();
 
         if (null === $section) {
             throw new BackgroundException(sprintf('系统设置分组[%s]不存在', $sectionKey));
         }
 
-        return [$root, $section];
+        return $section;
     }
 
     /**
@@ -163,7 +149,7 @@ class SystemSettingsService
 
         return [
             'updated_at' => date('Y-m-d H:i:s'),
-            'updated_by' => null !== $user ? (string) ($user->nickname ?: $user->username) : '',
+            'updated_by' => $user->nickname ?: $user->username,
         ];
     }
 
