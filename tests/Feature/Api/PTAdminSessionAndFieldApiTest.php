@@ -7,6 +7,7 @@ namespace PTAdmin\Admin\Tests\Feature\Api;
 use Illuminate\Support\Facades\Hash;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Models\AdminLoginLog;
+use PTAdmin\Admin\Models\OperationRecord;
 use PTAdmin\Admin\Models\UserToken;
 use PTAdmin\Admin\Tests\TestCase;
 
@@ -82,6 +83,37 @@ class PTAdminSessionAndFieldApiTest extends TestCase
                 ],
             ],
         ]);
+    }
+
+    public function test_profile_password_endpoint_updates_password_and_invalidates_current_token(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount([
+            'username' => 'profile_password_user',
+            'nickname' => 'Profile Password User',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->putJson('/system/auth/password', [
+                'old_password' => 'secret123',
+                'password' => 'newSecret123',
+                'password_confirmation' => 'newSecret123',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'code' => 0,
+                'message' => '操作成功',
+            ]);
+
+        $admin = $admin->fresh();
+
+        self::assertTrue(Hash::check('newSecret123', (string) $admin->password));
+        self::assertNull(UserToken::findToken($token));
     }
 
     public function test_custom_token_expiration_uses_absolute_timestamp_semantics(): void
@@ -164,6 +196,180 @@ class PTAdminSessionAndFieldApiTest extends TestCase
         self::assertIsString($payload);
         self::assertStringContainsString('console', $payload);
         self::assertStringContainsString('system.resources', $payload);
+    }
+
+    public function test_profile_endpoints_return_only_current_admin_runtime_data(): void
+    {
+        $this->createAdminsTable();
+        $this->createAdminLoginLogsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $currentAdmin = $this->createAdminAccount([
+            'username' => 'current_profile_user',
+            'nickname' => 'Current Profile User',
+        ]);
+        $otherAdmin = $this->createAdminAccount([
+            'username' => 'other_profile_user',
+            'nickname' => 'Other Profile User',
+        ]);
+
+        AdminLoginLog::query()->create([
+            'admin_id' => $currentAdmin->id,
+            'login_account' => 'current_profile_user',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.10',
+            'status' => AdminLoginLog::STATUS_SUCCESS,
+            'reason' => 'login_success',
+            'user_agent' => 'PHPUnit',
+        ]);
+        AdminLoginLog::query()->create([
+            'admin_id' => $otherAdmin->id,
+            'login_account' => 'other_profile_user',
+            'login_at' => time(),
+            'login_ip' => '127.0.0.20',
+            'status' => AdminLoginLog::STATUS_SUCCESS,
+            'reason' => 'login_success',
+            'user_agent' => 'PHPUnit',
+        ]);
+
+        $ownRecord = OperationRecord::query()->create([
+            'admin_id' => $currentAdmin->id,
+            'admin_username' => $currentAdmin->username,
+            'nickname' => $currentAdmin->nickname,
+            'ip' => '127.0.0.10',
+            'user_agent' => 'PHPUnit',
+            'url' => '/system/auth/profile',
+            'title' => '个人资料',
+            'resource_name' => 'system.admins',
+            'method' => 'PUT',
+            'controller' => 'PTAdmin\\Admin\\Controllers\\AuthorizationController',
+            'action' => 'updateProfile',
+            'trace_id' => 'profile-own',
+            'target_type' => 'admins',
+            'target_id' => (string) $currentAdmin->id,
+            'status' => 'success',
+            'request' => json_encode(['nickname' => 'Current Profile User'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'error_message' => null,
+            'response_code' => 200,
+            'response_time' => 18.21,
+        ]);
+        $otherRecord = OperationRecord::query()->create([
+            'admin_id' => $otherAdmin->id,
+            'admin_username' => $otherAdmin->username,
+            'nickname' => $otherAdmin->nickname,
+            'ip' => '127.0.0.20',
+            'user_agent' => 'PHPUnit',
+            'url' => '/system/admins/2',
+            'title' => '编辑账户',
+            'resource_name' => 'system.admins',
+            'method' => 'PUT',
+            'controller' => 'PTAdmin\\Admin\\Controllers\\AdminController',
+            'action' => 'edit',
+            'trace_id' => 'profile-other',
+            'target_type' => 'admins',
+            'target_id' => (string) $otherAdmin->id,
+            'status' => 'success',
+            'request' => json_encode(['nickname' => 'Other Profile User'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'error_message' => null,
+            'response_code' => 200,
+            'response_time' => 10.01,
+        ]);
+
+        $token = $this->issueAdminToken($currentAdmin);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/profile/login-logs')
+            ->assertOk()
+            ->assertJson([
+                'code' => 0,
+                'data' => [
+                    'total' => 1,
+                    'results' => [
+                        [
+                            'admin_id' => $currentAdmin->id,
+                            'login_account' => 'current_profile_user',
+                        ],
+                    ],
+                ],
+            ]);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/profile/operations')
+            ->assertOk()
+            ->assertJson([
+                'code' => 0,
+                'data' => [
+                    'total' => 1,
+                    'results' => [
+                        [
+                            'id' => $ownRecord->id,
+                            'admin_id' => $currentAdmin->id,
+                            'trace_id' => 'profile-own',
+                        ],
+                    ],
+                ],
+            ]);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/profile/operations/'.$ownRecord->id)
+            ->assertOk()
+            ->assertJson([
+                'code' => 0,
+                'data' => [
+                    'id' => $ownRecord->id,
+                    'admin_id' => $currentAdmin->id,
+                ],
+            ]);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/profile/operations/'.$otherRecord->id)
+            ->assertOk()
+            ->assertJson([
+                'code' => 10000,
+                'message' => '数据不存在',
+            ]);
+    }
+
+    public function test_profile_update_endpoint_updates_current_admin_profile(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount([
+            'username' => 'profile_update_user',
+            'nickname' => 'Old Nickname',
+            'email' => 'old@example.com',
+            'mobile' => '13800000000',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->putJson('/system/auth/profile', [
+                'nickname' => 'New Nickname',
+                'email' => 'new@example.com',
+                'mobile' => '13900000000',
+            ]);
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'id' => $admin->id,
+                'username' => 'profile_update_user',
+                'nickname' => 'New Nickname',
+                'email' => 'new@example.com',
+                'mobile' => '13900000000',
+            ],
+        ]);
+
+        self::assertDatabaseHas('admins', [
+            'id' => $admin->id,
+            'nickname' => 'New Nickname',
+            'email' => 'new@example.com',
+            'mobile' => '13900000000',
+        ]);
     }
 
     public function test_founder_can_view_all_login_logs_with_list_query_filters(): void

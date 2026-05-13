@@ -170,7 +170,7 @@ class AdminResourceService
         /** @var Admin $admin */
         $admin = Admin::query()->findOrFail($adminId);
         $resources = $this->resourceRows(['status' => StatusEnum::ENABLE]);
-
+        
         if (1 === (int) $admin->is_founder) {
             return $this->mergeDevelopAddonResources($resources, true);
         }
@@ -345,7 +345,7 @@ class AdminResourceService
                 'title' => (string) ($overlay['title'] ?? $name),
                 'name' => $name,
                 'status' => (int) ($overlay['status'] ?? StatusEnum::ENABLE),
-                'weight' => (int) ($overlay['weight'] ?? 0),
+                'sort' => (int) ($overlay['sort'] ?? 0),
                 'module' => $overlay['module'] ?? null,
                 'page_key' => $overlay['page_key'] ?? null,
                 'route' => $overlay['route'] ?? null,
@@ -385,7 +385,7 @@ class AdminResourceService
 
         $rows = array_values($resourceMap);
         usort($rows, static function (array $left, array $right): int {
-            $compare = ((int) ($left['weight'] ?? 0)) <=> ((int) ($right['weight'] ?? 0));
+            $compare = ((int) ($left['sort'] ?? 0)) <=> ((int) ($right['sort'] ?? 0));
             if (0 !== $compare) {
                 return $compare;
             }

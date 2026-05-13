@@ -40,6 +40,11 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     Route::get('auth/resources', [Admin\LoginController::class, 'adminResources']);
     Route::get('auth/status', [Admin\AuthorizationController::class, 'status']);
     Route::get('auth/profile', [Admin\AuthorizationController::class, 'profile']);
+    admin_audit_route(Route::get('auth/profile/login-logs', [Admin\AuthorizationController::class, 'loginLogs']), 'system.admin_login_logs');
+    admin_audit_route(Route::get('auth/profile/operations', [Admin\AuthorizationController::class, 'operations']), 'system.operate');
+    admin_audit_route(Route::get('auth/profile/operations/{id}', [Admin\AuthorizationController::class, 'operationDetails']), 'system.operate');
+    admin_audit_route(Route::put('auth/password', [Admin\AuthorizationController::class, 'password']), 'system.admins');
+    admin_audit_route(Route::put('auth/profile', [Admin\AuthorizationController::class, 'updateProfile']), 'system.admins');
 
     admin_audit_route(Route::post('upload', [Admin\UploadController::class, 'upload']), 'system.assets');
     admin_audit_route(Route::post('upload/tiny', [Admin\UploadController::class, 'tiny']), 'system.assets');

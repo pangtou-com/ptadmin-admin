@@ -27,17 +27,22 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Support\Query\BuilderQueryApplier;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Admin\Models\OperationRecord;
 use PTAdmin\Foundation\Auth\AdminAuth;
+use PTAdmin\Foundation\Exceptions\BackgroundException;
 
 class OperationRecordService
 {
-    public function details($id): array
+    public function details($id, ?Admin $admin = null): array
     {
         /** @var OperationRecord $dao */
         $dao = OperationRecord::query()->findOrFail($id);
+        if ($admin instanceof Admin && (int) $dao->admin_id !== (int) $admin->id) {
+            throw new BackgroundException(__('ptadmin::background.data_not_found'));
+        }
 
         $data = $dao->toArray();
         $data['request'] = $this->decodeJsonPayload($data['request'] ?? null);
@@ -45,12 +50,17 @@ class OperationRecordService
         return $data;
     }
 
-    public function page(array $query = []): array
+    public function page(array $query = [], ?Admin $admin = null): array
     {
         $query['paginate'] = true;
 
+        $builder = OperationRecord::query();
+        if ($admin instanceof Admin) {
+            $builder->where('admin_id', (int) $admin->id);
+        }
+
         $logs = (new BuilderQueryApplier())->fetch(
-            OperationRecord::query(),
+            $builder,
             $query,
             [
                 'allowed_filters' => ['id', 'admin_id', 'admin_username', 'nickname', 'ip', 'url', 'resource_name', 'method', 'action', 'status', 'response_code', 'target_type', 'target_id', 'created_at'],

@@ -220,6 +220,17 @@ class AdminService
         $admin->update();
     }
 
+    public function updateProfile(Admin $admin, array $data): Admin
+    {
+        $admin->update([
+            'nickname' => $data['nickname'],
+            'email' => $data['email'] ?? null,
+            'mobile' => $data['mobile'] ?? null,
+        ]);
+
+        return $admin->refresh();
+    }
+
     /**
      * 初始化创始人账户.
      *

@@ -14,6 +14,7 @@ return [
     '403' => '无权访问',
     '401' => '未授权',
     'access_denied' => '无权限访问',
+    'data_not_found' => '数据不存在',
     'model_not_defined' => '模型未定义',
     'model_not_exists' => '模型不存在',
     'path_not_exists' => '【:path】不存在',

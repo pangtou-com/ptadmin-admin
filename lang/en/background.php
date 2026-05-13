@@ -14,6 +14,7 @@ return [
     '403' => 'Access denied',
     '401' => 'Unauthorized',
     'access_denied' => 'You do not have permission to access this resource',
+    'data_not_found' => 'Data not found',
     'model_not_defined' => 'Model is not defined',
     'model_not_exists' => 'Model does not exist',
     'path_not_exists' => 'Path [:path] does not exist',
