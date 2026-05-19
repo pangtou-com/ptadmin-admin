@@ -7,7 +7,7 @@ namespace PTAdmin\Admin\Tests\Feature\Package;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
 use PTAdmin\Admin\Commands\AdminBootstrapAuthCommand;
-use PTAdmin\Admin\Commands\AdminInitCommand;
+use PTAdmin\Admin\Commands\AdminCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
 use PTAdmin\Admin\Http\Middleware\AuthorizationMiddleware;
 use PTAdmin\Admin\Http\Middleware\ExceptionResponseMiddleware;
@@ -78,8 +78,8 @@ class PTAdminPackageBootstrapTest extends TestCase
         $commands = Artisan::all();
 
         self::assertArrayHasKey('admin:auth-bootstrap', $commands);
-        self::assertArrayHasKey('admin:init', $commands);
+        self::assertArrayHasKey('admin:auth', $commands);
         self::assertInstanceOf(AdminBootstrapAuthCommand::class, $commands['admin:auth-bootstrap']);
-        self::assertInstanceOf(AdminInitCommand::class, $commands['admin:init']);
+        self::assertInstanceOf(AdminCommand::class, $commands['admin:auth']);
     }
 }

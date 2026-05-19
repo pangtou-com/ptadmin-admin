@@ -17,7 +17,7 @@ class PTAdminInstallCompleteTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_complete_stops_when_admin_init_command_fails(): void
+    public function test_complete_stops_when_admin_auth_command_fails(): void
     {
         $commands = [];
 
@@ -25,7 +25,7 @@ class PTAdminInstallCompleteTest extends TestCase
             ->andReturnUsing(function (string $command, array $arguments = []) use (&$commands): int {
                 $commands[] = [$command, $arguments];
 
-                return 'admin:init' === $command ? 1 : 0;
+                return 'admin:auth' === $command ? 1 : 0;
             });
         Artisan::shouldReceive('output')
             ->once()
@@ -46,12 +46,12 @@ class PTAdminInstallCompleteTest extends TestCase
         self::assertFalse($nextCalled);
         self::assertFileDoesNotExist($this->installedMarkerPath());
         self::assertSame([
-            ['admin:init', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
+            ['admin:auth', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
         ], $commands);
         self::assertStringContainsString(__('ptadmin::install.logs.admin_create_failed', ['message' => 'Init failed.']), $output);
     }
 
-    public function test_complete_writes_installed_marker_after_admin_init_succeeds(): void
+    public function test_complete_writes_installed_marker_after_admin_auth_succeeds(): void
     {
         $commands = [];
         $envPath = storage_path('install-test.env');
@@ -100,7 +100,7 @@ class PTAdminInstallCompleteTest extends TestCase
         self::assertStringContainsString('安装成功', $output);
         self::assertStringContainsString('保存配置文件', $output);
         self::assertSame([
-            ['admin:init', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
+            ['admin:auth', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
             ['cache:clear', []],
             ['config:clear', []],
             ['event:clear', []],
@@ -144,7 +144,7 @@ class PTAdminInstallCompleteTest extends TestCase
         ob_end_clean();
 
         self::assertSame([
-            ['admin:init', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
+            ['admin:auth', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
             ['cache:clear', []],
             ['config:clear', []],
             ['event:clear', []],

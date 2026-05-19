@@ -46,13 +46,13 @@ class PTAdminConsoleCommandTest extends TestCase
         ]);
     }
 
-    public function test_admin_init_command_creates_founder_account(): void
+    public function test_admin_auth_command_creates_founder_account(): void
     {
         $this->createAdminsTable();
         $this->createSystemConfigGroupsTable();
         $this->createSystemConfigsTable();
 
-        $this->artisan('admin:init', [
+        $this->artisan('admin:auth', [
             '--username' => 'root',
             '--nickname' => 'Root',
             '--password' => 'secret123',
@@ -74,11 +74,11 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertSame('local', SystemConfig::query()->where('name', 'storage_driver')->value('value'));
     }
 
-    public function test_admin_init_command_rejects_invalid_mobile_number(): void
+    public function test_admin_auth_command_rejects_invalid_mobile_number(): void
     {
         $this->createAdminsTable();
 
-        $this->artisan('admin:init', [
+        $this->artisan('admin:auth', [
             '--username' => 'root',
             '--nickname' => 'Root',
             '--password' => 'secret123',

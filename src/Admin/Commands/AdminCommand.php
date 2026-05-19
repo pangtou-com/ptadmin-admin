@@ -32,9 +32,9 @@ use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Admin\Services\AdminService;
 use PTAdmin\Admin\Support\SystemConfigPreset;
 
-class AdminInitCommand extends Command
+class AdminCommand extends Command
 {
-    protected $signature = 'admin:init
+    protected $signature = 'admin:auth
     {--u|username=root : 管理员用户名}
     {--N|nickname= : 管理员昵称}
     {--p|password= : 管理员密码}
@@ -42,7 +42,7 @@ class AdminInitCommand extends Command
     {--m|mobile= : 管理员手机号}
     {--f|force : 强制初始化}';
 
-    protected $description = '初始化管理员账户';
+    protected $description = '重置管理员账户';
 
     public function handle(): int
     {
@@ -72,7 +72,6 @@ class AdminInitCommand extends Command
 
         try {
             AdminService::initializeFounder($data);
-            $this->initializeSystemConfigs();
         } catch (\Exception $e) {
             $this->error($e->getMessage());
 
@@ -88,18 +87,6 @@ class AdminInitCommand extends Command
         return 0;
     }
 
-    /**
-     * 初始化后台默认系统配置。
-     */
-    private function initializeSystemConfigs(): void
-    {
-        if (!Schema::hasTable('system_config_groups') || !Schema::hasTable('system_configs')) {
-            return;
-        }
-
-        SystemConfigGroupService::installInitialize(SystemConfigPreset::definitions());
-        SystemConfigService::updateSystemConfigCache();
-    }
 
     private function check($data): bool
     {

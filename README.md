@@ -76,7 +76,7 @@ php artisan admin:auth-bootstrap
 初始化创始人账户与默认授权：
 
 ```bash
-php artisan admin:init
+php artisan admin:auth
 ```
 
 ## 测试

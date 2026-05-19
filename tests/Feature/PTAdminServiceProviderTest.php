@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Tests\Feature;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
+use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
 use PTAdmin\Admin\Http\Middleware\AuthorizationMiddleware;
 use PTAdmin\Admin\Http\Middleware\ExceptionResponseMiddleware;
@@ -65,5 +67,41 @@ class PTAdminServiceProviderTest extends TestCase
         self::assertSame('dist', basename((string) array_key_first($assetPublishes)));
         self::assertSame('admin', basename((string) current($assetPublishes)));
         self::assertSame($configPublishes + $migrationPublishes + $langPublishes + $assetPublishes, $allPublishes);
+    }
+
+    public function test_sys_blade_directive_reads_public_system_config_by_flat_key(): void
+    {
+        $this->migratePackageTables();
+
+        \PTAdmin\Admin\Models\SystemConfigGroup::query()->create([
+            'title' => '基础设置',
+            'name' => 'basic',
+            'type' => 'system',
+            'access' => 'public',
+            'sort' => 100,
+            'status' => 1,
+            'is_system' => 1,
+        ]);
+
+        $groupId = (int) \PTAdmin\Admin\Models\SystemConfigGroup::query()->where('name', 'basic')->value('id');
+        \PTAdmin\Admin\Models\SystemConfig::query()->create([
+            'title' => '站点标题',
+            'name' => 'site_title',
+            'system_config_group_id' => $groupId,
+            'sort' => 100,
+            'type' => 'text',
+            'value' => 'PTAdmin',
+            'default_val' => 'PTAdmin',
+            'status' => 1,
+            'is_system' => 1,
+        ]);
+
+        SystemConfigService::updateSystemConfigCache();
+
+        $view = Blade::render("@sys('basic.site_title')");
+        $fallback = Blade::render("@sys('basic.unknown', '默认标题')");
+
+        self::assertSame('PTAdmin', trim($view));
+        self::assertSame('默认标题', trim($fallback));
     }
 }

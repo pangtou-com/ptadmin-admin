@@ -38,7 +38,7 @@ class Complete
 
         try {
             $this->process(__('ptadmin::install.logs.admin_creating'));
-            $status = Artisan::call('admin:init', ['-u' => $data['username'], '-p' => $data['password'], '-f' => true]);
+            $status = Artisan::call('admin:auth', ['-u' => $data['username'], '-p' => $data['password'], '-f' => true]);
             if (0 !== $status) {
                 $this->error(__('ptadmin::install.logs.admin_create_failed', ['message' => Artisan::output()]));
 

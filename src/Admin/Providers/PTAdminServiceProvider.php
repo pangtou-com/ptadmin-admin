@@ -35,7 +35,7 @@ use ReflectionClass;
 use PTAdmin\Admin\Commands\AdminBootstrapAuthCommand;
 use PTAdmin\Admin\Commands\AdminFrontendPullCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
-use PTAdmin\Admin\Commands\AdminInitCommand;
+use PTAdmin\Admin\Commands\AdminCommand;
 use PTAdmin\Admin\Commands\ProjectFrontendPullCommand;
 use PTAdmin\Admin\Commands\ProjectFrontendPublishCommand;
 use PTAdmin\Admin\Http\Middleware\AuthorizationMiddleware;
@@ -86,7 +86,7 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->commands([
             AdminBootstrapAuthCommand::class,
             AdminFrontendPullCommand::class,
-            AdminInitCommand::class,
+            AdminCommand::class,
             ProjectFrontendPullCommand::class,
             ProjectFrontendPublishCommand::class,
         ]);
@@ -182,7 +182,7 @@ class PTAdminServiceProvider extends ServiceProvider
                 return "<?php echo e(''); ?>";
             }
 
-            return "<?php echo e(data_get(\\PTAdmin\\Admin\\Services\\SystemConfigService::public(), {$expression})); ?>";
+            return "<?php echo e((static function (\$__ptadminSysKey, \$__ptadminSysDefault = null) { \$__ptadminSysPublic = \\PTAdmin\\Admin\\Services\\SystemConfigService::public(); \$__ptadminSysKey = trim((string) \$__ptadminSysKey); if ('' === \$__ptadminSysKey) { return \$__ptadminSysDefault; } return array_key_exists(\$__ptadminSysKey, \$__ptadminSysPublic) ? \$__ptadminSysPublic[\$__ptadminSysKey] : \$__ptadminSysDefault; })(...array_pad([$expression], 2, null))); ?>";
         });
     }
 
