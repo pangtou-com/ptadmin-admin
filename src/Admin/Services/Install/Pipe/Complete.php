@@ -26,7 +26,10 @@ namespace PTAdmin\Admin\Services\Install\Pipe;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use PTAdmin\Admin\Services\AdminFrontendBuildService;
+use PTAdmin\Admin\Services\SystemConfigGroupService;
+use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Admin\Support\Concerns\FormatInstallOutput;
+use PTAdmin\Admin\Support\SystemConfigPreset;
 
 class Complete
 {
@@ -37,6 +40,7 @@ class Complete
         $installedMarkerWritten = false;
 
         try {
+            $this->initializeSystemConfig();
             $this->process(__('ptadmin::install.logs.admin_creating'));
             $status = Artisan::call('admin:auth', ['-u' => $data['username'], '-p' => $data['password'], '-f' => true]);
             if (0 !== $status) {
@@ -59,6 +63,13 @@ class Complete
             }
             $this->error(__('ptadmin::install.logs.install_finalize_failed', ['message' => $throwable->getMessage()]));
         }
+    }
+
+    private function initializeSystemConfig(): void
+    {
+        $this->process('初始化系统配置');
+        SystemConfigGroupService::installInitialize(SystemConfigPreset::definitions());
+        SystemConfigService::updateSystemConfigCache();
     }
 
     private function writeInstalledMarker(): void

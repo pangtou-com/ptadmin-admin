@@ -24,13 +24,9 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use PTAdmin\Admin\Services\SystemConfigGroupService;
-use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Admin\Services\AdminService;
-use PTAdmin\Admin\Support\SystemConfigPreset;
 
 class AdminCommand extends Command
 {
