@@ -36,7 +36,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InstallController
 {
-    private const AGREEMENT_TTL_SECONDS = 300;
+    private const AGREEMENT_TTL_SECONDS = 60 * 60;
 
     private RequirementService $requirementService;
     private array $tabs = [];

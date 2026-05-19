@@ -202,7 +202,7 @@ class SystemConfigPreset
                     [
                         'title' => '扩展参数',
                         'name' => 'storage_meta',
-                        'type' => 'json',
+                        'type' => 'key-value',
                         'value' => '{}',
                         'default_val' => '{}',
                         'sort' => 50,
