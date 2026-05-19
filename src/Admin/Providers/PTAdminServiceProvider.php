@@ -25,6 +25,7 @@ namespace PTAdmin\Admin\Providers;
 
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -66,7 +67,7 @@ class PTAdminServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../../../config/ptadmin-auth.php', 'ptadmin-auth');
+        $this->mergeConfigFrom(__DIR__.'/../../../config/ptadmin.php', 'ptadmin');
         $this->mergeConfigFrom(__DIR__.'/../../../config/install.php', 'ptadmin-install');
         $this->app->register(EasyServiceProviders::class);
 
@@ -92,7 +93,7 @@ class PTAdminServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $configPaths = [
-                __DIR__.'/../../../config/ptadmin-auth.php' => config_path('ptadmin-auth.php'),
+                __DIR__.'/../../../config/ptadmin.php' => config_path('ptadmin.php'),
             ];
             $migrationPaths = [
                 __DIR__.'/../../../database/Migrations/2026_04_09_110000_create_admin_foundation_tables.php' => database_path('migrations/2026_04_09_110000_create_admin_foundation_tables.php'),
@@ -134,6 +135,7 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->mapInstallRoutes();
         $this->mapWebRoutes();
         $this->mapSystemRoutes();
+        $this->registerTemplateDirectives();
         $this->registerTemplateActive();
     }
 
@@ -170,6 +172,18 @@ class PTAdminServiceProvider extends ServiceProvider
         if (is_dir($path)) {
             $this->loadViewsFrom($path, "pt");
         }
+    }
+
+    private function registerTemplateDirectives(): void
+    {
+        Blade::directive('sys', static function ($expression): string {
+            $expression = trim((string) $expression);
+            if ('' === $expression) {
+                return "<?php echo e(''); ?>";
+            }
+
+            return "<?php echo e(data_get(\\PTAdmin\\Admin\\Services\\SystemConfigService::public(), {$expression})); ?>";
+        });
     }
 
     /**

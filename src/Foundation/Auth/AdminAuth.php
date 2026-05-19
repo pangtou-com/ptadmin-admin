@@ -49,6 +49,6 @@ class AdminAuth
 
     public static function getGuard()
     {
-        return config('ptadmin-auth.guard', config('auth.app_guard_name', 'admin'));
+        return config('ptadmin.guard', config('auth.app_guard_name', 'admin'));
     }
 }

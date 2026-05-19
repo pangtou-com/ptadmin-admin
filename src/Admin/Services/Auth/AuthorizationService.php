@@ -92,7 +92,7 @@ class AuthorizationService implements AuthorizationServiceInterface
 
     private function resolveDefaultResolvers(): array
     {
-        $resolverClasses = (array) config('ptadmin-auth.resolvers', [BasicGrantResolver::class]);
+        $resolverClasses = (array) config('ptadmin.resolvers', [BasicGrantResolver::class]);
         $resolvers = [];
 
         foreach ($resolverClasses as $resolverClass) {

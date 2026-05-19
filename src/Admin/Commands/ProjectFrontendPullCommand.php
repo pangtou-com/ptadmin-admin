@@ -21,8 +21,8 @@ class ProjectFrontendPullCommand extends Command
 
     public function handle(): int
     {
-        $target = $this->normalizePath((string) ($this->option('target') ?: \dirname((string) config('ptadmin-auth.project_frontend_manifest', base_path('resources/ptadmin/frontend/frontend.json')))));
-        $code = $this->normalizeCode((string) ($this->option('code') ?: config('ptadmin-auth.project_frontend_code', '__app__')));
+        $target = $this->normalizePath((string) ($this->option('target') ?: \dirname((string) config('ptadmin.project_frontend_manifest', base_path('resources/ptadmin/frontend/frontend.json')))));
+        $code = $this->normalizeCode((string) ($this->option('code') ?: config('ptadmin.project_frontend_code', '__app__')));
 
         if (!method_exists(AddonAction::class, 'pullProjectFrontend')) {
             $this->error('当前 ptadmin/addon 版本不支持项目二开前端模板拉取，请先升级 ptadmin/addon。');

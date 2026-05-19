@@ -30,6 +30,7 @@ use PTAdmin\Foundation\Exceptions\ServiceException;
  * @property string $name
  * @property int    $system_config_group_id
  * @property int    $weight
+ * @property int    $is_system
  * @property string $type
  * @property string $intro
  * @property array  $extra
@@ -39,8 +40,7 @@ use PTAdmin\Foundation\Exceptions\ServiceException;
 class SystemConfig extends \PTAdmin\Foundation\Database\Models\AbstractModel
 {
     protected $table = 'system_configs';
-    protected $fillable = ['title', 'name', 'system_config_group_id', 'weight', 'type', 'intro', 'extra', 'value', 'default_val'];
-    protected $appends = ['extra_value'];
+    protected $fillable = ['title', 'name', 'system_config_group_id', 'sort', 'is_system', 'type', 'intro', 'extra', 'value', 'default_val', 'status'];
     protected $casts = ['extra' => 'array'];
 
     /**
@@ -50,132 +50,5 @@ class SystemConfig extends \PTAdmin\Foundation\Database\Models\AbstractModel
     {
         return $this->belongsTo(SystemConfigGroup::class, 'system_config_group_id', 'id');
     }
-
-    /**
-     * 将换行文本格式的 options 转为统一存储结构。
-     *
-     * 支持：
-     * - `key=value`
-     * - 单行纯文本，自动使用顺序索引作为 key
-     * - 已经是数组结构时直接归一化
-     *
-     * @param mixed $val
-     */
-    public function setExtraAttribute($val): void
-    {
-        if (null === $val || '' === $val) {
-            $this->attributes['extra'] = json_encode(['options' => [], 'meta' => []], JSON_UNESCAPED_UNICODE);
-
-            return;
-        }
-
-        if (\is_array($val) && array_key_exists('meta', $val)) {
-            $meta = \is_array($val['meta']) ? $val['meta'] : [];
-            $options = $this->normalizeExtraOptions($val['options'] ?? []);
-
-            $this->attributes['extra'] = json_encode([
-                'options' => $options,
-                'meta' => $meta,
-            ], JSON_UNESCAPED_UNICODE);
-
-            return;
-        }
-
-        if (\is_array($val) && !$this->shouldNormalizeExtraAsOptions($val)) {
-            $this->attributes['extra'] = json_encode([
-                'options' => [],
-                'meta' => $val,
-            ], JSON_UNESCAPED_UNICODE);
-
-            return;
-        }
-
-        $extraOptions = $this->normalizeExtraOptions($val);
-
-        $this->attributes['extra'] = json_encode(['options' => $extraOptions, 'meta' => []], JSON_UNESCAPED_UNICODE);
-    }
-
-    /**
-     * @param mixed $val
-     *
-     * @return array<string, string>
-     */
-    private function normalizeExtraOptions($val): array
-    {
-        $extraOptions = [];
-        $options = \is_array($val) ? ($val['options'] ?? $val) : preg_split('/\r\n|\r|\n/', (string) $val);
-
-        foreach ((array) $options as $key => $option) {
-            if (\is_array($option)) {
-                $normalizedKey = (string) ($option['value'] ?? $key);
-                $normalizedValue = (string) ($option['label'] ?? $option['name'] ?? $normalizedKey);
-            } else {
-                $line = trim((string) $option);
-                if ('' === $line) {
-                    continue;
-                }
-
-                $parts = explode('=', $line, 2);
-                $normalizedKey = 1 === \count($parts) ? (string) $key : trim($parts[0]);
-                $normalizedValue = 1 === \count($parts) ? $line : trim($parts[1]);
-            }
-
-            if ('' === $normalizedKey) {
-                $normalizedKey = (string) $key;
-            }
-
-            if (isset($extraOptions[$normalizedKey])) {
-                throw new ServiceException(__('ptadmin::background.config_option_duplicate'));
-            }
-
-            $extraOptions[$normalizedKey] = $normalizedValue;
-        }
-
-        return $extraOptions;
-    }
-
-    /**
-     * @param array<string|int, mixed> $val
-     */
-    private function shouldNormalizeExtraAsOptions(array $val): bool
-    {
-        if ([] === $val) {
-            return true;
-        }
-
-        if (array_key_exists('options', $val)) {
-            return true;
-        }
-
-        foreach ($val as $key => $item) {
-            if (\is_array($item)) {
-                return true;
-            }
-
-            if (\is_int($key)) {
-                continue;
-            }
-
-            if (\is_string($item)) {
-                continue;
-            }
-
-            return false;
-        }
-
-        return true;
-    }
-
-    public function getExtraValueAttribute(): string
-    {
-        $extra = $this->extra;
-        $extraValue = [];
-        if (isset($extra['options']) && \is_array($extra['options'])) {
-            foreach ($extra['options'] as $key => $value) {
-                $extraValue[] = $key.'='.$value;
-            }
-        }
-
-        return implode("\n", $extraValue);
-    }
+    
 }

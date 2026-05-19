@@ -42,7 +42,7 @@ if (!function_exists('admin_api_prefix')) {
      */
     function admin_api_prefix(): string
     {
-        return trim((string) config('ptadmin-auth.api_prefix', config('ptadmin-auth.route_prefix', config('app.prefix', 'system'))), '/');
+        return trim((string) config('ptadmin.api_prefix', config('ptadmin.route_prefix', config('app.prefix', 'system'))), '/');
     }
 }
 
@@ -52,7 +52,7 @@ if (!function_exists('admin_web_prefix')) {
      */
     function admin_web_prefix(): string
     {
-        return trim((string) config('ptadmin-auth.web_prefix', 'admin'), '/');
+        return trim((string) config('ptadmin.web_prefix', 'admin'), '/');
     }
 }
 
@@ -62,7 +62,7 @@ if (!function_exists('admin_web_asset_path')) {
      */
     function admin_web_asset_path(): string
     {
-        return trim((string) config('ptadmin-auth.web_asset_path', 'vendor/ptadmin/admin'), '/');
+        return trim((string) config('ptadmin.web_asset_path', 'vendor/ptadmin/admin'), '/');
     }
 }
 
@@ -500,7 +500,7 @@ if (!function_exists('addon_path')) {
      */
     function addon_path($code, string $path = ''): string
     {
-        $base = rtrim((string) config('ptadmin-auth.addons_path', base_path('addons')), \DIRECTORY_SEPARATOR);
+        $base = rtrim((string) config('ptadmin.addons_path', base_path('addons')), \DIRECTORY_SEPARATOR);
 
         return $base.\DIRECTORY_SEPARATOR.ucfirst((string) $code).('' !== $path ? \DIRECTORY_SEPARATOR.$path : '');
     }
@@ -512,7 +512,7 @@ if (!function_exists('addon_storage_path')) {
      */
     function addon_storage_path($code, string $path = ''): string
     {
-        $base = rtrim((string) config('ptadmin-auth.addons_storage_path', storage_path('app/addons')), \DIRECTORY_SEPARATOR);
+        $base = rtrim((string) config('ptadmin.addons_storage_path', storage_path('app/addons')), \DIRECTORY_SEPARATOR);
 
         return $base.\DIRECTORY_SEPARATOR.(string) $code.('' !== $path ? \DIRECTORY_SEPARATOR.$path : '');
     }
@@ -568,15 +568,18 @@ if (!function_exists('system_config')) {
     }
 }
 
-if (!function_exists('public_system_config')) {
+if (!function_exists('addon_config')) {
     /**
-     * 读取允许公开输出的系统配置集合。
+     * 读取插件配置。
      *
-     * @return array<string, mixed>
+     * @param mixed $key
+     * @param mixed $default
+     *
+     * @return mixed
      */
-    function public_system_config(): array
+    function addon_config($key, string $addonCode, $default = null)
     {
-        return \PTAdmin\Admin\Services\SystemConfigService::public();
+        return \PTAdmin\Admin\Services\SystemConfigService::addonValue($addonCode, $key, $default);
     }
 }
 
@@ -608,19 +611,6 @@ if (!function_exists('is_mobile')) {
     }
 }
 
-if (!function_exists('pt_submit')) {
-    /**
-     * 生成layui隐藏的表单提交按钮.
-     *
-     * @param mixed $display
-     *
-     * @return string
-     */
-    function pt_submit($display = 'none'): string
-    {
-        return '<button type="button" style="display: '.$display.'" lay-submit lay-filter="PT-submit"></button>';
-    }
-}
 
 if (!function_exists('get_current_user')) {
     /**

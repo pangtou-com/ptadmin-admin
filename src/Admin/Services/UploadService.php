@@ -194,7 +194,7 @@ class UploadService
 
     private function getDriver(): string
     {
-        return (string) config('ptadmin-auth.upload_local_disk', 'public');
+        return (string) config('ptadmin.upload_local_disk', 'public');
     }
 
     private function getFilename(Request $request): string

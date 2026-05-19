@@ -38,7 +38,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('database.default', 'sqlite');
         $app['config']->set('database.connections.sqlite.database', ':memory:');
         $app['config']->set('filesystems.default', 'public');
-        $app['config']->set('ptadmin-auth.guard', 'api');
+        $app['config']->set('ptadmin.guard', 'api');
     }
 
     protected function setUp(): void
@@ -271,7 +271,7 @@ abstract class TestCase extends Orchestra
     {
         $this->createUserTokensTable();
 
-        return app('auth')->guard(config('ptadmin-auth.guard'))->login($admin);
+        return app('auth')->guard(config('ptadmin.guard'))->login($admin);
     }
 
     protected function jsonApiHeaders(?string $token = null): array

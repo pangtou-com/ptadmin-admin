@@ -10,18 +10,18 @@ use Illuminate\Filesystem\Filesystem;
 class ProjectFrontendPublishCommand extends Command
 {
     protected $signature = 'admin:project-frontend:publish
-    {--source= : 项目二开前端构建产物目录，默认读取 ptadmin-auth.project_frontend_dist_path}
-    {--target= : 项目二开前端运行目录，默认读取 ptadmin-auth.project_frontend_storage_path}
-    {--code= : 项目二开前端模块标识，默认读取 ptadmin-auth.project_frontend_code}';
+    {--source= : 项目二开前端构建产物目录，默认读取 ptadmin.project_frontend_dist_path}
+    {--target= : 项目二开前端运行目录，默认读取 ptadmin.project_frontend_storage_path}
+    {--code= : 项目二开前端模块标识，默认读取 ptadmin.project_frontend_code}';
 
     protected $description = '发布项目二开前端构建产物到后台宿主模块目录';
 
     public function handle(Filesystem $filesystem): int
     {
-        $code = $this->normalizeCode((string) ($this->option('code') ?: config('ptadmin-auth.project_frontend_code', '__app__')));
-        $source = $this->normalizePath((string) ($this->option('source') ?: config('ptadmin-auth.project_frontend_dist_path', base_path('resources/ptadmin/frontend/dist'))));
-        $target = $this->normalizePath((string) ($this->option('target') ?: config('ptadmin-auth.project_frontend_storage_path', storage_path('app/ptadmin/modules/'.$code))));
-        $manifest = $this->normalizePath((string) config('ptadmin-auth.project_frontend_manifest', base_path('resources/ptadmin/frontend/frontend.json')));
+        $code = $this->normalizeCode((string) ($this->option('code') ?: config('ptadmin.project_frontend_code', '__app__')));
+        $source = $this->normalizePath((string) ($this->option('source') ?: config('ptadmin.project_frontend_dist_path', base_path('resources/ptadmin/frontend/dist'))));
+        $target = $this->normalizePath((string) ($this->option('target') ?: config('ptadmin.project_frontend_storage_path', storage_path('app/ptadmin/modules/'.$code))));
+        $manifest = $this->normalizePath((string) config('ptadmin.project_frontend_manifest', base_path('resources/ptadmin/frontend/frontend.json')));
 
         if (!is_dir($source)) {
             $this->error(sprintf('Project frontend build directory does not exist: %s', $source));

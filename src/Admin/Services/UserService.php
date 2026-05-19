@@ -113,8 +113,8 @@ class UserService
      */
     public function otherOauth($tag): array
     {
-        $config = SystemConfigService::group('oauth');
-        if (!isset($config[$tag])) {
+        $config = system_config(sprintf('%s.active', $tag));
+        if (1 !== (int) $config) {
             throw new BackgroundException(__('ptadmin::background.oauth_config_required'));
         }
 //        $oauth = Oauth::make($tag, $config[$tag]);
@@ -141,8 +141,8 @@ class UserService
      */
     public function otherOauthCallback($data, $tag): array
     {
-        $config = SystemConfigService::group('oauth');
-        if (!isset($config[$tag])) {
+        $config = system_config(sprintf('%s.active', $tag));
+        if (1 !== (int) $config) {
             throw new BackgroundException(__('ptadmin::background.oauth_config_required'));
         }
         // $oauth = Oauth::make($tag, $config[$tag])->setCallbackParams($data);
@@ -228,8 +228,8 @@ class UserService
      */
     public function unbindOauth($user_id, $source): void
     {
-        $config = SystemConfigService::group('oauth');
-        if (!isset($config[$source])) {
+        $config = system_config(sprintf('%s.active', $source));
+        if (1 !== (int) $config) {
             throw new BackgroundException(__('ptadmin::background.oauth_config_invalid'));
         }
         /** @var UserBindPlatform $dao */
@@ -461,7 +461,7 @@ class UserService
         $user = User::query()->where($field, $data['username'])->first();
         if (!$user) {
             // 开启自动注册后自动注册，默认未开启状态
-            if (true === system_config('is_register', true)) {
+            if (true === system_config('security.is_register', true)) {
                 $data['password'] = Str::random();
                 $data['avatar'] = user_avatar();
                 $data['status'] = StatusEnum::ENABLE;

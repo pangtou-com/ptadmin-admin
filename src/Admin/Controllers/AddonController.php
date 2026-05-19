@@ -34,7 +34,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AddonController extends AbstractBackgroundController
 {
-    public $unAddon;
     private AddonPlatformService $addonPlatformService;
 
     public function __construct(AddonPlatformService $addonPlatformService)
@@ -44,30 +43,7 @@ class AddonController extends AbstractBackgroundController
         view()->share('ptadmin_addon_user', AddonApi::getCloudUserinfo());
     }
 
-    /**
-     * 获取本地插件信息.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getAddonLocal(): \Illuminate\Http\JsonResponse
-    {
-        return AdminResponse::success($this->addonPlatformService->localAddons());
-    }
-
-    /**
-     * 下载插件.
-     *
-     * @param $id
-     * @param Request $request
-     *
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
-     */
-    public function upLoadAddon($id, Request $request)
-    {
-        return AdminResponse::success();
-    }
-
-    public function localInstall(Request $request)
+    public function localInstall(Request $request): \Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
             'file' => 'required|file|mimes:zip',
@@ -115,43 +91,6 @@ class AddonController extends AbstractBackgroundController
     public function moduleManifests(AddonFrontendService $service): \Illuminate\Http\JsonResponse
     {
         return AdminResponse::success($service->manifests());
-    }
-
-    /**
-     * 保存配置.
-     *
-     * @param Request $request
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function addonSetting(Request $request): \Illuminate\Http\JsonResponse
-    {
-        $data = $request->validate([
-            'code' => 'required|string|max:100',
-            'values' => 'sometimes|array',
-        ]);
-
-        return AdminResponse::success($this->addonPlatformService->saveAddonConfig((string) $data['code'], $request->all()));
-    }
-
-    /**
-     * 图片地址
-     *
-     * @param $code
-     *
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response
-     */
-    public function showImage($code)
-    {
-        $image = addon_path((string) $code, 'cover.png');
-        response()->header('Content-Length', filesize($image));
-        response()->header('Content-Disposition', 'attachment; filename="'.$code.'.jpg"');
-        response()->header('Content-Transfer-Encoding', 'binary');
-        response()->header('Expires', '0');
-        response()->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
-        response()->header('Pragma', 'public');
-
-        return response()->setContent(file_get_contents($image));
     }
 
     /**

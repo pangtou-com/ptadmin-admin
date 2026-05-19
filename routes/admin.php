@@ -136,14 +136,18 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     admin_audit_route(Route::delete('user/{id?}', [Admin\UserController::class, 'delete']), 'user.users');
 
     // 配置管理模块
-    admin_audit_route(Route::get('settings/catalog', [Admin\SettingsController::class, 'systemCatalog']), 'system.config');
-    admin_audit_route(Route::get('settings/system/catalog', [Admin\SettingsController::class, 'systemCatalog']), 'system.config');
-    admin_audit_route(Route::get('settings/system/sections/{sectionKey}', [Admin\SettingsController::class, 'systemSection']), 'system.config');
-    admin_audit_route(Route::put('settings/system/sections/{sectionKey}', [Admin\SettingsController::class, 'saveSystemSection']), 'system.config');
-    admin_audit_route(Route::get('settings/plugins/catalog', [Admin\SettingsController::class, 'pluginCatalog']), 'system.config');
-    admin_audit_route(Route::get('settings/plugins/{code}/sections/{sectionKey}', [Admin\SettingsController::class, 'pluginSection']), 'system.config');
-    admin_audit_route(Route::put('settings/plugins/{code}/sections/{sectionKey}', [Admin\SettingsController::class, 'savePluginSection']), 'system.config');
-
+    admin_audit_route(Route::get('settings', [Admin\SettingsController::class, 'index']), 'system.config');
+    admin_audit_route(Route::put('settings/{id}', [Admin\SettingsController::class, 'edit']), 'system.config');
+    admin_audit_route(Route::get('settings/{id}', [Admin\SettingsController::class, 'detail']), 'system.config');
+    admin_audit_route(Route::delete('settings/{id}', [Admin\SettingsController::class, 'delete']), 'system.config');
+    admin_audit_route(Route::post('settings', [Admin\SettingsController::class, 'store']), 'system.config');
+    admin_audit_route(Route::get('settings/{name}', [Admin\SettingsController::class, 'systemSection']), 'system.config');
+    admin_audit_route(Route::put('setting-field/{id}', [Admin\SettingsController::class, 'editField']), 'system.config');
+    admin_audit_route(Route::get('setting-field/{id}', [Admin\SettingsController::class, 'detailField']), 'system.config');
+    admin_audit_route(Route::delete('setting-field/{id}', [Admin\SettingsController::class, 'deleteField']), 'system.config');
+    admin_audit_route(Route::post('setting-field/{name}', [Admin\SettingsController::class, 'saveField']), 'system.config');
+    admin_audit_route(Route::post('setting-config/{name}', [Admin\SettingsController::class, 'saveConfig']), 'system.config');
+    
     // 本地服务
     admin_audit_route(Route::get('cloud/local/apps', [Admin\AddonController::class, 'local']), 'cloud.apps');
     // 云服务

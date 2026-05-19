@@ -17,9 +17,9 @@ class PTAdminServiceProviderTest extends TestCase
 {
     public function test_provider_registers_config_routes_and_middlewares(): void
     {
-        self::assertSame('api', config('ptadmin-auth.guard'));
-        self::assertSame('system', config('ptadmin-auth.api_prefix'));
-        self::assertSame('admin', config('ptadmin-auth.web_prefix'));
+        self::assertSame('api', config('ptadmin.guard'));
+        self::assertSame('system', config('ptadmin.api_prefix'));
+        self::assertSame('admin', config('ptadmin.web_prefix'));
 
         $middleware = app(Router::class)->getMiddleware();
 
@@ -42,8 +42,8 @@ class PTAdminServiceProviderTest extends TestCase
 
         self::assertCount(11, $allPublishes);
         self::assertCount(1, $configPublishes);
-        self::assertSame('ptadmin-auth.php', basename((string) array_key_first($configPublishes)));
-        self::assertSame('ptadmin-auth.php', basename((string) current($configPublishes)));
+        self::assertSame('ptadmin.php', basename((string) array_key_first($configPublishes)));
+        self::assertSame('ptadmin.php', basename((string) current($configPublishes)));
 
         self::assertCount(8, $migrationPublishes);
         self::assertSame([

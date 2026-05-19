@@ -128,8 +128,8 @@ class PTAdminSessionAndFieldApiTest extends TestCase
             'is_founder' => 1,
         ]);
 
-        $validToken = $founder->createToken(config('ptadmin-auth.guard'), time() + 60)->plainTextToken;
-        $expiredToken = $founder->createToken(config('ptadmin-auth.guard'), time() - 60)->plainTextToken;
+        $validToken = $founder->createToken(config('ptadmin.guard'), time() + 60)->plainTextToken;
+        $expiredToken = $founder->createToken(config('ptadmin.guard'), time() - 60)->plainTextToken;
 
         $this->withHeaders($this->jsonApiHeaders($validToken))
             ->getJson('/system/auth/profile')

@@ -48,10 +48,7 @@ final class AdminListQuery
             $query['page'] = $page;
         }
 
-        $query['paginate'] = array_key_exists('paginate', $input)
-            ? self::normalizeBool($input['paginate'])
-            : $paginate
-        ;
+        $query['paginate'] = array_key_exists('paginate', $input) ? self::normalizeBool($input['paginate']) : $paginate;
 
         return $query;
     }

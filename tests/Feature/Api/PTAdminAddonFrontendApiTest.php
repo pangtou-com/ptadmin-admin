@@ -220,7 +220,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
 
     public function test_module_manifests_endpoint_uses_cache_when_cache_key_is_stable(): void
     {
-        config()->set('ptadmin-auth.module_manifest_cache_ttl', 300);
+        config()->set('ptadmin.module_manifest_cache_ttl', 300);
 
         $this->app->instance(AddonFrontendService::class, new class() extends AddonFrontendService {
             protected function buildManifestFingerprint(): string

@@ -19,7 +19,6 @@ return [
     'project_frontend_manifest' => env('PTADMIN_PROJECT_FRONTEND_MANIFEST', base_path('resources/ptadmin/frontend/frontend.json')),
     'project_frontend_dist_path' => env('PTADMIN_PROJECT_FRONTEND_DIST_PATH', base_path('resources/ptadmin/frontend/dist')),
     'project_frontend_storage_path' => env('PTADMIN_PROJECT_FRONTEND_STORAGE_PATH', storage_path('app/ptadmin/modules/'.env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'))),
-    // 兼容旧代码读取 route_prefix，内部统一以 api_prefix 为准。
     'route_prefix' => env('PTADMIN_API_PREFIX', env('PTADMIN_ROUTE_PREFIX', config('app.prefix', 'system'))),
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),
     'addons_storage_path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),
@@ -39,5 +38,12 @@ return [
         OrganizationResolver::class,
         DataScopeResolver::class,
         WorkflowGuardResolver::class,
+    ],
+    'setting_type' => [
+        ['label' => "系统设置", "value" => "system", "sort" => 0],
+        ['label' => "授权能力", "value" => "auth", "sort" => 1],
+        ['label' => "短信能力", "value" => "sms", "sort" => 2],
+        ['label' => "支付能力", "value" => "pay", "sort" => 3],
+        ['label' => "业务扩展", "value" => "addon", "sort" => 4],
     ],
 ];

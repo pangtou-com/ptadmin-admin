@@ -266,7 +266,7 @@ class PTAdminAddonFrontendServiceTest extends TestCase
     public function test_project_frontend_manifest_can_use_dev_url_in_debug_mode(): void
     {
         config()->set('app.debug', true);
-        config()->set('ptadmin-auth.project_frontend_dev_url', 'http://localhost:4180/');
+        config()->set('ptadmin.project_frontend_dev_url', 'http://localhost:4180/');
 
         $this->writeProjectManifest([
             'title' => '项目二开',

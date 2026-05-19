@@ -25,7 +25,6 @@ namespace PTAdmin\Admin\Services;
 
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
-use PTAdmin\Admin\Support\ConfigRuleValidator;
 use PTAdmin\Foundation\Exceptions\ServiceException;
 
 class SystemConfigGroupService
@@ -35,32 +34,24 @@ class SystemConfigGroupService
      *
      * @param array<int, array<string, mixed>> $data
      */
-    public static function installInitialize(array $data, int $parentId = 0): void
+    public static function installInitialize(array $data, string $addonCode = null): void
     {
         foreach ($data as $item) {
-            self::assertGroupHierarchyAllowed($item, $parentId);
-            self::assertGroupExtraAllowed((array) ($item['extra'] ?? []));
-
             $groupData = $item;
-            $groupData['parent_id'] = $parentId;
-            unset($groupData['children'], $groupData['fields']);
+            $groupData['addon_code'] = $addonCode;
+            $groupData['is_system'] = $groupData['is_system'] ?? 1;
 
             /** @var SystemConfigGroup $model */
-            $model = SystemConfigGroup::query()->updateOrCreate(['name' => $item['name']], $groupData);
-
-            if (isset($item['children']) && \count($item['children']) > 0) {
-                self::installInitialize($item['children'], $model->id);
-
-                continue;
-            }
+            $model = SystemConfigGroup::query()->updateOrCreate(
+                ['addon_code' => $groupData['addon_code'], 'name' => $groupData['name'] ],
+                $groupData
+            );
 
             if (isset($item['fields']) && \count($item['fields']) > 0) {
                 self::assertUniqueFieldNames((array) $item['fields']);
                 foreach ($item['fields'] as $field) {
-                    $fieldType = strtolower(trim((string) ($field['type'] ?? '')));
-                    self::assertFieldTypeAllowed($fieldType);
-                    self::assertFieldExtraAllowed($fieldType, (array) ($field['extra'] ?? []));
                     $field['system_config_group_id'] = $model->id;
+                    $field['is_system'] = $field['is_system'] ?? 1;
                     SystemConfig::query()->updateOrCreate(
                         [
                             'system_config_group_id' => $model->id,
@@ -71,98 +62,6 @@ class SystemConfigGroupService
                 }
             }
         }
-    }
-
-    /**
-     * @param array<string, mixed> $item
-     */
-    private static function assertGroupHierarchyAllowed(array $item, int $parentId): void
-    {
-        if (0 === $parentId) {
-            return;
-        }
-
-        $parent = SystemConfigGroup::query()->find($parentId);
-        if (null === $parent) {
-            return;
-        }
-
-        if ((int) $parent->parent_id > 0) {
-            throw new ServiceException(__('ptadmin::background.config_group_depth_invalid'));
-        }
-
-        if (isset($item['children']) && \count((array) $item['children']) > 0) {
-            throw new ServiceException(__('ptadmin::background.config_group_depth_invalid'));
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $extra
-     */
-    private static function assertGroupExtraAllowed(array $extra): void
-    {
-        $layout = (array) ($extra['layout'] ?? []);
-        if ([] === $layout) {
-            return;
-        }
-
-        $mode = strtolower(trim((string) ($layout['mode'] ?? 'block')));
-        if (!ConfigRuleValidator::isValidGroupLayoutMode($mode)) {
-            throw new ServiceException(__('ptadmin::background.config_group_layout_invalid'));
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $extra
-     */
-    private static function assertFieldExtraAllowed(string $type, array $extra): void
-    {
-        $meta = (array) ($extra['meta'] ?? []);
-        if ([] === $meta) {
-            return;
-        }
-
-        foreach (array_keys($meta) as $key) {
-            if (!\is_string($key)) {
-                continue;
-            }
-
-            $resolvedKey = strtolower(trim($key));
-            if ('' === $resolvedKey) {
-                continue;
-            }
-
-            if (!\in_array($resolvedKey, ConfigRuleValidator::supportedFieldMetaKeys(), true)) {
-                throw new ServiceException(__('ptadmin::background.config_field_meta_key_invalid', ['key' => $resolvedKey]));
-            }
-        }
-
-        $unsupportedKeys = ConfigRuleValidator::unsupportedMetaKeysForFieldType($type, $meta);
-        if ([] !== $unsupportedKeys) {
-            throw new ServiceException(__('ptadmin::background.config_field_meta_unsupported', [
-                'type' => $type,
-                'key' => $unsupportedKeys[0],
-            ]));
-        }
-
-        $expose = strtolower(trim((string) ($meta['expose'] ?? 'private')));
-        if (!ConfigRuleValidator::isValidExposeMode($expose)) {
-            throw new ServiceException(__('ptadmin::background.config_field_expose_invalid'));
-        }
-
-        $invalidMeta = ConfigRuleValidator::invalidMetaValueTypes($meta);
-        if ([] !== $invalidMeta) {
-            throw new ServiceException(__('ptadmin::background.config_field_meta_value_invalid', ['key' => reset($invalidMeta)]));
-        }
-    }
-
-    private static function assertFieldTypeAllowed(string $type): void
-    {
-        if (ConfigRuleValidator::isValidFieldType($type)) {
-            return;
-        }
-
-        throw new ServiceException(__('ptadmin::background.config_field_type_invalid'));
     }
 
     /**

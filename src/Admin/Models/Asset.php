@@ -145,6 +145,6 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
     {
         $driver = trim((string) ($this->attributes['driver'] ?? ''));
 
-        return '' === $driver ? (string) config('ptadmin-auth.upload_local_disk', 'public') : $driver;
+        return '' === $driver ? (string) config('ptadmin.upload_local_disk', 'public') : $driver;
     }
 }

@@ -26,7 +26,7 @@ class AddonFrontendService
     public function manifests(): array
     {
         $cacheKey = $this->buildCacheKey();
-        $ttl = max(0, (int) config('ptadmin-auth.module_manifest_cache_ttl', 300));
+        $ttl = max(0, (int) config('ptadmin.module_manifest_cache_ttl', 300));
 
         if ($ttl <= 0) {
             return $this->buildManifestPayload();
@@ -328,7 +328,7 @@ class AddonFrontendService
             $entry['wujie'] = [];
         }
         if ('wujie' === $definition['runtime'] && \is_array($entry['wujie'] ?? null) && !isset($entry['wujie']['url'])) {
-            $devUrl = trim((string) config('ptadmin-auth.project_frontend_dev_url', ''));
+            $devUrl = trim((string) config('ptadmin.project_frontend_dev_url', ''));
             $entry['wujie']['url'] = '' !== $devUrl ? $devUrl : $this->addonPublicModuleUrl($projectCode, 'dist/');
         }
         $definition['entry'] = $entry;
@@ -568,7 +568,7 @@ class AddonFrontendService
 
     protected function projectFrontendCode(): string
     {
-        $code = trim((string) config('ptadmin-auth.project_frontend_code', self::PROJECT_FRONTEND_DEFAULT_CODE));
+        $code = trim((string) config('ptadmin.project_frontend_code', self::PROJECT_FRONTEND_DEFAULT_CODE));
 
         return '' === $code ? self::PROJECT_FRONTEND_DEFAULT_CODE : $code;
     }
@@ -599,7 +599,7 @@ class AddonFrontendService
 
     protected function projectFrontendManifestPath(): ?string
     {
-        $path = trim((string) config('ptadmin-auth.project_frontend_manifest', ''));
+        $path = trim((string) config('ptadmin.project_frontend_manifest', ''));
         if ('' === $path) {
             return null;
         }

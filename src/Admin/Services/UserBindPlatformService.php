@@ -40,25 +40,4 @@ class UserBindPlatformService
 
         return $open;
     }
-
-    /**
-     * 获取允许登录授权的第三方平台类型.
-     *
-     * @return array
-     */
-    public function getOpenType(): array
-    {
-        $config = system_config('oauth', []);
-        if (!\is_array($config) || 0 === \count($config)) {
-            return [];
-        }
-        $results = [];
-        foreach ($config as $key => $item) {
-            if (isset($item['active']) && 1 === (int) $item['active']) {
-                $results[$key] = $item;
-            }
-        }
-
-        return $results;
-    }
 }

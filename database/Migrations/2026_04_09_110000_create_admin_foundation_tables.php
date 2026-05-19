@@ -137,19 +137,20 @@ return new class extends Migration
     {
         Schema::create('system_config_groups', function (Blueprint $table): void {
             $table->id();
-            $table->string('title', 255);
-            $table->string('name', 32);
-            $table->unsignedInteger('weight')->default(0);
-            $table->unsignedBigInteger('parent_id')->default(0);
-            $table->string('addon_code', 50)->nullable();
+            $table->string('title', 255)->comment("分组标题");
+            $table->string('name', 32)->comment("分组标识");
+            $table->string('badge', 32)->nullable();
+            $table->string('type', 32)->comment("分组所属类型");
+            $table->string('access', 32)->comment("访问权限：【public】公开访问，可通过模版指令或接口获取数据，【private】只支持通过函数方法获取");
+            $table->unsignedTinyInteger('is_system')->default(0)->comment("是否为系统分组，系统分组不允许修改标识和删除操作");
+            $table->unsignedInteger('sort')->default(0);
+            $table->string('addon_code', 50)->nullable()->comment("配置所属插件");
             $table->string('intro', 255)->nullable();
-            $table->json('extra')->nullable();
             $table->unsignedTinyInteger('status')->default(1);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();
 
-            $table->index(['parent_id', 'status'], 'idx_system_config_groups_parent_status');
             $table->unique(['addon_code', 'name'], 'uniq_system_config_groups_addon_name');
         });
 
@@ -163,17 +164,19 @@ return new class extends Migration
             $table->string('title', 255);
             $table->string('name', 32);
             $table->unsignedBigInteger('system_config_group_id');
-            $table->unsignedInteger('weight')->default(0);
+            $table->unsignedInteger('sort')->default(0);
+            $table->unsignedTinyInteger('is_system')->default(0)->comment("是否属于系统配置字段，系统配置字段不允许编辑name和删除操作");
             $table->string('type', 20)->default('text');
             $table->string('intro', 255)->nullable();
             $table->json('extra')->nullable();
             $table->string('value', 500)->nullable();
             $table->string('default_val', 500)->nullable();
+            $table->unsignedTinyInteger('status')->default(1);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();
 
-            $table->index(['system_config_group_id', 'weight'], 'idx_system_configs_group_weight');
+            $table->index(['system_config_group_id', 'sort'], 'idx_system_configs_group_weight');
             $table->unique(['system_config_group_id', 'name'], 'uniq_system_configs_group_name');
         });
 

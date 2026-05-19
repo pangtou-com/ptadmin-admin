@@ -5,23 +5,21 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services;
 
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Schema;
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\AddonApi;
 use PTAdmin\Addon\Exception\AddonException;
 use PTAdmin\Addon\Service\Action\AddonAction;
-use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 use Throwable;
 
 class AddonPlatformService
 {
-    private SystemConfigService $systemConfigService;
+    private SystemSettingsService $systemSettingsService;
 
-    public function __construct(SystemConfigService $systemConfigService)
+    public function __construct(SystemSettingsService $systemSettingsService)
     {
-        $this->systemConfigService = $systemConfigService;
+        $this->systemSettingsService = $systemSettingsService;
     }
 
     /**
@@ -119,7 +117,6 @@ class AddonPlatformService
     public function initAddon(string $code, string $title = '', bool $force = false): array
     {
         $result = $this->performAddonInitialization($code, $title, $force);
-        $this->ensureAddonSettingsRegistrationScaffold($code, $title, $result);
 
         return $result;
     }
@@ -177,18 +174,8 @@ class AddonPlatformService
     public function uninstall(string $code, bool $force = false): array
     {
         $addon = $this->status($code);
-        $settingsRegistry = app(\PTAdmin\Admin\Services\Settings\SettingsRegistryService::class);
-        $settings = [];
-        if (Addon::hasInstalledAddon($code)) {
-            try {
-                $settings = $settingsRegistry->pluginSettingsRegistration($code);
-            } catch (Throwable $exception) {
-                $settings = [];
-            }
-        }
         $this->assertAddonCanUninstall($code, $force);
         AddonAction::uninstall($code, true);
-        $settingsRegistry->uninstallPluginSettings($code, $settings);
 
         return [
             'code' => $code,
@@ -240,25 +227,12 @@ class AddonPlatformService
      */
     public function addonConfig(string $code): array
     {
-        $section = $this->ensureAddonConfigSection($code);
-        if (null === $section) {
-            return [
-                'code' => $code,
-                'supported' => false,
-                'group' => null,
-                'section' => null,
-                'schema' => [
-                    'fields' => [],
-                ],
-                'values' => [],
-            ];
+        $group = SystemConfigGroup::query()->where('addon_code', $code)->where('status', 1)->first();
+        if (!$group) {
+            return [];
         }
 
-        $payload = $this->systemConfigService->section($section->id);
-        $payload['code'] = $code;
-        $payload['supported'] = true;
-
-        return $payload;
+        return $this->systemSettingsService->addonSection((string) $group->addon_code, (string) $group->name);
     }
 
     /**
@@ -266,18 +240,15 @@ class AddonPlatformService
      *
      * @param array<string, mixed> $data
      *
-     * @return array<string, mixed>
      */
-    public function saveAddonConfig(string $code, array $data): array
+    public function saveAddonConfig(string $code, array $data)
     {
-        $section = $this->ensureAddonConfigSection($code);
-        if (null === $section) {
+        $section = SystemConfigGroup::query()->where('addon_code', $code)->where('status', 1)->first();
+        if (!$section) {
             throw new BackgroundException(sprintf('插件[%s]未提供通用配置', $code));
         }
-
-        $this->systemConfigService->saveSection((int) $section->id, $data);
-
-        return $this->addonConfig($code);
+        
+        $this->systemSettingsService->saveAddonSection($code, (string) $section->name, $data);
     }
 
     /**
@@ -336,9 +307,6 @@ class AddonPlatformService
     private function normalizeLocalAddon(string $code, array $addonInfo): array
     {
         $enabled = Addon::hasAddon($code);
-        $configurable = $this->hasAddonConfigSection($code)
-            || [] !== $this->getAddonConfigDefaults($code)
-            || $this->hasAddonSettingsRegistration($code);
 
         return [
             'code' => $code,
@@ -354,7 +322,7 @@ class AddonPlatformService
             'is_install' => 1,
             'is_enable' => $enabled ? 1 : 0,
             'develop' => !empty($addonInfo['develop']) ? 1 : 0,
-            'configurable' => $configurable ? 1 : 0,
+            'configurable' =>  0,
             'has_frontend_modules' => $this->hasAddonModuleManifest($addonInfo) ? 1 : 0,
             'dependencies' => (array) data_get($addonInfo, 'dependencies.plugins', $addonInfo['require'] ?? []),
             'required_satisfied' => $this->dependenciesSatisfied($code, $addonInfo, $enabled) ? 1 : 0,
@@ -451,283 +419,5 @@ class AddonPlatformService
     {
         return !\is_int($dependencyCode) && trim((string) $dependencyCode) === $code;
     }
-
-    private function ensureAddonConfigSection(string $code): ?SystemConfigGroup
-    {
-        $installed = Addon::getInstalledAddons();
-        if (!isset($installed[$code]) || !\is_array($installed[$code])) {
-            throw new BackgroundException(sprintf('插件[%s]不存在', $code));
-        }
-
-        if (!Schema::hasTable('system_config_groups') || !Schema::hasTable('system_configs')) {
-            return null;
-        }
-
-        $defaults = $this->getAddonConfigDefaults($code);
-        $section = $this->findAddonConfigSection($code);
-        if ([] === $defaults && null === $section) {
-            return null;
-        }
-
-        $addon = $installed[$code];
-        $root = SystemConfigGroup::query()->firstOrCreate(
-            [
-                'addon_code' => $code,
-                'name' => $this->rootGroupName($code),
-            ],
-            [
-                'title' => (string) ($addon['title'] ?? $addon['name'] ?? $code),
-                'parent_id' => 0,
-                'intro' => (string) ($addon['description'] ?? ''),
-                'status' => 1,
-                'weight' => 0,
-            ]
-        );
-
-        $section = SystemConfigGroup::query()->firstOrCreate(
-            [
-                'addon_code' => $code,
-                'name' => 'basic',
-            ],
-            [
-                'title' => '基础配置',
-                'parent_id' => (int) $root->id,
-                'intro' => '插件通用配置',
-                'status' => 1,
-                'weight' => 0,
-            ]
-        );
-
-        if ((int) $section->parent_id !== (int) $root->id) {
-            $section->parent_id = (int) $root->id;
-            $section->save();
-        }
-
-        foreach ($defaults as $name => $value) {
-            $this->syncAddonConfigItem($section, (string) $name, $value);
-        }
-
-        return $section->refresh();
-    }
-
-    private function findAddonConfigSection(string $code)
-    {
-        if (!Schema::hasTable('system_config_groups')) {
-            return null;
-        }
-
-        return SystemConfigGroup::query()
-            ->where('addon_code', $code)
-            ->where('name', 'basic')->first();
-    }
-
-    private function hasAddonConfigSection(string $code): bool
-    {
-        return null !== $this->findAddonConfigSection($code);
-    }
-
-    private function hasAddonSettingsRegistration(string $code): bool
-    {
-        $path = addon_path($code, 'Config/settings.php');
-        if (!is_file($path)) {
-            return false;
-        }
-
-        $payload = require $path;
-        if (!\is_array($payload)) {
-            return false;
-        }
-
-        if (!(bool) ($payload['enabled'] ?? true)) {
-            return false;
-        }
-
-        $mode = (string) ($payload['mode'] ?? 'hosted');
-        if ('none' === $mode) {
-            return false;
-        }
-
-        if ('external_route' === $mode) {
-            return '' !== trim((string) ($payload['path'] ?? ''));
-        }
-
-        return [] !== array_values(array_filter((array) ($payload['sections'] ?? []), static function ($item): bool {
-            return \is_array($item);
-        }));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function getAddonConfigDefaults(string $code): array
-    {
-        $installed = Addon::getInstalledAddons();
-        $addon = $installed[$code] ?? null;
-        if (!\is_array($addon)) {
-            return [];
-        }
-
-        $path = base_path('addons/'.($addon['base_path'] ?? '').'/Config/config.php');
-        if (!is_file($path)) {
-            return [];
-        }
-
-        $defaults = require $path;
-
-        return \is_array($defaults) ? $defaults : [];
-    }
-
-    /**
-     * @param mixed $value
-     */
-    private function syncAddonConfigItem(SystemConfigGroup $section, string $name, $value): void
-    {
-        $name = trim($name);
-        if ('' === $name) {
-            return;
-        }
-
-        $type = $this->inferConfigFieldType($value);
-        $serialized = $this->serializeConfigValue($value, $type);
-        /** @var SystemConfig $config */
-        $config = SystemConfig::query()->firstOrNew([
-            'system_config_group_id' => $section->id,
-            'name' => $name,
-        ]);
-
-        $isNew = !$config->exists;
-        $config->title = $this->humanizeConfigName($name);
-        $config->type = $type;
-        $config->intro = '';
-        $config->extra = [];
-        $config->default_val = $serialized;
-        $config->weight = 0;
-        if ($isNew) {
-            $config->value = $serialized;
-        }
-
-        $config->save();
-    }
-
-    /**
-     * @param mixed $value
-     */
-    private function inferConfigFieldType($value): string
-    {
-        if (\is_bool($value)) {
-            return 'switch';
-        }
-
-        if (\is_array($value)) {
-            return 'json';
-        }
-
-        return 'text';
-    }
-
-    /**
-     * @param mixed  $value
-     */
-    private function serializeConfigValue($value, string $type): string
-    {
-        if ('switch' === $type) {
-            return (bool) $value ? '1' : '0';
-        }
-
-        if ('json' === $type) {
-            return (string) json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        }
-
-        if (null === $value) {
-            return '';
-        }
-
-        return (string) $value;
-    }
-
-    private function humanizeConfigName(string $name): string
-    {
-        return ucfirst(str_replace(['_', '-'], ' ', $name));
-    }
-
-    /**
-     * @param array<string, mixed> $result
-     */
-    private function ensureAddonSettingsRegistrationScaffold(string $code, string $title, array $result): void
-    {
-        $basePath = trim((string) ($result['path'] ?? ''));
-        if ('' === $basePath) {
-            $basePath = addon_path($code);
-        }
-
-        if ('' === $basePath || !is_dir($basePath)) {
-            return;
-        }
-
-        $configDirectory = rtrim($basePath, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'Config';
-        if (!is_dir($configDirectory)) {
-            mkdir($configDirectory, 0755, true);
-        }
-
-        $settingsPath = $configDirectory.DIRECTORY_SEPARATOR.'settings.php';
-        if (is_file($settingsPath)) {
-            return;
-        }
-
-        $resolvedTitle = '' !== trim($title) ? trim($title) : ucfirst($code);
-        $payload = [
-            'enabled' => true,
-            'mode' => 'hosted',
-            'managed_by' => 'system',
-            'injection' => [
-                'strategy' => 'merge',
-            ],
-            'cleanup' => [
-                'on_uninstall' => 'retain',
-            ],
-            'icon' => 'Setting',
-            'sections' => [
-                [
-                    'key' => 'basic',
-                    'title' => '基础配置',
-                    'description' => $resolvedTitle.'基础运行参数',
-                    'icon' => 'Setting',
-                    'order' => 10,
-                    'schema' => [
-                        'name' => strtolower($code).'_basic_settings',
-                        'title' => '基础配置',
-                        'layout' => [
-                            'mode' => 'block',
-                        ],
-                        'fields' => [
-                            [
-                                'name' => 'enabled',
-                                'type' => 'switch',
-                                'label' => '启用状态',
-                            ],
-                            [
-                                'name' => 'app_name',
-                                'type' => 'text',
-                                'label' => '应用名称',
-                            ],
-                        ],
-                    ],
-                    'defaults' => [
-                        'enabled' => true,
-                        'app_name' => $resolvedTitle,
-                    ],
-                ],
-            ],
-        ];
-
-        file_put_contents(
-            $settingsPath,
-            "<?php\n\ndeclare(strict_types=1);\n\nreturn ".var_export($payload, true).";\n"
-        );
-    }
-
-    private function rootGroupName(string $code): string
-    {
-        return 'addon_'.$code;
-    }
+    
 }

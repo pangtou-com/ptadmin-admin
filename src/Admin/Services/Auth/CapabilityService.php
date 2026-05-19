@@ -13,7 +13,7 @@ class CapabilityService implements CapabilityServiceInterface
 
     public function __construct(?array $capabilities = null)
     {
-        $this->capabilities = $capabilities ?? (array) config('ptadmin-auth.capabilities', [
+        $this->capabilities = $capabilities ?? (array) config('ptadmin.capabilities', [
             'rbac' => true,
             'organization' => false,
             'tenant' => false,

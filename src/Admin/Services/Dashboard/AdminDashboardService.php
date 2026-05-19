@@ -182,6 +182,9 @@ class AdminDashboardService
         if (!$handler instanceof AdminDashboardWidgetHandlerInterface) {
             throw new BackgroundException(__('ptadmin::background.dashboard_handler_interface_missing'));
         }
+        if (!method_exists($handler, "query")) {
+            throw new BackgroundException(__('ptadmin::background.dashboard_handler_interface_missing'));
+        }
 
         return $handler->query($payload, $definition, $context);
     }

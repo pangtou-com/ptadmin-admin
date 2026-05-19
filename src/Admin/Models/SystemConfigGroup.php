@@ -23,34 +23,34 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 /**
  * @property string $title
  * @property string $name
- * @property int    $weight
- * @property int    $parent_id
+ * @property string $badge
+ * @property string $type
+ * @property string $access
+ * @property int    $is_system
+ * @property int    $sort
  * @property string $addon_code
  * @property string $intro
- * @property array  $extra
  * @property int    $status
  */
 class SystemConfigGroup extends \PTAdmin\Foundation\Database\Models\AbstractModel
 {
+    use SoftDeletes;
+    
     protected $table = 'system_config_groups';
-    protected $fillable = ['title', 'name', 'weight', 'parent_id', 'addon_code', 'intro', 'extra', 'status'];
-    protected $casts = ['extra' => 'array'];
+    protected $fillable = ['title', 'name', 'badge', 'type', 'access', 'is_system', 'sort', 'addon_code', 'intro', 'status'];
+    protected $casts = [
+        'is_system' => 'integer',
+        'sort' => 'integer',
+        'status' => 'integer',
+    ];
 
     public function configs(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(SystemConfig::class, 'system_config_group_id', 'id');
-    }
-
-    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(self::class, 'parent_id', 'id');
-    }
-
-    public static function getParentLists(int $id): array
-    {
-        return array_to_options(self::query()->where('parent_id', 0)->where('id', '<>', $id)->get()->toArray());
     }
 }
