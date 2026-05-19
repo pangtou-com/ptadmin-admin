@@ -64,10 +64,13 @@ class PTAdminDatabaseMigrationTest extends TestCase
         self::assertTrue(Schema::hasColumns('system_config_groups', [
             'name',
             'title',
-            'parent_id',
+            'badge',
+            'type',
+            'access',
+            'is_system',
+            'sort',
             'addon_code',
             'intro',
-            'extra',
         ]));
 
         self::assertTrue(Schema::hasColumns('operation_records', [
@@ -99,8 +102,6 @@ class PTAdminDatabaseMigrationTest extends TestCase
 
         self::assertSame([
             'console',
-            'user',
-            'user.users',
             'system',
             'system.role',
             'system.admins',
@@ -109,22 +110,18 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'system.operate',
             'system.config',
             'system.assets',
-            'cloud',
-            'cloud.market',
-            'cloud.apps',
         ], $names);
 
         /** @var AdminResource $console */
         $console = AdminResource::query()->where('name', 'console')->firstOrFail();
         self::assertSame('仪表盘', $console->title);
         self::assertSame('dashboard', $console->module);
-        self::assertSame('console.dashboard', $console->page_key);
+        self::assertSame('dashboard.page.home', $console->page_key);
         self::assertSame('/dashboard', $console->route);
 
-        /** @var AdminResource $cloud */
-        $cloud = AdminResource::query()->where('name', 'cloud')->firstOrFail();
-        self::assertSame('云平台', $cloud->title);
-        self::assertSame('/cloud', $cloud->route);
-        self::assertSame('Connection', $cloud->icon);
+        /** @var AdminResource $system */
+        $system = AdminResource::query()->where('name', 'system')->firstOrFail();
+        self::assertSame('系统管理', $system->title);
+        self::assertSame('Setting', $system->icon);
     }
 }

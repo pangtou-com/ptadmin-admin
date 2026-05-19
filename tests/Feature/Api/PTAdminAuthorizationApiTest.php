@@ -117,11 +117,13 @@ class PTAdminAuthorizationApiTest extends TestCase
         self::assertGreaterThan(0, count($resources));
         self::assertSame('console', $resources[0]['name'] ?? null);
         self::assertSame('/dashboard', $resources[0]['route'] ?? null);
-        self::assertSame('console.dashboard', $resources[0]['page_key'] ?? null);
+        self::assertSame('dashboard.page.home', $resources[0]['page_key'] ?? null);
         self::assertSame('HomeFilled', $resources[0]['icon'] ?? null);
         self::assertSame(1, $resources[0]['keep_alive'] ?? null);
-        self::assertSame('cloud', $resources[3]['name'] ?? null);
-        self::assertSame('/cloud', $resources[3]['route'] ?? null);
+        self::assertContains('system', array_column($resources, 'name'));
+        $systemNode = collect($resources)->firstWhere('name', 'system');
+        self::assertIsArray($systemNode);
+        self::assertContains('system.config', array_column((array) ($systemNode['children'] ?? []), 'name'));
         self::assertDatabaseHas('admin_login_logs', [
             'admin_id' => $founder->id,
             'login_account' => 'founder',

@@ -82,7 +82,7 @@ class PTAdminAddonManagementApiTest extends TestCase
                     [
                         'code' => 'cms',
                         'enabled' => 1,
-                        'configurable' => 1,
+                        'configurable' => 0,
                         'has_frontend_modules' => 1,
                     ],
                     [
@@ -103,7 +103,7 @@ class PTAdminAddonManagementApiTest extends TestCase
             'data' => [
                 'code' => 'cms',
                 'enabled' => 1,
-                'configurable' => 1,
+                'configurable' => 0,
             ],
         ]);
 
@@ -112,14 +112,7 @@ class PTAdminAddonManagementApiTest extends TestCase
 
         $configResponse->assertOk()->assertJson([
             'code' => 0,
-            'data' => [
-                'code' => 'cms',
-                'supported' => true,
-                'values' => [
-                    'admin_route_prefix' => 'cms',
-                    'api_route_prefix' => 'api/cms',
-                ],
-            ],
+            'data' => [],
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
@@ -128,40 +121,19 @@ class PTAdminAddonManagementApiTest extends TestCase
                     'admin_route_prefix' => 'cms-admin',
                 ],
             ])
-            ->assertOk()
-            ->assertJson([
-                'code' => 0,
-                'data' => [
-                    'values' => [
-                        'admin_route_prefix' => 'cms-admin',
-                    ],
-                ],
-            ]);
+            ->assertStatus(500)
+            ->assertJsonPath('message', '插件[cms]未提供通用配置');
 
         $this->withHeaders($this->jsonApiHeaders($token))
             ->getJson('/system/addons/cms/config')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
-                'data' => [
-                    'values' => [
-                        'admin_route_prefix' => 'cms-admin',
-                        'api_route_prefix' => 'api/cms',
-                    ],
-                ],
+                'data' => [],
             ]);
 
-        $this->assertDatabaseHas('system_config_groups', [
+        $this->assertDatabaseMissing('system_config_groups', [
             'addon_code' => 'cms',
-            'name' => 'addon_cms',
-        ]);
-        $this->assertDatabaseHas('system_config_groups', [
-            'addon_code' => 'cms',
-            'name' => 'basic',
-        ]);
-        $this->assertDatabaseHas('system_configs', [
-            'name' => 'admin_route_prefix',
-            'value' => 'cms-admin',
         ]);
     }
 
@@ -215,13 +187,13 @@ class PTAdminAddonManagementApiTest extends TestCase
             ->getJson('/system/cloud/local/apps')
             ->assertOk()
             ->assertJsonPath('data.results.0.code', 'shop')
-            ->assertJsonPath('data.results.0.configurable', 1);
+            ->assertJsonPath('data.results.0.configurable', 0);
 
         $this->withHeaders($this->jsonApiHeaders($token))
             ->getJson('/system/addons/shop/status')
             ->assertOk()
             ->assertJsonPath('data.code', 'shop')
-            ->assertJsonPath('data.configurable', 1);
+            ->assertJsonPath('data.configurable', 0);
     }
 
     public function test_local_addon_list_excludes_none_mode_settings_registration_from_configurable(): void
@@ -374,9 +346,6 @@ class PTAdminAddonManagementApiTest extends TestCase
         self::assertStringContainsString('"message":"开始初始化插件"', $content);
         self::assertStringContainsString('"type":"success"', $content);
         self::assertStringContainsString('"title":"CMS Demo"', $content);
-        self::assertTrue(File::exists(base_path('addons/Cms/Config/settings.php')));
-        self::assertStringContainsString("'mode' => 'hosted'", (string) File::get(base_path('addons/Cms/Config/settings.php')));
-        self::assertStringContainsString("'app_name' => 'CMS Demo'", (string) File::get(base_path('addons/Cms/Config/settings.php')));
     }
 
     public function test_frontend_pull_endpoint_streams_progress_messages(): void
@@ -526,18 +495,6 @@ class PTAdminAddonManagementApiTest extends TestCase
         ]);
 
         Addon::swap(new AddonManager());
-
-        $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/settings/plugins/cms/sections/basic')
-            ->assertOk();
-
-        $this->assertDatabaseHas('system_config_groups', [
-            'addon_code' => 'cms',
-            'name' => 'addon_cms_basic',
-        ]);
-        $this->assertDatabaseHas('system_configs', [
-            'name' => 'app_name',
-        ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
             ->deleteJson('/system/addon-uninstall/cms')

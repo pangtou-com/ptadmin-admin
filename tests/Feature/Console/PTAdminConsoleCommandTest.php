@@ -11,6 +11,7 @@ use PTAdmin\Admin\Models\AdminRole;
 use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
+use PTAdmin\Admin\Support\SystemConfigPreset;
 use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminConsoleCommandTest extends TestCase
@@ -51,6 +52,8 @@ class PTAdminConsoleCommandTest extends TestCase
         $this->createAdminsTable();
         $this->createSystemConfigGroupsTable();
         $this->createSystemConfigsTable();
+
+        \PTAdmin\Admin\Services\SystemConfigGroupService::installInitialize(SystemConfigPreset::definitions());
 
         $this->artisan('admin:auth', [
             '--username' => 'root',

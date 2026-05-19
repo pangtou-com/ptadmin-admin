@@ -28,7 +28,8 @@ class PTAdminFrontendRouteTest extends TestCase
         $response = $this->get('/admin');
 
         $response->assertOk();
-        $response->assertSee('/vendor/ptadmin/admin/assets/admin-app.js', false);
+        $response->assertSee('./ptconfig.js', false);
+        $response->assertSee('./assets/', false);
     }
 
     public function test_frontend_config_script_returns_runtime_prefixes(): void

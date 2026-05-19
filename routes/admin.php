@@ -137,9 +137,9 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
 
     // 配置管理模块
     admin_audit_route(Route::get('settings', [Admin\SettingsController::class, 'index']), 'system.config');
-    admin_audit_route(Route::put('settings/{id}', [Admin\SettingsController::class, 'edit']), 'system.config');
-    admin_audit_route(Route::get('settings/{id}', [Admin\SettingsController::class, 'detail']), 'system.config');
-    admin_audit_route(Route::delete('settings/{id}', [Admin\SettingsController::class, 'delete']), 'system.config');
+    admin_audit_route(Route::put('settings/{id}', [Admin\SettingsController::class, 'edit'])->whereNumber('id'), 'system.config');
+    admin_audit_route(Route::get('settings/{id}', [Admin\SettingsController::class, 'detail'])->whereNumber('id'), 'system.config');
+    admin_audit_route(Route::delete('settings/{id}', [Admin\SettingsController::class, 'delete'])->whereNumber('id'), 'system.config');
     admin_audit_route(Route::post('settings', [Admin\SettingsController::class, 'store']), 'system.config');
     admin_audit_route(Route::get('settings/{name}', [Admin\SettingsController::class, 'systemSection']), 'system.config');
     admin_audit_route(Route::put('setting-field/{id}', [Admin\SettingsController::class, 'editField']), 'system.config');

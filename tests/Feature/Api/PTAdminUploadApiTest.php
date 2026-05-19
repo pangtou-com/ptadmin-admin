@@ -132,16 +132,17 @@ class PTAdminUploadApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         Cache::forever('systemConfig', [
-            'system' => [
+            '__sections__' => [
                 'upload' => [
                     'storage_driver' => 'oss_storage',
                     'storage_disk' => 'oss',
                 ],
             ],
-            '__group_names__' => [
-                'system' => 'system',
-                'upload' => 'system',
+            '__fields__' => [
+                'upload.storage_driver' => 'oss_storage',
+                'upload.storage_disk' => 'oss',
             ],
+            '__public_fields__' => [],
         ]);
 
         $this->app->instance(UploadService::class, new class() extends UploadService {

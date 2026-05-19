@@ -26,9 +26,9 @@ namespace PTAdmin\Admin\Services;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use PTAdmin\Easy\Easy;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
+use PTAdmin\Easy\Easy;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 use PTAdmin\Foundation\Exceptions\ServiceException;
 use PTAdmin\Support\Enums\StatusEnum;
@@ -427,7 +427,7 @@ class SystemConfigService
     /**
      * @param SystemConfig|array<string, mixed> $setting
      */
-    private function fieldHandle($setting): \PTAdmin\Easy\Handle\FieldHandle
+    private function fieldHandle($setting)
     {
         return Easy::field($this->buildEasyFieldSchema($setting));
     }

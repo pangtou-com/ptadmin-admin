@@ -194,15 +194,18 @@ abstract class TestCase extends Orchestra
             $table->id();
             $table->string('title', 255);
             $table->string('name', 32);
-            $table->unsignedInteger('weight')->default(0);
-            $table->unsignedBigInteger('parent_id')->default(0);
+            $table->string('badge', 32)->nullable();
+            $table->string('type', 32);
+            $table->string('access', 32);
+            $table->unsignedTinyInteger('is_system')->default(0);
+            $table->unsignedInteger('sort')->default(0);
             $table->string('addon_code', 50)->nullable();
             $table->string('intro', 255)->nullable();
-            $table->json('extra')->nullable();
             $table->unsignedTinyInteger('status')->default(1);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();
+            $table->unique(['addon_code', 'name']);
         });
     }
 
@@ -217,15 +220,18 @@ abstract class TestCase extends Orchestra
             $table->string('title', 255);
             $table->string('name', 32);
             $table->unsignedBigInteger('system_config_group_id');
-            $table->unsignedInteger('weight')->default(0);
+            $table->unsignedInteger('sort')->default(0);
+            $table->unsignedTinyInteger('is_system')->default(0);
             $table->string('type', 20)->default('text');
             $table->string('intro', 255)->nullable();
-            $table->text('extra')->nullable();
-            $table->text('value')->nullable();
-            $table->text('default_val')->nullable();
+            $table->json('extra')->nullable();
+            $table->string('value', 500)->nullable();
+            $table->string('default_val', 500)->nullable();
+            $table->unsignedTinyInteger('status')->default(1);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();
+            $table->unique(['system_config_group_id', 'name']);
         });
     }
 
