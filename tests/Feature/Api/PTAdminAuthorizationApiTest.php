@@ -7,6 +7,7 @@ namespace PTAdmin\Admin\Tests\Feature\Api;
 use Illuminate\Support\Facades\File;
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\Service\AddonManager;
+use PTAdmin\Addon\Service\Action\AddonAction;
 use PTAdmin\Admin\Models\AdminLoginLog;
 use PTAdmin\Admin\Models\AdminResource;
 use PTAdmin\Contracts\Auth\AdminGrantServiceInterface;
@@ -353,6 +354,143 @@ class PTAdminAuthorizationApiTest extends TestCase
         self::assertSame('开发概览', $flat['test.dashboard']['title'] ?? null);
         self::assertSame('/dev-test', $flat['test.dashboard']['route'] ?? null);
         self::assertArrayNotHasKey('test.preview', $flat);
+    }
+
+    public function test_auth_resources_excludes_children_when_parent_resource_is_disabled(): void
+    {
+        $this->migratePackageTables();
+
+        $member = $this->createAdminAccount([
+            'username' => 'member-disabled-parent',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($member);
+
+        app(AdminResourceServiceInterface::class)->syncAddonResources('test', [
+            [
+                'name' => 'test',
+                'title' => '测试插件',
+                'type' => 'dir',
+                'module' => 'test',
+                'addon_code' => 'test',
+                'is_nav' => 1,
+                'status' => 1,
+                'sort' => 0,
+            ],
+            [
+                'name' => 'test.dashboard',
+                'title' => '测试概览',
+                'type' => 'nav',
+                'module' => 'test',
+                'page_key' => 'test.page.home',
+                'addon_code' => 'test',
+                'parent' => 'test',
+                'route' => '/test-home',
+                'icon' => 'TestIcon',
+                'is_nav' => 1,
+                'status' => 1,
+                'sort' => 10,
+            ],
+        ]);
+
+        app(AdminGrantServiceInterface::class)->syncUserGrants($member->id, [
+            new GrantPayload('test.dashboard'),
+        ]);
+
+        /** @var AdminResource $parent */
+        $parent = AdminResource::query()->where('name', 'test')->firstOrFail();
+        $parent->update(['status' => 0]);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/resources');
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+        ]);
+
+        $flat = $this->flattenResources((array) $response->json('data.resources'));
+        self::assertArrayNotHasKey('test', $flat);
+        self::assertArrayNotHasKey('test.dashboard', $flat);
+    }
+
+    public function test_founder_auth_resources_excludes_disabled_develop_addon_resources(): void
+    {
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount([
+            'username' => 'founder-disabled-addon',
+            'password' => 'secret123',
+            'is_founder' => 1,
+        ]);
+        $token = $this->issueAdminToken($founder);
+
+        app(AdminResourceServiceInterface::class)->syncAddonResources('test', [
+            [
+                'name' => 'test',
+                'title' => '测试插件',
+                'type' => 'dir',
+                'module' => 'test',
+                'addon_code' => 'test',
+                'is_nav' => 1,
+                'status' => 1,
+                'sort' => 0,
+            ],
+            [
+                'name' => 'test.dashboard',
+                'title' => '旧概览',
+                'type' => 'nav',
+                'module' => 'test',
+                'page_key' => 'test.page.home',
+                'addon_code' => 'test',
+                'parent' => 'test',
+                'route' => '/test-old',
+                'icon' => 'OldIcon',
+                'is_nav' => 1,
+                'status' => 1,
+                'sort' => 10,
+            ],
+        ]);
+
+        $this->writeDevelopAddon('Test', [
+            [
+                'name' => 'test',
+                'title' => '开发测试',
+                'type' => 'dir',
+                'module' => 'test',
+                'addon_code' => 'test',
+                'is_nav' => 1,
+                'status' => 1,
+                'sort' => 0,
+            ],
+            [
+                'name' => 'test.dashboard',
+                'title' => '开发概览',
+                'type' => 'nav',
+                'module' => 'test',
+                'page_key' => 'test.page.home',
+                'addon_code' => 'test',
+                'parent' => 'test',
+                'route' => '/dev-test',
+                'icon' => 'NewIcon',
+                'is_nav' => 1,
+                'status' => 1,
+                'sort' => 1,
+            ],
+        ]);
+
+        AddonAction::disable('test');
+        Addon::swap(new AddonManager());
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/auth/resources');
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+        ]);
+
+        $flat = $this->flattenResources((array) $response->json('data.resources'));
+        self::assertArrayNotHasKey('test', $flat);
+        self::assertArrayNotHasKey('test.dashboard', $flat);
     }
 
     /**

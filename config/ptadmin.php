@@ -41,9 +41,10 @@ return [
     ],
     'setting_type' => [
         ['label' => "系统设置", "value" => "system", "sort" => 0],
-        ['label' => "授权能力", "value" => "auth", "sort" => 1],
-        ['label' => "短信能力", "value" => "sms", "sort" => 2],
-        ['label' => "支付能力", "value" => "pay", "sort" => 3],
-        ['label' => "业务扩展", "value" => "addon", "sort" => 4],
+        ['label' => "授权服务", "value" => "auth", "sort" => 1],
+        ['label' => "短信服务", "value" => "sms", "sort" => 2],
+        ['label' => "支付服务", "value" => "pay", "sort" => 3],
+        ['label' => "存储服务", "value" => "storage", "sort" => 4],
+        ['label' => "AI服务", "value" => "ai", "sort" => 5],
     ],
 ];

@@ -257,6 +257,15 @@ class AdminResourceService
             ]
         );
         $resources = $query->get();
+        $allResourceMapById = [];
+        foreach (AdminResource::query()->whereNull('deleted_at')->get() as $resource) {
+            $allResourceMapById[(int) $resource->id] = $resource;
+        }
+
+        $resources = $resources->filter(function (AdminResource $resource) use ($allResourceMapById): bool {
+            return $this->hasVisibleAncestorChain($resource, $allResourceMapById);
+        })->values();
+
         $resourceMapById = [];
         $resourceNameById = [];
         foreach ($resources as $resource) {
@@ -299,6 +308,31 @@ class AdminResourceService
         }
 
         return ['filters' => $filters];
+    }
+
+    /**
+     * @param array<int, AdminResource> $resourceMapById
+     */
+    private function hasVisibleAncestorChain(AdminResource $resource, array $resourceMapById): bool
+    {
+        $parentId = (int) $resource->parent_id;
+        $visited = [];
+
+        while ($parentId > 0) {
+            if (isset($visited[$parentId]) || !isset($resourceMapById[$parentId])) {
+                return false;
+            }
+
+            $visited[$parentId] = true;
+            $parent = $resourceMapById[$parentId];
+            if ((int) $parent->status !== StatusEnum::ENABLE) {
+                return false;
+            }
+
+            $parentId = (int) $parent->parent_id;
+        }
+
+        return true;
     }
 
     /**
@@ -412,6 +446,10 @@ class AdminResourceService
             }
 
             $addonConfig = \is_array($addonInfo['addons'] ?? null) ? (array) $addonInfo['addons'] : $addonInfo;
+            if (!Addon::hasAddon((string) $addonCode)) {
+                continue;
+            }
+
             if (empty($addonConfig['develop'])) {
                 continue;
             }
