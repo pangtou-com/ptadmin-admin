@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services\Dashboard;
 
+use PTAdmin\Addon\Addon;
+use PTAdmin\Admin\Services\PlatformSnapshotService;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 
 class DashboardComposerService
@@ -11,15 +13,18 @@ class DashboardComposerService
     private DashboardWidgetRegistryService $registry;
     private DashboardLayoutService $layoutService;
     private AdminRoleServiceInterface $adminRoleService;
+    private PlatformSnapshotService $platformSnapshotService;
 
     public function __construct(
         DashboardWidgetRegistryService $registry,
         DashboardLayoutService $layoutService,
-        AdminRoleServiceInterface $adminRoleService
+        AdminRoleServiceInterface $adminRoleService,
+        PlatformSnapshotService $platformSnapshotService
     ) {
         $this->registry = $registry;
         $this->layoutService = $layoutService;
         $this->adminRoleService = $adminRoleService;
+        $this->platformSnapshotService = $platformSnapshotService;
     }
 
     /**
@@ -34,6 +39,7 @@ class DashboardComposerService
             'title' => '仪表盘',
             'description' => '平台核心经营数据与工作台概览',
             'updatedAt' => date('Y-m-d H:i:s'),
+            'summary' => $this->buildSummary(),
             'widgets' => $this->widgetsForUser($user, $tenantId),
         ];
     }
@@ -93,7 +99,7 @@ class DashboardComposerService
             return (bool) ($widget['enabled'] ?? true);
         }));
 
-        usort($widgets, static function (array $left, array $right): int {
+        usort($widgets, static function (array $left, array $right) {
             $sortCompare = ((int) ($right['sort'] ?? 0)) <=> ((int) ($left['sort'] ?? 0));
             if (0 !== $sortCompare) {
                 return $sortCompare;
@@ -231,5 +237,138 @@ class DashboardComposerService
     private function isFounder($user): bool
     {
         return 1 === (int) data_get($user, 'is_founder', 0);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildSummary(): array
+    {
+        $backendVersion = get_frame_version();
+        $frontendLock = $this->readAdminFrontendLock();
+        $frontendVersion = trim((string) ($frontendLock['version'] ?? ''));
+        $snapshot = $this->platformSnapshotService->read();
+        $this->platformSnapshotService->scheduleRefresh();
+        $latestFrontendVersion = trim((string) data_get($snapshot, 'latest.frontend_version', ''));
+        $latestFrameworkVersion = trim((string) data_get($snapshot, 'latest.framework_version', ''));
+        $addonSnapshots = (array) ($snapshot['addons'] ?? []);
+        $addonUpdatePending = $this->hasPendingAddonUpdates($addonSnapshots);
+        $frameworkUpdateRequired = $this->isVersionOutdated($backendVersion, $latestFrameworkVersion);
+        $frontendUpdateRequired = $this->isVersionOutdated($frontendVersion, $latestFrontendVersion);
+        $securityAlertPending = $this->hasSecurityAlerts($snapshot, $addonSnapshots);
+
+        return [
+            'frontend_version' => $frontendVersion,
+            'frontend_latest_version' => $latestFrontendVersion,
+            'frontend_update_required' => $frontendUpdateRequired,
+            'backend_version' => $backendVersion,
+            'backend_latest_version' => $latestFrameworkVersion,
+            'backend_update_required' => $frameworkUpdateRequired,
+            'update_required' => $frontendUpdateRequired || $frameworkUpdateRequired || $addonUpdatePending || $securityAlertPending,
+            'addon_update_pending' => $addonUpdatePending,
+            'security_alert_pending' => $securityAlertPending,
+            'last_platform_sync_at' => (string) ($snapshot['synced_at'] ?? ''),
+            'platform_snapshot_stale' => $this->platformSnapshotService->isStale($snapshot),
+        ];
+    }
+    
+    /**
+     * @return array<string, mixed>
+     */
+    private function readAdminFrontendLock(): array
+    {
+        $lockPath = $this->resolvePackagePath('resources/admin-frontend/.release-lock.json');
+        if (!is_file($lockPath) || !is_readable($lockPath)) {
+            return [];
+        }
+
+        $content = file_get_contents($lockPath);
+        $payload = false === $content ? null : json_decode($content, true);
+
+        return \is_array($payload) ? $payload : [];
+    }
+
+    private function isVersionOutdated(string $currentVersion, string $latestVersion): bool
+    {
+        $current = $this->normalizeVersion($currentVersion);
+        $latest = $this->normalizeVersion($latestVersion);
+        if ('' === $current || '' === $latest) {
+            return false;
+        }
+
+        return version_compare($latest, $current, '>');
+    }
+
+    /**
+     * @param array<int, mixed> $addonSnapshots
+     */
+    private function hasPendingAddonUpdates(array $addonSnapshots): bool
+    {
+        foreach ($addonSnapshots as $item) {
+            if (!\is_array($item)) {
+                continue;
+            }
+
+            $code = trim((string) ($item['code'] ?? ''));
+            if ('' === $code || !Addon::hasInstalledAddon($code)) {
+                continue;
+            }
+
+            $installedVersion = $this->normalizeVersion((string) Addon::getAddonVersion($code));
+            $latestVersion = $this->normalizeVersion((string) ($item['latest_version'] ?? ''));
+            if ('' !== $installedVersion && '' !== $latestVersion && version_compare($latestVersion, $installedVersion, '>')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeVersion(string $version): string
+    {
+        $normalized = trim($version);
+        if ('' === $normalized) {
+            return '';
+        }
+
+        return ltrim($normalized, 'vV');
+    }
+
+    /**
+     * @param array<string, mixed> $snapshot
+     * @param array<int, mixed> $addonSnapshots
+     */
+    private function hasSecurityAlerts(array $snapshot, array $addonSnapshots): bool
+    {
+        foreach ((array) data_get($snapshot, 'framework.security_alerts', []) as $item) {
+            if (\is_array($item) || \is_string($item)) {
+                return true;
+            }
+        }
+
+        foreach ($addonSnapshots as $item) {
+            if (!\is_array($item)) {
+                continue;
+            }
+
+            foreach ((array) ($item['security_alerts'] ?? []) as $alert) {
+                if (\is_array($alert) || \is_string($alert)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function resolvePackagePath(string $relativePath): string
+    {
+        $relativePath = ltrim($relativePath, '/');
+        $basePath = base_path($relativePath);
+        if (is_file($basePath) || is_dir($basePath)) {
+            return $basePath;
+        }
+
+        return dirname(__DIR__, 4).DIRECTORY_SEPARATOR.$relativePath;
     }
 }

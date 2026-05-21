@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Tests\Feature\Api;
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\Service\BaseBootstrap;
 use PTAdmin\Admin\Models\AdminRole;
@@ -13,9 +15,21 @@ use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 
 class PTAdminDashboardComposeApiTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::flush();
+    }
+
     protected function tearDown(): void
     {
         Addon::swap(new ComposeDashboardAddonManager(array(), array()));
+        Cache::forget('ptadmin:addon_user_keys');
+        File::deleteDirectory(base_path('addons'));
+        File::delete(base_path('bootstrap/cache/addons.php'));
+        File::delete((string) config('ptadmin.platform_snapshot_path'));
+        File::delete(dirname((string) config('ptadmin.platform_snapshot_path')).'/snapshot.lock');
 
         parent::tearDown();
     }
@@ -45,6 +59,17 @@ class PTAdminDashboardComposeApiTest extends TestCase
                 'cms' => new ComposeDashboardBootstrap(),
             )
         ));
+        $this->writePlatformSnapshot([
+            'synced_at' => date(DATE_ATOM),
+            'latest' => [
+                'frontend_version' => '0.1.12',
+                'framework_version' => '1.1.8',
+            ],
+            'addons' => [],
+            'framework' => [
+                'security_alerts' => [],
+            ],
+        ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
             ->getJson('/system/dashboard');
@@ -54,6 +79,17 @@ class PTAdminDashboardComposeApiTest extends TestCase
             'data' => array(
                 'key' => 'dashboard.default',
                 'title' => '仪表盘',
+                'summary' => array(
+                    'frontend_version' => '0.1.12',
+                    'frontend_latest_version' => '0.1.12',
+                    'frontend_update_required' => false,
+                    'backend_version' => '1.1.8',
+                    'backend_latest_version' => '1.1.8',
+                    'backend_update_required' => false,
+                    'update_required' => false,
+                    'addon_update_pending' => false,
+                    'security_alert_pending' => false,
+                ),
                 'widgets' => array(
                     array(
                         'code' => 'cms.overview',
@@ -77,6 +113,100 @@ class PTAdminDashboardComposeApiTest extends TestCase
 
         self::assertCount(1, (array) $response->json('data.widgets'));
         self::assertSame('cms.overview', $response->json('data.widgets.0.code'));
+    }
+
+    public function test_dashboard_console_summary_marks_authorized_and_pending_addon_updates(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount(array(
+            'username' => 'founder_dashboard_summary',
+            'nickname' => 'Founder Summary',
+            'is_founder' => 1,
+        ));
+        $token = $this->issueAdminToken($admin);
+
+        Addon::swap(new class()
+        {
+            public function getAddons(): array
+            {
+                return [];
+            }
+
+            public function hasInstalledAddon(string $code): bool
+            {
+                return 'cms' === $code;
+            }
+
+            public function getAddonVersion(string $code): ?string
+            {
+                return 'cms' === $code ? '1.0.0' : null;
+            }
+        });
+        $this->writePlatformSnapshot([
+            'synced_at' => date(DATE_ATOM),
+            'latest' => [
+                'frontend_version' => '0.1.12',
+                'framework_version' => '1.1.8',
+            ],
+            'addons' => [
+                [
+                    'code' => 'cms',
+                    'latest_version' => '1.2.0',
+                    'authorized' => false,
+                    'security_alerts' => [],
+                ],
+            ],
+            'framework' => [
+                'security_alerts' => [],
+            ],
+        ]);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/dashboard');
+
+        $response->assertOk()
+            ->assertJsonPath('data.summary.addon_update_pending', true)
+            ->assertJsonPath('data.summary.frontend_version', '0.1.12')
+            ->assertJsonPath('data.summary.backend_version', '1.1.8');
+    }
+
+    public function test_dashboard_console_summary_marks_update_required_when_platform_has_newer_frontend(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount(array(
+            'username' => 'founder_dashboard_update_required',
+            'nickname' => 'Founder Update Required',
+            'is_founder' => 1,
+        ));
+        $token = $this->issueAdminToken($founder);
+
+        Addon::swap(new ComposeDashboardAddonManager(array(), array()));
+        $this->writePlatformSnapshot([
+            'synced_at' => date(DATE_ATOM),
+            'latest' => [
+                'frontend_version' => '0.1.13',
+                'framework_version' => '1.1.8',
+            ],
+            'addons' => [],
+            'framework' => [
+                'security_alerts' => [],
+            ],
+        ]);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/dashboard');
+
+        $response->assertOk()
+            ->assertJsonPath('data.summary.frontend_version', '0.1.12')
+            ->assertJsonPath('data.summary.update_required', true);
     }
 
     public function test_dashboard_console_merges_role_defaults_and_user_overrides_and_filters_unavailable_widgets(): void
@@ -264,6 +394,17 @@ class PTAdminDashboardComposeApiTest extends TestCase
             ),
         ));
     }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function writePlatformSnapshot(array $payload): void
+    {
+        $path = (string) config('ptadmin.platform_snapshot_path');
+        File::ensureDirectoryExists(dirname($path));
+        file_put_contents($path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).PHP_EOL);
+    }
+
 }
 
 final class ComposeDashboardAddonManager

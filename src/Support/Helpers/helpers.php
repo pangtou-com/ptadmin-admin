@@ -666,11 +666,19 @@ if (!function_exists('get_frame_version')) {
      */
     function get_frame_version(): string
     {
-        if (false === defined('PTADMIN_FRAME_VERSION')) {
-            return 'v1.0.0';
+        $composerPath = dirname(__DIR__, 3).DIRECTORY_SEPARATOR.'composer.json';
+        if (is_file($composerPath) && is_readable($composerPath)) {
+            $content = file_get_contents($composerPath);
+            $payload = false === $content ? null : json_decode($content, true);
+            if (\is_array($payload)) {
+                $version = trim((string) ($payload['version'] ?? ''));
+                if ('' !== $version) {
+                    return $version;
+                }
+            }
         }
 
-        return PTADMIN_FRAME_VERSION;
+        return 'v1.0.0';
     }
 }
 

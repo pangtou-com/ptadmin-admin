@@ -19,6 +19,8 @@ return [
     'project_frontend_manifest' => env('PTADMIN_PROJECT_FRONTEND_MANIFEST', base_path('resources/ptadmin/frontend/frontend.json')),
     'project_frontend_dist_path' => env('PTADMIN_PROJECT_FRONTEND_DIST_PATH', base_path('resources/ptadmin/frontend/dist')),
     'project_frontend_storage_path' => env('PTADMIN_PROJECT_FRONTEND_STORAGE_PATH', storage_path('app/ptadmin/modules/'.env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'))),
+    'platform_snapshot_path' => env('PTADMIN_PLATFORM_SNAPSHOT_PATH', storage_path('app/ptadmin/platform/snapshot.json')),
+    'platform_snapshot_ttl' => (int) env('PTADMIN_PLATFORM_SNAPSHOT_TTL', 86400),
     'route_prefix' => env('PTADMIN_API_PREFIX', env('PTADMIN_ROUTE_PREFIX', config('app.prefix', 'system'))),
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),
     'addons_storage_path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),

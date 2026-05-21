@@ -10,10 +10,10 @@ final class AdminFrontendBuildService
 
     public function syncFromManifest(
         string $packageRoot,
-        string $manifestUrl = self::DEFAULT_MANIFEST_URL,
         string $ref = 'latest',
         string $backendVersion = ''
     ): array {
+        $manifestUrl = self::DEFAULT_MANIFEST_URL;
         $manifest = $this->readJsonFromUrl($manifestUrl);
         $version = $this->resolveVersion($manifest, $ref);
         $artifact = $this->resolveArtifact($version);

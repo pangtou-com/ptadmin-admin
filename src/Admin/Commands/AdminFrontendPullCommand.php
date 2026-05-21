@@ -10,7 +10,6 @@ use PTAdmin\Admin\Services\AdminFrontendBuildService;
 class AdminFrontendPullCommand extends Command
 {
     protected $signature = 'admin:fe:pull
-    {--manifest-url=https://cloud.api.pangtou.com/storage/starter/console-build.json : 前端构建包 manifest 地址}
     {--ref=latest : 前端构建版本，默认 latest}
     {--backend-version= : 当前后端版本，用于写入锁文件}';
 
@@ -21,7 +20,6 @@ class AdminFrontendPullCommand extends Command
         try {
             $result = $service->syncFromManifest(
                 dirname(__DIR__, 3),
-                (string) $this->option('manifest-url'),
                 (string) $this->option('ref'),
                 (string) $this->option('backend-version')
             );
