@@ -8,7 +8,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use PTAdmin\Admin\Services\Dashboard\AdminDashboardService;
 use PTAdmin\Foundation\Auth\AdminAuth;
-use PTAdmin\Foundation\Exceptions\BackgroundException;
 use PTAdmin\Foundation\Response\AdminResponse;
 
 class AdminDashboardController extends AbstractBackgroundController
@@ -29,38 +28,30 @@ class AdminDashboardController extends AbstractBackgroundController
 
     public function query(string $code, Request $request): JsonResponse
     {
-        try {
-            $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;
+        $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;
 
-            return AdminResponse::success(
-                $this->adminDashboardService->queryWidget(
-                    AdminAuth::user(),
-                    $code,
-                    (array) $request->input('query', $request->all()),
-                    $tenantId
-                )
-            );
-        } catch (BackgroundException $exception) {
-            return AdminResponse::fail($exception->getMessage());
-        }
+        return AdminResponse::success(
+            $this->adminDashboardService->queryWidget(
+                AdminAuth::user(),
+                $code,
+                (array) $request->input('query', $request->all()),
+                $tenantId
+            )
+        );
     }
 
     public function action(string $code, string $action, Request $request): JsonResponse
     {
-        try {
-            $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;
+        $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;
 
-            return AdminResponse::success(
-                $this->adminDashboardService->executeWidgetAction(
-                    AdminAuth::user(),
-                    $code,
-                    $action,
-                    (array) $request->input('payload', $request->all()),
-                    $tenantId
-                )
-            );
-        } catch (BackgroundException $exception) {
-            return AdminResponse::fail($exception->getMessage());
-        }
+        return AdminResponse::success(
+            $this->adminDashboardService->executeWidgetAction(
+                AdminAuth::user(),
+                $code,
+                $action,
+                (array) $request->input('payload', $request->all()),
+                $tenantId
+            )
+        );
     }
 }

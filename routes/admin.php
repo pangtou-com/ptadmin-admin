@@ -31,9 +31,7 @@ Route::group(['prefix' => admin_route_prefix()], function (): void {
 });
 
 Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'.\PTAdmin\Foundation\Auth\AdminAuth::getGuard()]], function (): void {
-    // 仪表盘配置
-    admin_audit_route(Route::get('dashboard', [Admin\DashboardController::class, 'console']), 'console');
-    
+ 
     // 模块加载，返回给前端已安装的模块信息
     Route::get('auth/frontends', [Admin\AddonController::class, 'moduleManifests']);
     // 获取授权菜单树
@@ -104,7 +102,10 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     admin_audit_route(Route::post('resources-admin/{id}', [Admin\AdminResourceController::class, 'syncAdminResources']), 'system.resources');
     admin_audit_route(Route::get('admin-resources-tree', [Admin\AdminResourceController::class, 'tree']), 'system.resources');
     admin_audit_route(Route::get('resources-lists', [Admin\AdminResourceController::class, 'lists']), 'system.resources');
-
+    
+    // 仪表盘配置
+    admin_audit_route(Route::get('dashboard', [Admin\DashboardController::class, 'console']), 'console');
+    
     // 后台仪表盘组件
     admin_audit_route(Route::get('dashboard/widgets', [Admin\AdminDashboardController::class, 'widgets']), 'console');
     admin_audit_route(Route::post('dashboard/widgets/{code}/query', [Admin\AdminDashboardController::class, 'query']), 'console');

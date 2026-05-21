@@ -13,7 +13,6 @@ use PTAdmin\Admin\Services\Auth\AuthorizationBootstrapService;
 use PTAdmin\Admin\Services\OperationRecordService;
 use PTAdmin\Admin\Support\Query\AdminListQuery;
 use PTAdmin\Foundation\Auth\AdminAuth;
-use PTAdmin\Foundation\Exceptions\BackgroundException;
 use PTAdmin\Foundation\Response\AdminResponse;
 
 class AuthorizationController extends AbstractBackgroundController
@@ -55,11 +54,7 @@ class AuthorizationController extends AbstractBackgroundController
 
     public function operationDetails(int $id): \Illuminate\Http\JsonResponse
     {
-        try {
-            return AdminResponse::success($this->operationRecordService->details($id, AdminAuth::user()));
-        } catch (BackgroundException $exception) {
-            return AdminResponse::fail($exception->getMessage());
-        }
+        return AdminResponse::success($this->operationRecordService->details($id, AdminAuth::user()));
     }
 
     public function password(ProfilePasswordRequest $request): \Illuminate\Http\JsonResponse
