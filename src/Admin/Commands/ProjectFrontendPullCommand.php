@@ -9,7 +9,7 @@ use PTAdmin\Addon\Service\Action\AddonAction;
 
 class ProjectFrontendPullCommand extends Command
 {
-    protected $signature = 'admin:project-frontend:pull
+    protected $signature = 'admin:pf:pull
     {--template=micro-app : 前端模板标识，项目二开默认使用 micro-app}
     {--ref=main : 模板版本或分支，默认 main}
     {--source= : 指定模板源，仅支持 official，留空时使用 official}

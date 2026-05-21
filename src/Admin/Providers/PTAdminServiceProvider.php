@@ -32,8 +32,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use ReflectionClass;
-use PTAdmin\Admin\Commands\AdminBootstrapAuthCommand;
 use PTAdmin\Admin\Commands\AdminFrontendPullCommand;
+use PTAdmin\Admin\Commands\AdminFrontendUpdateCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
 use PTAdmin\Admin\Commands\AdminCommand;
 use PTAdmin\Admin\Commands\ProjectFrontendPullCommand;
@@ -84,8 +84,8 @@ class PTAdminServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->commands([
-            AdminBootstrapAuthCommand::class,
             AdminFrontendPullCommand::class,
+            AdminFrontendUpdateCommand::class,
             AdminCommand::class,
             ProjectFrontendPullCommand::class,
             ProjectFrontendPublishCommand::class,

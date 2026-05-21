@@ -7,33 +7,35 @@ namespace PTAdmin\Admin\Commands;
 use Illuminate\Console\Command;
 use PTAdmin\Admin\Services\AdminFrontendBuildService;
 
-class AdminFrontendPullCommand extends Command
+class AdminFrontendUpdateCommand extends Command
 {
-    protected $signature = 'admin:fe:pull
+    protected $signature = 'admin:fe:update
     {--manifest-url=https://cloud.api.pangtou.com/storage/starter/console-build.json : 前端构建包 manifest 地址}
     {--ref=latest : 前端构建版本，默认 latest}
     {--backend-version= : 当前后端版本，用于写入锁文件}';
 
-    protected $description = '拉取主应用后台前端构建包到 ptadmin 包内（短命令）';
+    protected $description = '拉取并发布主应用后台前端构建包（短命令）';
 
     public function handle(AdminFrontendBuildService $service): int
     {
         try {
-            $result = $service->syncFromManifest(
+            $pulled = $service->syncFromManifest(
                 dirname(__DIR__, 3),
                 (string) $this->option('manifest-url'),
                 (string) $this->option('ref'),
                 (string) $this->option('backend-version')
             );
+            $published = $service->publishBundled(dirname(__DIR__, 3), base_path());
         } catch (\Throwable $throwable) {
             $this->error($throwable->getMessage());
 
             return 1;
         }
 
-        $this->info('Admin frontend build pulled.');
-        $this->line('Version: '.$result['version']);
-        $this->line('Path: '.$result['path']);
+        $this->info('Admin frontend build updated.');
+        $this->line('Version: '.$pulled['version']);
+        $this->line('Source: '.$published['source_path']);
+        $this->line('Current: '.$published['current_path']);
 
         return 0;
     }

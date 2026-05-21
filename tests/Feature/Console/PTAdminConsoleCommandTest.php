@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Tests\Feature\Console;
 
 use Illuminate\Support\Facades\Hash;
-use PTAdmin\Admin\Models\AdminGrant;
-use PTAdmin\Admin\Models\AdminResource;
-use PTAdmin\Admin\Models\AdminRole;
 use PTAdmin\Admin\Models\Admin;
+use PTAdmin\Admin\Services\AdminFrontendBuildService;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Support\SystemConfigPreset;
@@ -16,37 +14,6 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminConsoleCommandTest extends TestCase
 {
-    public function test_admin_auth_bootstrap_command_initializes_role_and_assigns_resources(): void
-    {
-        $this->createAdminsTable();
-        $this->migratePackageTables();
-
-        $admin = new Admin();
-        $admin->username = 'console-user';
-        $admin->nickname = 'Console User';
-        $admin->status = 1;
-        $admin->password = Hash::make('secret123');
-        $admin->save();
-
-        $this->artisan('admin:auth-bootstrap', [
-            '--role-code' => 'ops_admin',
-            '--role-name' => '运维管理员',
-            '--assign-user-id' => (string) $admin->id,
-            '--force' => true,
-        ])
-            ->expectsOutput(__('ptadmin::common.command.admin_auth_bound', ['role' => '运维管理员', 'user_id' => $admin->id]))
-            ->expectsOutput(__('ptadmin::common.command.admin_auth_done', ['role' => '运维管理员']))
-            ->expectsOutput(__('ptadmin::common.command.admin_auth_resource_count', ['count' => AdminResource::query()->count()]))
-            ->assertExitCode(0);
-
-        $role = AdminRole::query()->where('code', 'ops_admin')->firstOrFail();
-        self::assertSame(AdminResource::query()->count(), AdminGrant::query()->where('subject_id', $role->id)->count());
-        self::assertDatabaseHas('admin_user_roles', [
-            'user_id' => $admin->id,
-            'role_id' => $role->id,
-        ]);
-    }
-
     public function test_admin_auth_command_creates_founder_account(): void
     {
         $this->createAdminsTable();
@@ -74,7 +41,7 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertSame('Root', $founder->nickname);
         self::assertTrue(Hash::check('secret123', $founder->getAuthPassword()));
         self::assertNotNull(SystemConfigGroup::query()->where('name', 'upload')->first());
-        self::assertSame('local', SystemConfig::query()->where('name', 'storage_driver')->value('value'));
+        self::assertSame('1', SystemConfig::query()->where('name', 'enabled')->value('value'));
     }
 
     public function test_admin_auth_command_rejects_invalid_mobile_number(): void
@@ -91,13 +58,31 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertSame(0, Admin::query()->count());
     }
 
-    public function test_admin_frontend_pull_command_is_registered(): void
+    public function test_admin_frontend_short_commands_are_registered(): void
     {
-        self::assertArrayHasKey('admin:frontend:pull', \Illuminate\Support\Facades\Artisan::all());
+        $commands = \Illuminate\Support\Facades\Artisan::all();
+
+        self::assertArrayHasKey('admin:fe:pull', $commands);
+        self::assertArrayHasKey('admin:fe:update', $commands);
+    }
+
+    public function test_admin_frontend_build_service_can_publish_bundled_assets_to_current_storage(): void
+    {
+        $service = new AdminFrontendBuildService();
+        $currentPath = storage_path('app/ptadmin/frontend/admin/current');
+        $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
+
+        self::assertSame($currentPath, $result['current_path']);
+        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js');
+        self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
     }
 
     public function test_project_frontend_pull_command_is_registered(): void
     {
-        self::assertArrayHasKey('admin:project-frontend:pull', \Illuminate\Support\Facades\Artisan::all());
+        $commands = \Illuminate\Support\Facades\Artisan::all();
+
+        self::assertArrayHasKey('admin:pf:pull', $commands);
+        self::assertArrayHasKey('admin:pf:publish', $commands);
     }
 }

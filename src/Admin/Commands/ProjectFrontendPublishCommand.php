@@ -9,7 +9,7 @@ use Illuminate\Filesystem\Filesystem;
 
 class ProjectFrontendPublishCommand extends Command
 {
-    protected $signature = 'admin:project-frontend:publish
+    protected $signature = 'admin:pf:publish
     {--source= : 项目二开前端构建产物目录，默认读取 ptadmin.project_frontend_dist_path}
     {--target= : 项目二开前端运行目录，默认读取 ptadmin.project_frontend_storage_path}
     {--code= : 项目二开前端模块标识，默认读取 ptadmin.project_frontend_code}';

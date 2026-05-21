@@ -67,16 +67,34 @@ php artisan migrate
 
 ## 初始化命令
 
-初始化授权角色与资源：
-
-```bash
-php artisan admin:auth-bootstrap
-```
-
 初始化创始人账户与默认授权：
 
 ```bash
 php artisan admin:auth
+```
+
+更新包内置后台前端构建资源：
+
+```bash
+php artisan admin:fe:pull
+```
+
+更新包内置后台前端构建资源并发布到运行目录：
+
+```bash
+php artisan admin:fe:update
+```
+
+拉取项目二开前端模板源码：
+
+```bash
+php artisan admin:pf:pull
+```
+
+发布项目二开前端构建产物：
+
+```bash
+php artisan admin:pf:publish
 ```
 
 ## 测试

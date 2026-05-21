@@ -12,22 +12,6 @@ return new class extends Migration
 {
     private array $definitions = [
         [
-            'name' => 'console',
-            'title' => '仪表盘',
-            'type' => MenuTypeEnum::NAV,
-            'module' => 'dashboard',
-            'page_key' => 'dashboard.page.home',
-            'route' => '/dashboard',
-            'icon' => 'HomeFilled',
-            'is_nav' => 1,
-            'status' => 1,
-            'sort' => 10,
-            'meta_json' => [
-                'hidden' => 0,
-                'keep_alive' => 1,
-            ],
-        ],
-        [
             'name' => 'system',
             'title' => '系统管理',
             'type' => MenuTypeEnum::DIR,
@@ -35,7 +19,7 @@ return new class extends Migration
             'icon' => 'Setting',
             'is_nav' => 1,
             'status' => 1,
-            'sort' => 20,
+            'sort' => 0,
             'meta_json' => [
                 'hidden' => 0,
                 'keep_alive' => 0,

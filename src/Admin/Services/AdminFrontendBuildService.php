@@ -110,6 +110,21 @@ final class AdminFrontendBuildService
         ];
     }
 
+    public function publishBundled(string $packageRoot, string $appRoot): array
+    {
+        $sourcePath = $this->bundledFrontendPath($packageRoot);
+        $this->assertFrontendBuild($sourcePath);
+
+        $currentPath = $appRoot.\DIRECTORY_SEPARATOR.'storage'.\DIRECTORY_SEPARATOR.'app'.\DIRECTORY_SEPARATOR.'ptadmin'.\DIRECTORY_SEPARATOR.'frontend'.\DIRECTORY_SEPARATOR.'admin'.\DIRECTORY_SEPARATOR.'current';
+
+        $this->replaceLinkOrCopy($currentPath, $sourcePath);
+
+        return [
+            'source_path' => $sourcePath,
+            'current_path' => $currentPath,
+        ];
+    }
+
     public function bundledFrontendPath(string $packageRoot): string
     {
         return rtrim($packageRoot, \DIRECTORY_SEPARATOR).\DIRECTORY_SEPARATOR.'resources'.\DIRECTORY_SEPARATOR.'admin-frontend';
