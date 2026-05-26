@@ -39,8 +39,6 @@ class AddonController extends AbstractBackgroundController
     public function __construct(AddonPlatformService $addonPlatformService)
     {
         $this->addonPlatformService = $addonPlatformService;
-
-        view()->share('ptadmin_addon_user', AddonApi::getCloudUserinfo());
     }
 
     public function localInstall(Request $request): \Illuminate\Http\JsonResponse
@@ -73,11 +71,6 @@ class AddonController extends AbstractBackgroundController
         $result = AddonApi::getAddonDownloadUrl($data);
 
         return AdminResponse::success($result);
-    }
-
-    public function myAddon(Request $request): \Illuminate\Http\JsonResponse
-    {
-        return AdminResponse::success($this->addonPlatformService->myCloudAddons($request->all()));
     }
 
     /**
@@ -123,7 +116,10 @@ class AddonController extends AbstractBackgroundController
      */
     public function cloud(Request $request): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::success($this->addonPlatformService->cloudMarket($request->all()));
+        $market = $this->addonPlatformService->cloudMarket($request->all());
+        $data = array_merge($market, ['user' => AddonApi::getCloudUserinfo()]);
+
+        return AdminResponse::success($data);
     }
 
     /**
@@ -131,7 +127,11 @@ class AddonController extends AbstractBackgroundController
      */
     public function cloudMine(Request $request): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::success($this->addonPlatformService->myCloudAddons($request->all()));
+    
+        $market = $this->addonPlatformService->myCloudAddons($request->all());
+        $data = array_merge($market, ['user' => AddonApi::getCloudUserinfo()]);
+        
+        return AdminResponse::success($data);
     }
 
     /**

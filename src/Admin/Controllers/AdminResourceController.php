@@ -40,7 +40,7 @@ class AdminResourceController extends AbstractBackgroundController
 
     public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        return AdminResponse::success(['results' => $this->adminResourceService->resourceTree(AdminListQuery::fromRequest($request, false))]);
+        return AdminResponse::success(['results' => $this->adminResourceService->resourceTree($request->all())]);
     }
 
     public function store(AdminResourceRequest $request): \Illuminate\Http\JsonResponse
@@ -66,7 +66,7 @@ class AdminResourceController extends AbstractBackgroundController
 
     public function tree(Request $request): \Illuminate\Http\JsonResponse
     {
-        $data = $this->adminResourceService->resourceTree(AdminListQuery::fromRequest($request, false));
+        $data = $this->adminResourceService->resourceTree($request->all());
 
         return AdminResponse::success($data);
     }

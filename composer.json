@@ -16,7 +16,8 @@
         "ptadmin/addon": "^1.1.5",
         "ptadmin/easy": "^1.1.4",
         "ext-curl": "*",
-        "ext-zip": "*"
+        "ext-zip": "*",
+        "ext-openssl": "*"
     },
     "require-dev": {
         "orchestra/testbench": "^6.44",

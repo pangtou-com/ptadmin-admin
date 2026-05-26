@@ -153,7 +153,6 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     admin_audit_route(Route::get('cloud/local/apps', [Admin\AddonController::class, 'local']), 'cloud.apps');
     // 云服务
     admin_audit_route(Route::get('cloud/market/services', [Admin\AddonController::class, 'cloud']), 'cloud.market');
-    admin_audit_route(Route::get('addons/cloud/me', [Admin\AddonController::class, 'cloudMine']), 'cloud.market');
     admin_audit_route(Route::get('addons/{code}/status', [Admin\AddonController::class, 'status']), 'cloud.apps');
     admin_audit_route(Route::get('addons/{code}/config', [Admin\AddonController::class, 'config']), 'cloud.apps');
     admin_audit_route(Route::put('addons/{code}/config', [Admin\AddonController::class, 'saveConfig']), 'cloud.apps');
@@ -166,7 +165,7 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     admin_audit_route(Route::post('addons/install/cloud', [Admin\AddonController::class, 'installCloud']), 'cloud.market');
     admin_audit_route(Route::post('addons/install/local', [Admin\AddonController::class, 'localInstall']), 'cloud.apps');
     admin_audit_route(Route::post('addon-download', [Admin\AddonController::class, 'getAddonDownloadUrl']), 'cloud.market');
-    admin_audit_route(Route::get('my-addon', [Admin\AddonController::class, 'myAddon']), 'cloud.apps');
+    admin_audit_route(Route::get('my-addon', [Admin\AddonController::class, 'cloudMine']), 'cloud.apps');
     admin_audit_route(Route::delete('addon-uninstall/{code}', [Admin\AddonController::class, 'uninstall']), 'cloud.apps');
     admin_audit_route(Route::post('addons/cloud/login', [Admin\AddonCloudController::class, 'login']), 'cloud.market');
     admin_audit_route(Route::post('addons/cloud/logout', [Admin\AddonCloudController::class, 'logout']), 'cloud.market');

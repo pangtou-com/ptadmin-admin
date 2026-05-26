@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use PTAdmin\Addon\Addon;
+use PTAdmin\Admin\Support\Query\AdminListQuery;
 use PTAdmin\Admin\Support\Query\BuilderQueryApplier;
 use PTAdmin\Support\Enums\MenuTypeEnum;
 use PTAdmin\Support\Enums\StatusEnum;
@@ -243,25 +244,18 @@ class AdminResourceService
     public function resourceRows(array $filters = []): array
     {
         $query = AdminResource::query()->whereNull('deleted_at');
-        $filters = $this->normalizeResourceListQuery($filters);
-
-        (new BuilderQueryApplier())->apply(
-            $query,
-            $filters,
-            [
-                'allowed_filters' => ['id', 'parent_id', 'title', 'name', 'status', 'sort', 'module', 'page_key', 'route', 'type', 'is_nav'],
-                'allowed_sorts' => ['id', 'parent_id', 'title', 'name', 'status', 'sort', 'module', 'type', 'is_nav'],
-                'allowed_keyword_fields' => ['title', 'name', 'module', 'page_key', 'route'],
-                'keyword_fields' => ['title', 'name', 'module', 'page_key', 'route'],
-                'default_order' => ['sort' => 'asc', 'id' => 'asc'],
-            ]
-        );
+        $query->orderBy("sort")->orderBy('id');
+        if (isset($filters['status'])) {
+            $query->where("status", $filters['status']);
+        }
+        
         $resources = $query->get();
         $allResourceMapById = [];
         foreach (AdminResource::query()->whereNull('deleted_at')->get() as $resource) {
             $allResourceMapById[(int) $resource->id] = $resource;
         }
-
+    
+        // 判断父节点是否合法
         $resources = $resources->filter(function (AdminResource $resource) use ($allResourceMapById): bool {
             return $this->hasVisibleAncestorChain($resource, $allResourceMapById);
         })->values();
@@ -279,38 +273,12 @@ class AdminResourceService
             $data['parent_ids']  = $this->resolveAncestorIds((int) $data['parent_id'], $resourceMapById);
             $data['paths']  = $this->resolveAncestorCodes((int) $data['parent_id'], $resourceMapById);
             
-            return $this->mergeMetaJsonIntoResourceData($data);
+            return $data;
         })->values()->all();
     }
 
     /**
-     * @param array<string, mixed> $query
-     *
-     * @return array<string, mixed>
-     */
-    private function normalizeResourceListQuery(array $query): array
-    {
-        if (isset($query['filters']) || isset($query['sorts']) || isset($query['keyword']) || isset($query['keyword_fields'])) {
-            return $query;
-        }
-
-        $filters = [];
-        foreach ($query as $field => $value) {
-            if (!is_string($field)) {
-                continue;
-            }
-
-            $filters[] = [
-                'field' => $field,
-                'operator' => is_array($value) ? 'in' : '=',
-                'value' => $value,
-            ];
-        }
-
-        return ['filters' => $filters];
-    }
-
-    /**
+     * 查询上级是否有效
      * @param array<int, AdminResource> $resourceMapById
      */
     private function hasVisibleAncestorChain(AdminResource $resource, array $resourceMapById): bool
@@ -336,6 +304,7 @@ class AdminResourceService
     }
 
     /**
+     * 合并开发模式插件资源树
      * @param array<int, array<string, mixed>> $resources
      *
      * @return array<int, array<string, mixed>>
@@ -570,153 +539,7 @@ class AdminResourceService
             ? $type
             : MenuTypeEnum::NAV;
     }
-    
-    public static function addonInstallMenu($addonInfo, $menu, $parentName = null): void
-    {
-        $addonInfo = (array) $addonInfo;
-        $addonCode = (string) ($addonInfo['code'] ?? '');
-        if ('' === $addonCode) {
-            return;
-        }
-
-        $module = isset($addonInfo['module']) && '' !== (string) $addonInfo['module']
-            ? (string) $addonInfo['module']
-            : $addonCode;
-        $definitions = array();
-
-        if (null === $parentName || '' === (string) $parentName) {
-            $definitions[] = array(
-                'name' => $addonCode,
-                'title' => (string) ($addonInfo['title'] ?? $addonCode),
-                'type' => MenuTypeEnum::DIR,
-                'module' => $module,
-                'page_key' => null,
-                'addon_code' => $addonCode,
-                'is_nav' => 1,
-                'status' => 1,
-                'sort' => 0,
-                'meta_json' => array(
-                    'note' => (string) ($addonInfo['description'] ?? ''),
-                    'controller' => '',
-                ),
-            );
-            $parentName = $addonCode;
-        }
-
-        $definitions = array_merge(
-            $definitions,
-            self::normalizeAddonMenuDefinitions($addonCode, (array) $menu, (string) $parentName, $module)
-        );
-
-        app(AdminResourceServiceInterface::class)->syncAddonResources($addonCode, $definitions);
-    }
-
-    public function installChildMenu($addonInfo, $menu, $parentId): void
-    {
-        foreach ($menu as $item) {
-            $resource = $this->adminResourceService->create([
-                'name' => $addonInfo['code'].'.'.$item['name'],
-                'title' => $item['title'],
-                'module' => (string) ($item['module'] ?? $addonInfo['code']),
-                'page_key' => $item['page_key'] ?? null,
-                'addon_code' => $addonInfo['code'],
-                'route' => $item['route'] ?? '',
-                'parent_id' => (int) $parentId,
-                'type' => $item['type'] ?? MenuTypeEnum::NAV,
-                'is_nav' => (int) ($item['is_nav'] ?? 1),
-                'icon' => $item['icon'] ?? '',
-                'status' => 1,
-                'sort' => isset($item['weight']) ? (int) $item['weight'] : 0,
-                'note' => $item['note'] ?? '',
-                'controller' => $item['controller'] ?? '',
-            ]);
-
-            if (isset($item['children']) && $item['children']) {
-                $this->installChildMenu($addonInfo, $item['children'], $resource->id);
-            }
-        }
-    }
-
-    public function installParentMenu($addonInfo): AdminResource
-    {
-        $parent = $this->adminResourceService->findByName((string) $addonInfo['code']);
-        $code = $addonInfo['code'];
-        if (null !== $parent) {
-            $code = $addonInfo['code'].'_'.Str::random(6);
-        }
-
-        return $this->adminResourceService->create([
-            'name' => $code,
-            'title' => $addonInfo['title'],
-            'module' => (string) ($addonInfo['module'] ?? $addonInfo['code']),
-            'addon_code' => $addonInfo['code'],
-            'type' => MenuTypeEnum::DIR,
-            'is_nav' => 1,
-            'status' => 1,
-            'sort' => 0,
-            'note' => $addonInfo['description'] ?? '',
-        ]);
-    }
-
-    public static function addonUninstallMenu($addonName): void
-    {
-        app(AdminResourceServiceInterface::class)->deleteByAddonCode((string) $addonName);
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $menu
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private static function normalizeAddonMenuDefinitions(string $addonCode, array $menu, string $parentCode, string $module): array
-    {
-        $definitions = array();
-
-        foreach ($menu as $item) {
-            if (!\is_array($item)) {
-                continue;
-            }
-
-            $name = trim((string) ($item['name'] ?? $item['code'] ?? ''));
-            if ('' === $name) {
-                continue;
-            }
-
-            $resourceName = isset($item['code']) && '' !== trim((string) $item['code'])
-                ? trim((string) $item['code'])
-                : $addonCode.'.'.$name;
-
-            $definitions[] = array(
-                'name' => $resourceName,
-                'title' => (string) ($item['title'] ?? $name),
-                'type' => (string) ($item['type'] ?? MenuTypeEnum::NAV),
-                'module' => (string) ($item['module'] ?? $module),
-                'page_key' => $item['page_key'] ?? null,
-                'addon_code' => $addonCode,
-                'parent' => $parentCode,
-                'path' => $item['path'] ?? null,
-                'route' => $item['route'] ?? null,
-                'icon' => $item['icon'] ?? null,
-                'is_nav' => isset($item['is_nav']) ? (int) $item['is_nav'] : 1,
-                'status' => isset($item['status']) ? (int) $item['status'] : 1,
-                'sort' => isset($item['sort']) ? (int) $item['sort'] : 0,
-                'meta_json' => array(
-                    'note' => (string) ($item['note'] ?? ''),
-                    'controller' => (string) ($item['controller'] ?? ''),
-                ),
-            );
-
-            if (isset($item['children']) && \is_array($item['children']) && [] !== $item['children']) {
-                $definitions = array_merge(
-                    $definitions,
-                    self::normalizeAddonMenuDefinitions($addonCode, $item['children'], $resourceName, $module)
-                );
-            }
-        }
-
-        return $definitions;
-    }
-
+  
     public function buildGrantPayloadsFromResourceIds(array $resourceIds): array
     {
         $resourceIds = array_values(array_unique(array_map('intval', $resourceIds)));
@@ -863,22 +686,6 @@ class AdminResourceService
         return $withDefaults ? 0 : null;
     }
 
-    private function buildResourceMetaPayload(array $data, bool $withDefaults): ?array
-    {
-        if (!$withDefaults && !\array_key_exists('hidden', $data) && !\array_key_exists('keep_alive', $data)) {
-            return null;
-        }
-
-        return array_filter([
-            'hidden' => isset($data['hidden']) ? (int) $data['hidden'] : ($withDefaults ? 0 : null),
-            'keep_alive' => isset($data['keep_alive'])
-                ? (int) $data['keep_alive']
-                : ($withDefaults ? $this->defaultKeepAliveForMenuType($this->normalizeMenuType((string) ($data['type'] ?? MenuTypeEnum::NAV))) : null),
-        ], static function ($value): bool {
-            return null !== $value;
-        });
-    }
-
     private function mapResourceDetail(AdminResource $resource): array
     {
         $resources = AdminResource::query()
@@ -891,42 +698,11 @@ class AdminResourceService
             $resourceNameById[(int) $item->id] = (string) $item->name;
         }
         $data = $resource->toArray();
-        $data['parent_name'] = $resource->parent_id > 0 && isset($resourceNameById[(int) $resource->parent_id])
-            ? $resourceNameById[(int) $resource->parent_id]
-            : self::TOP_RESOURCE_NAME;
+        $data['parent_name'] = $resource->parent_id > 0 && isset($resourceNameById[(int) $resource->parent_id]) ? $resourceNameById[(int) $resource->parent_id] : self::TOP_RESOURCE_NAME;
         $data['parent_ids'] = $this->resolveAncestorIds((int) $resource->parent_id, $resourceMapById);
         $data['paths'] = $this->resolveAncestorCodes((int) $resource->parent_id, $resourceMapById);
         
-        return $this->mergeMetaJsonIntoResourceData($data);
-    }
-
-
-    /**
-     * @param array<string, mixed> $data
-     *
-     * @return array<string, mixed>
-     */
-    private function mergeMetaJsonIntoResourceData(array $data): array
-    {
-        $metaJson = $data['meta_json'] ?? null;
-        if (!\is_array($metaJson)) {
-            return $data;
-        }
-
-        foreach ($metaJson as $key => $value) {
-            if (!\is_string($key) || array_key_exists($key, $data)) {
-                continue;
-            }
-
-            $data[$key] = $value;
-        }
-
         return $data;
     }
-
-
-    private function defaultKeepAliveForMenuType(string $type): int
-    {
-        return (int)($type === MenuTypeEnum::NAV );
-    }
+    
 }
