@@ -790,7 +790,7 @@ if (!function_exists('whenBlank')) {
      *
      * @return mixed
      */
-    function whenBlank($value, callable $callback = null)
+    function whenBlank($value, ?callable $callback = null)
     {
         if (null === $callback) {
             return $value;
@@ -809,7 +809,7 @@ if (!function_exists('whenNotBlank')) {
      *
      * @return mixed
      */
-    function whenNotBlank($value, callable $callback = null)
+    function whenNotBlank($value, ?callable $callback = null)
     {
         if (null === $callback) {
             return $value;

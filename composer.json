@@ -11,13 +11,13 @@
     ],
     "require": {
         "php": "^7.4 || ^8.0",
+        "ext-curl": "*",
         "ext-json": "*",
+        "ext-openssl": "*",
+        "ext-zip": "*",
         "laravel/framework": "^8.75",
         "ptadmin/addon": "^1.1.6",
-        "ptadmin/easy": "^1.1.5",
-        "ext-curl": "*",
-        "ext-zip": "*",
-        "ext-openssl": "*"
+        "ptadmin/easy": "^1.1.6"
     },
     "require-dev": {
         "orchestra/testbench": "^6.44",

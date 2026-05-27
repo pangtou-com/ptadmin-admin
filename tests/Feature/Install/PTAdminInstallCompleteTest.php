@@ -10,9 +10,18 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminInstallCompleteTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->createSystemConfigGroupsTable();
+        $this->createSystemConfigsTable();
+    }
+
     protected function tearDown(): void
     {
         @unlink($this->installedMarkerPath());
+        $this->deletePath(public_path('storage'));
 
         parent::tearDown();
     }
@@ -64,6 +73,9 @@ class PTAdminInstallCompleteTest extends TestCase
         Artisan::shouldReceive('call')
             ->andReturnUsing(function (string $command, array $arguments = []) use (&$commands): int {
                 $commands[] = [$command, $arguments];
+                if ('storage:link' === $command) {
+                    $this->createPublicStorageLink();
+                }
 
                 return 0;
             });
@@ -107,10 +119,12 @@ class PTAdminInstallCompleteTest extends TestCase
             ['route:clear', []],
             ['view:clear', []],
             ['permission:cache-reset', []],
+            ['storage:link', []],
         ], $commands);
 
         @unlink($envPath);
         $this->deletePath(public_path('admin-web'));
+        $this->deletePath(public_path('storage'));
         $this->deletePath(storage_path('app/ptadmin/frontend/admin'));
     }
 
@@ -125,6 +139,9 @@ class PTAdminInstallCompleteTest extends TestCase
         Artisan::shouldReceive('call')
             ->andReturnUsing(function (string $command, array $arguments = []) use (&$commands): int {
                 $commands[] = [$command, $arguments];
+                if ('storage:link' === $command) {
+                    $this->createPublicStorageLink();
+                }
 
                 return 0;
             });
@@ -150,10 +167,62 @@ class PTAdminInstallCompleteTest extends TestCase
             ['event:clear', []],
             ['route:clear', []],
             ['view:clear', []],
+            ['storage:link', []],
         ], $commands);
 
         @unlink($envPath);
         @unlink($this->installedMarkerPath());
+    }
+
+    public function test_complete_stops_before_installed_marker_when_storage_link_fails(): void
+    {
+        $commands = [];
+        $envPath = storage_path('install-test-storage-link-failed.env');
+
+        Artisan::shouldReceive('all')
+            ->once()
+            ->andReturn([]);
+        Artisan::shouldReceive('call')
+            ->andReturnUsing(function (string $command, array $arguments = []) use (&$commands): int {
+                $commands[] = [$command, $arguments];
+
+                return 'storage:link' === $command ? 1 : 0;
+            });
+        Artisan::shouldReceive('output')
+            ->once()
+            ->andReturn('Storage link failed.');
+
+        $nextCalled = false;
+        $pipe = new Complete();
+
+        ob_start();
+        $pipe->handle([
+            'username' => 'admin',
+            'password' => 'secret123',
+            '__install_env_path' => $envPath,
+            '__install_env_content' => "APP_NAME=PTAdmin\n",
+        ], function () use (&$nextCalled): void {
+            $nextCalled = true;
+        });
+        $output = (string) ob_get_clean();
+
+        self::assertFalse($nextCalled);
+        self::assertFileDoesNotExist($this->installedMarkerPath());
+        self::assertSame([
+            ['admin:auth', ['-u' => 'admin', '-p' => 'secret123', '-f' => true]],
+            ['cache:clear', []],
+            ['config:clear', []],
+            ['event:clear', []],
+            ['route:clear', []],
+            ['view:clear', []],
+            ['storage:link', []],
+        ], $commands);
+        self::assertStringContainsString(
+            __('ptadmin::install.logs.install_finalize_failed', ['message' => 'Storage link failed.']),
+            $output
+        );
+
+        @unlink($envPath);
     }
 
     private function deletePath(string $path): void
@@ -175,6 +244,19 @@ class PTAdminInstallCompleteTest extends TestCase
             $item->isDir() && !$item->isLink() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
         }
         @rmdir($path);
+    }
+
+    private function createPublicStorageLink(): void
+    {
+        $this->deletePath(public_path('storage'));
+        if (!is_dir(storage_path('app/public'))) {
+            mkdir(storage_path('app/public'), 0755, true);
+        }
+        if (!is_dir(public_path())) {
+            mkdir(public_path(), 0755, true);
+        }
+
+        symlink(storage_path('app/public'), public_path('storage'));
     }
 
     private function installedMarkerPath(): string

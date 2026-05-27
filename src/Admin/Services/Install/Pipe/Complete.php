@@ -52,6 +52,7 @@ class Complete
             $this->publishAdminFrontend($data);
             $this->resetRuntimeCaches();
             $this->persistEnvFile($data);
+            $this->ensureStorageLink();
             $this->writeInstalledMarker();
             $installedMarkerWritten = true;
             $this->success(__('ptadmin::install.logs.install_success'));
@@ -78,6 +79,25 @@ class Complete
         $written = File::put(storage_path('installed'), date('Y-m-d H:i:s', time()));
         if (false === $written || !File::exists(storage_path('installed'))) {
             throw new \RuntimeException(__('ptadmin::background.install_marker_write_failed'));
+        }
+    }
+
+    private function ensureStorageLink(): void
+    {
+        $publicStorage = public_path('storage');
+        if (is_link($publicStorage)) {
+            return;
+        }
+
+        $this->process('创建 storage 软链接');
+        $status = Artisan::call('storage:link');
+        if (0 !== $status || !is_link($publicStorage)) {
+            $message = trim(Artisan::output());
+            if ('' === $message) {
+                $message = 'storage:link 执行失败';
+            }
+
+            throw new \RuntimeException($message);
         }
     }
 
