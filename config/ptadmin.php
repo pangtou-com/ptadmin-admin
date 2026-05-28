@@ -26,6 +26,23 @@ return [
     'addons_storage_path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),
     'upload_local_disk' => env('PTADMIN_UPLOAD_LOCAL_DISK', 'public'),
 
+    'notifications' => [
+        'delivery' => [
+            'enabled' => (bool) env('PTADMIN_NOTIFICATION_DELIVERY_ENABLED', true),
+            'sync' => (bool) env('PTADMIN_NOTIFICATION_DELIVERY_SYNC', true),
+        ],
+        'channels' => [
+            'admin' => [],
+            'user' => [],
+        ],
+        'providers' => [
+            'mail' => [
+                'driver' => 'mail',
+                'enabled' => (bool) env('PTADMIN_NOTIFICATION_MAIL_ENABLED', true),
+            ],
+        ],
+    ],
+
     'capabilities' => [
         'rbac' => true,
         'organization' => false,

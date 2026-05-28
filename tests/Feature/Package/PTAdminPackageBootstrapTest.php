@@ -48,18 +48,19 @@ class PTAdminPackageBootstrapTest extends TestCase
         $langPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-lang');
         $assetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-assets');
 
-        self::assertCount(11, $allPublishes);
+        self::assertCount(12, $allPublishes);
         self::assertCount(1, $configPublishes);
         self::assertSame('ptadmin.php', basename((string) array_key_first($configPublishes)));
         self::assertSame('ptadmin.php', basename((string) current($configPublishes)));
 
-        self::assertCount(8, $migrationPublishes);
+        self::assertCount(9, $migrationPublishes);
         self::assertSame([
             '2026_04_09_110000_create_admin_foundation_tables.php',
             '2026_04_09_120000_create_admin_authorization_tables.php',
             '2026_04_09_130000_create_admin_authorization_extension_tables.php',
             '2026_04_09_140000_seed_admin_default_resources.php',
             '2026_04_10_120000_create_assets_table.php',
+            '2026_04_28_120000_create_notification_tables.php',
             '2024_06_13_154934_mod_init.php',
             '2026_04_06_000000_create_model_versions_table.php',
             '2026_04_06_000001_create_audit_logs_table.php',

@@ -23,12 +23,68 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Controllers;
 
+use Illuminate\Http\Request;
+use PTAdmin\Admin\Services\NotificationService;
+use PTAdmin\Admin\Support\Query\AdminListQuery;
+use PTAdmin\Foundation\Auth\AdminAuth;
 use PTAdmin\Foundation\Response\AdminResponse;
 
 class MessageController extends AbstractBackgroundController
 {
+    private NotificationService $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     public function unread(): \Illuminate\Http\JsonResponse
     {
+        return AdminResponse::success($this->notificationService->unreadSummaryForAdmin(AdminAuth::user()));
+    }
+
+    public function index(Request $request): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::pages($this->notificationService->pageForAdmin(AdminAuth::user(), AdminListQuery::fromRequest($request)));
+    }
+
+    public function latest(Request $request): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success([
+            'results' => $this->notificationService->latestForAdmin(AdminAuth::user(), (int) $request->query('limit', 10)),
+        ]);
+    }
+
+    public function categories(): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success([
+            'results' => $this->notificationService->categoriesForAdmin(AdminAuth::user()),
+        ]);
+    }
+
+    public function details($id): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success($this->notificationService->detailForAdmin(AdminAuth::user(), (int) $id));
+    }
+
+    public function read($id): \Illuminate\Http\JsonResponse
+    {
+        $this->notificationService->markReadForAdmin(AdminAuth::user(), (int) $id);
+
+        return AdminResponse::success();
+    }
+
+    public function readAll(): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success([
+            'updated' => $this->notificationService->markAllReadForAdmin(AdminAuth::user()),
+        ]);
+    }
+
+    public function delete($id): \Illuminate\Http\JsonResponse
+    {
+        $this->notificationService->deleteForAdmin(AdminAuth::user(), (int) $id);
+
         return AdminResponse::success();
     }
 }

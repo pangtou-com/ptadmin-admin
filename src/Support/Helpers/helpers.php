@@ -583,6 +583,143 @@ if (!function_exists('addon_config')) {
     }
 }
 
+if (!function_exists('notify_message_service')) {
+    /**
+     * 获取消息通知服务实例。
+     *
+     * 示例：
+     *
+     * ```php
+     * notify_message_service()->sendToAdmin($adminId, [
+     *     'title' => '文章待审核',
+     *     'content' => '有 1 篇文章需要审核',
+     * ]);
+     * ```
+     */
+    function notify_message_service(): \PTAdmin\Admin\Services\NotificationService
+    {
+        return app(\PTAdmin\Admin\Services\NotificationService::class);
+    }
+}
+
+if (!function_exists('admin_notify')) {
+    /**
+     * 发送后台管理员站内消息，并按 channels 触发外部通知。
+     *
+     * 支持单个管理员 ID：
+     *
+     * ```php
+     * admin_notify($adminId, [
+     *     'source_type' => 'addon',
+     *     'source_code' => 'cms',
+     *     'category' => 'todo',
+     *     'level' => 'warning',
+     *     'title' => '文章待审核',
+     *     'content' => '有 1 篇文章需要审核',
+     *     'action_type' => 'route',
+     *     'action_url' => '/cms/archive',
+     *     'biz_type' => 'cms.archive',
+     *     'biz_id' => '1001',
+     *     'biz_key' => 'cms.archive.pending.1001',
+     *     'data' => [
+     *         'archive_id' => 1001,
+     *     ],
+     * ]);
+     * ```
+     *
+     * 支持多个管理员 ID：
+     *
+     * ```php
+     * admin_notify([$adminA, $adminB], [
+     *     'title' => '系统通知',
+     *     'content' => '请及时处理待办事项。',
+     * ]);
+     * ```
+     *
+     * 如需同时触发内置邮箱通知，可指定 channels：
+     *
+     * ```php
+     * admin_notify($adminId, [
+     *     'title' => '系统告警',
+     *     'content' => '系统出现异常，请及时处理。',
+     *     'channels' => ['mail'],
+     * ]);
+     * ```
+     *
+     * @param int|array $adminIds
+     *
+     * @return array<string, mixed>
+     */
+    function admin_notify($adminIds, array $message): array
+    {
+        $ids = norm_ids($adminIds);
+        if (1 === count($ids)) {
+            return notify_message_service()->sendToAdmin((int) reset($ids), $message);
+        }
+
+        return notify_message_service()->sendToAdmins($ids, $message);
+    }
+}
+
+if (!function_exists('user_notify')) {
+    /**
+     * 发送前台用户站内消息，并按 channels 触发外部通知。
+     *
+     * 支持单个用户 ID：
+     *
+     * ```php
+     * user_notify($userId, [
+     *     'category' => 'notice',
+     *     'level' => 'info',
+     *     'title' => '订单状态更新',
+     *     'content' => '你的订单已经发货。',
+     *     'action_type' => 'route',
+     *     'action_url' => '/orders/1001',
+     *     'biz_type' => 'order',
+     *     'biz_id' => '1001',
+     *     'biz_key' => 'order.shipped.1001',
+     * ]);
+     * ```
+     *
+     * 支持多个用户 ID：
+     *
+     * ```php
+     * user_notify([$userA, $userB], [
+     *     'title' => '活动提醒',
+     *     'content' => '你关注的活动即将开始。',
+     * ]);
+     * ```
+     *
+     * 外部通知通道同样通过 channels 指定：
+     *
+     * ```php
+     * user_notify($userId, [
+     *     'title' => '验证码通知',
+     *     'content' => '你的验证码为 123456。',
+     *     'channels' => [
+     *         [
+     *             'channel' => 'sms',
+     *             'provider' => 'aliyun_sms',
+     *         ],
+     *     ],
+     * ]);
+     * ```
+     *
+     * @param int|array $userIds
+     *
+     * @return array<string, mixed>
+     */
+    function user_notify($userIds, array $message): array
+    {
+        $ids = norm_ids($userIds);
+        if (1 === count($ids)) {
+            return notify_message_service()->sendToUser((int) reset($ids), $message);
+        }
+
+        return notify_message_service()->sendToUsers($ids, $message);
+    }
+}
+
 if (!function_exists('is_email')) {
     /**
      * 验证是否为邮箱.

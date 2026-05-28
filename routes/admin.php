@@ -64,6 +64,13 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
 
     // 消息通知
     Route::get('message/unread', [Admin\MessageController::class, 'unread']);
+    Route::get('message/latest', [Admin\MessageController::class, 'latest']);
+    Route::get('message/categories', [Admin\MessageController::class, 'categories']);
+    Route::get('message', [Admin\MessageController::class, 'index']);
+    Route::get('message/{id}', [Admin\MessageController::class, 'details'])->whereNumber('id');
+    Route::put('message/{id}/read', [Admin\MessageController::class, 'read'])->whereNumber('id');
+    Route::put('message/read', [Admin\MessageController::class, 'readAll']);
+    Route::delete('message/{id}', [Admin\MessageController::class, 'delete'])->whereNumber('id');
 
     // 后台管理员管理
     admin_audit_route(Route::get('admins', [Admin\AdminController::class, 'index']), 'system.admins');

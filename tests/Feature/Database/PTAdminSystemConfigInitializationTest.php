@@ -176,5 +176,6 @@ class PTAdminSystemConfigInitializationTest extends TestCase
         self::assertArrayHasKey('access', $definitions[0]);
         self::assertArrayHasKey('fields', $definitions[0]);
         self::assertSame('site_title', $definitions[0]['fields'][0]['name']);
+        self::assertContains('mail', array_column($definitions, 'name'));
     }
 }

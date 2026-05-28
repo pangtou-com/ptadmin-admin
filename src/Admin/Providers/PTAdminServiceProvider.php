@@ -101,6 +101,7 @@ class PTAdminServiceProvider extends ServiceProvider
                 __DIR__.'/../../../database/Migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php' => database_path('migrations/2026_04_09_130000_create_admin_authorization_extension_tables.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_09_140000_seed_admin_default_resources.php' => database_path('migrations/2026_04_09_140000_seed_admin_default_resources.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_10_120000_create_assets_table.php' => database_path('migrations/2026_04_10_120000_create_assets_table.php'),
+                __DIR__.'/../../../database/Migrations/2026_04_28_120000_create_notification_tables.php' => database_path('migrations/2026_04_28_120000_create_notification_tables.php'),
                 $this->easyMigrationPath('2024_06_13_154934_mod_init.php') => database_path('migrations/2024_06_13_154934_mod_init.php'),
                 $this->easyMigrationPath('2026_04_06_000000_create_model_versions_table.php') => database_path('migrations/2026_04_06_000000_create_model_versions_table.php'),
                 $this->easyMigrationPath('2026_04_06_000001_create_audit_logs_table.php') => database_path('migrations/2026_04_06_000001_create_audit_logs_table.php'),

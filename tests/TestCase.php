@@ -76,6 +76,9 @@ abstract class TestCase extends Orchestra
             'admin_roles',
             'admin_dashboard_user_widgets',
             'admin_dashboard_role_widgets',
+            'notification_deliveries',
+            'notification_receipts',
+            'notification_messages',
             'system_configs',
             'system_config_groups',
             'operation_records',
@@ -256,6 +259,70 @@ abstract class TestCase extends Orchestra
             $table->unsignedInteger('updated_at')->default(0);
             $table->unsignedInteger('deleted_at')->nullable();
         });
+    }
+
+    protected function createNotificationTables(): void
+    {
+        if (!Schema::hasTable('notification_messages')) {
+            Schema::create('notification_messages', function (Blueprint $table): void {
+                $table->id();
+                $table->string('audience_type', 20)->default('admin');
+                $table->string('source_type', 20)->default('system');
+                $table->string('source_code', 100)->default('system');
+                $table->string('category', 50)->default('notice');
+                $table->string('level', 20)->default('info');
+                $table->string('title', 255);
+                $table->text('content')->nullable();
+                $table->string('action_type', 20)->default('none');
+                $table->string('action_url', 500)->nullable();
+                $table->string('biz_type', 100)->nullable();
+                $table->string('biz_id', 100)->nullable();
+                $table->string('biz_key', 150)->nullable();
+                $table->json('data')->nullable();
+                $table->unsignedBigInteger('created_by')->default(0);
+                $table->unsignedInteger('expires_at')->nullable();
+                $table->unsignedInteger('created_at')->default(0);
+                $table->unsignedInteger('updated_at')->default(0);
+                $table->unique('biz_key');
+            });
+        }
+
+        if (!Schema::hasTable('notification_receipts')) {
+            Schema::create('notification_receipts', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('notification_id');
+                $table->string('receiver_type', 20);
+                $table->unsignedBigInteger('receiver_id');
+                $table->unsignedInteger('read_at')->nullable();
+                $table->unsignedInteger('archived_at')->nullable();
+                $table->unsignedInteger('deleted_at')->nullable();
+                $table->unsignedInteger('created_at')->default(0);
+                $table->unsignedInteger('updated_at')->default(0);
+                $table->unique(['notification_id', 'receiver_type', 'receiver_id']);
+            });
+        }
+
+        if (!Schema::hasTable('notification_deliveries')) {
+            Schema::create('notification_deliveries', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('notification_id')->nullable();
+                $table->unsignedBigInteger('receipt_id')->nullable();
+                $table->string('receiver_type', 20)->nullable();
+                $table->unsignedBigInteger('receiver_id')->nullable();
+                $table->string('channel', 50);
+                $table->string('provider', 100)->nullable();
+                $table->string('message_id', 150)->nullable();
+                $table->string('batch_id', 150)->nullable();
+                $table->string('status', 50)->default('pending');
+                $table->unsignedInteger('accepted_at')->nullable();
+                $table->unsignedInteger('delivered_at')->nullable();
+                $table->text('error_message')->nullable();
+                $table->json('meta')->nullable();
+                $table->json('raw')->nullable();
+                $table->unsignedInteger('created_at')->default(0);
+                $table->unsignedInteger('updated_at')->default(0);
+            });
+        }
     }
 
     protected function createAdminAccount(array $overrides = []): Admin
