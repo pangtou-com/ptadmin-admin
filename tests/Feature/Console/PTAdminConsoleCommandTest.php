@@ -14,6 +14,13 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminConsoleCommandTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        $this->deletePath(storage_path('app/ptadmin/frontend/admin/current'));
+
+        parent::tearDown();
+    }
+
     public function test_admin_auth_command_creates_founder_account(): void
     {
         $this->createAdminsTable();
@@ -70,12 +77,36 @@ class PTAdminConsoleCommandTest extends TestCase
     {
         $service = new AdminFrontendBuildService();
         $currentPath = storage_path('app/ptadmin/frontend/admin/current');
+        $this->deletePath($currentPath);
+
         $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
 
         self::assertSame($currentPath, $result['current_path']);
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js');
         self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
+        self::assertSame('generated', $result['runtime_config']);
+        self::assertFalse(is_link($currentPath));
+    }
+
+    public function test_admin_frontend_build_service_preserves_existing_runtime_config_on_publish(): void
+    {
+        $service = new AdminFrontendBuildService();
+        $currentPath = storage_path('app/ptadmin/frontend/admin/current');
+        $configPath = $currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js';
+        $runtimeConfig = "window.ptconfig = { baseURL: 'https://tenant.example.test/custom-api/' };\n";
+
+        $this->deletePath($currentPath);
+        mkdir($currentPath, 0755, true);
+        file_put_contents($configPath, $runtimeConfig);
+
+        $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
+
+        self::assertSame('preserved', $result['runtime_config']);
+        self::assertSame($runtimeConfig, file_get_contents($configPath));
+        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
+        self::assertFalse(is_link($currentPath));
     }
 
     public function test_project_frontend_pull_command_is_registered(): void
@@ -84,5 +115,26 @@ class PTAdminConsoleCommandTest extends TestCase
 
         self::assertArrayHasKey('admin:pf:pull', $commands);
         self::assertArrayHasKey('admin:pf:publish', $commands);
+    }
+
+    private function deletePath(string $path): void
+    {
+        if (is_link($path) || is_file($path)) {
+            @unlink($path);
+
+            return;
+        }
+        if (!is_dir($path)) {
+            return;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($iterator as $item) {
+            $item->isDir() && !$item->isLink() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+        }
+        @rmdir($path);
     }
 }
