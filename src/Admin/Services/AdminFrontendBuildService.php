@@ -120,6 +120,7 @@ final class AdminFrontendBuildService
         $runtimeConfig = is_file($currentConfigPath) ? (string) file_get_contents($currentConfigPath) : null;
         $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
         $preservedModulesPath = $this->preservePath($modulesPath);
+        $modulesState = null !== $preservedModulesPath ? 'preserved' : 'created';
 
         try {
             $this->deletePath($currentPath);
@@ -141,6 +142,7 @@ final class AdminFrontendBuildService
 
             $this->restorePreservedPath($preservedModulesPath, $modulesPath);
             $preservedModulesPath = null;
+            $this->ensureRuntimeDirectory($modulesPath);
         } finally {
             if (null !== $preservedModulesPath) {
                 $this->deletePath($preservedModulesPath);
@@ -151,7 +153,7 @@ final class AdminFrontendBuildService
             'source_path' => $sourcePath,
             'current_path' => $currentPath,
             'runtime_config' => null !== $runtimeConfig ? 'preserved' : 'generated',
-            'modules' => is_dir($modulesPath) || is_link($modulesPath) ? 'preserved' : 'none',
+            'modules' => $modulesState,
         ];
     }
 
@@ -437,6 +439,15 @@ final class AdminFrontendBuildService
         if (!@rename($preservedPath, $targetPath)) {
             throw new \RuntimeException(sprintf('Unable to restore frontend runtime path: %s', $targetPath));
         }
+    }
+
+    private function ensureRuntimeDirectory(string $path): void
+    {
+        if (!is_dir($path)) {
+            $this->ensureDirectory($path);
+        }
+
+        @chmod($path, 0777);
     }
 
     private function deletePath(string $path): void

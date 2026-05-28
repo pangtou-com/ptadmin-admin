@@ -123,9 +123,31 @@ class PTAdminConsoleCommandTest extends TestCase
 
         $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
 
+        clearstatcache(true, $modulesPath);
+
         self::assertSame('preserved', $result['modules']);
         self::assertSame('console.log("cms");', file_get_contents($moduleFile));
-        self::assertSame('770', substr(sprintf('%o', fileperms($modulesPath)), -3));
+        self::assertSame('777', substr(sprintf('%o', fileperms($modulesPath)), -3));
+        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
+        self::assertFalse(is_link($currentPath));
+    }
+
+    public function test_admin_frontend_build_service_creates_writable_runtime_modules_on_publish(): void
+    {
+        $service = new AdminFrontendBuildService();
+        $currentPath = storage_path('app/ptadmin/frontend/admin/current');
+        $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
+
+        $this->deletePath($currentPath);
+
+        $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
+
+        clearstatcache(true, $modulesPath);
+
+        self::assertSame('created', $result['modules']);
+        self::assertDirectoryExists($modulesPath);
+        self::assertSame('777', substr(sprintf('%o', fileperms($modulesPath)), -3));
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
         self::assertFalse(is_link($currentPath));
