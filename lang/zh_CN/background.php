@@ -29,6 +29,7 @@ return [
     'remote_delete_failed' => '远程文件删除失败',
     'invalid_file' => '无效的文件',
     'upload_storage_not_configured' => '上传存储插件未配置',
+    'directory_not_writable' => '目录不可写，请检查权限：:path',
     'file_save_failed' => '文件保存失败',
     'parent_menu_self' => '父级菜单不能为自身',
     'parent_menu_child' => '父级菜单不能为自身子级',

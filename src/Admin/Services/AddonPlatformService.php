@@ -97,9 +97,7 @@ class AddonPlatformService
     public function installFromLocal(UploadedFile $file, bool $force = false): array
     {
         $directory = storage_path('app/addons/uploads');
-        if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
-        }
+        $this->ensureDirectoryWritable($directory);
 
         $filename = sprintf('%s_%s.%s', pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), uniqid('', true), $file->getClientOriginalExtension());
         $target = $file->move($directory, $filename);
@@ -107,6 +105,30 @@ class AddonPlatformService
         @unlink($target->getPathname());
 
         return $this->status($code);
+    }
+
+    private function ensureDirectoryWritable(string $directory): void
+    {
+        if (is_dir($directory)) {
+            if (!is_writable($directory)) {
+                throw new BackgroundException(__('ptadmin::background.directory_not_writable', ['path' => $directory]));
+            }
+
+            return;
+        }
+
+        $parent = \dirname($directory);
+        while ($parent !== \dirname($parent) && !is_dir($parent)) {
+            $parent = \dirname($parent);
+        }
+
+        if (!is_dir($parent) || !is_writable($parent)) {
+            throw new BackgroundException(__('ptadmin::background.directory_not_writable', ['path' => $directory]));
+        }
+
+        if (!@mkdir($directory, 0755, true) && !is_dir($directory)) {
+            throw new BackgroundException(__('ptadmin::background.directory_not_writable', ['path' => $directory]));
+        }
     }
 
     /**

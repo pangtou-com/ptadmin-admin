@@ -29,6 +29,7 @@ return [
     'remote_delete_failed' => 'Failed to delete the remote file',
     'invalid_file' => 'Invalid file',
     'upload_storage_not_configured' => 'Upload storage plugin is not configured',
+    'directory_not_writable' => 'Directory is not writable. Check permissions: :path',
     'file_save_failed' => 'Failed to save the file',
     'parent_menu_self' => 'The parent menu cannot be itself',
     'parent_menu_child' => 'The parent menu cannot be one of its own children',
