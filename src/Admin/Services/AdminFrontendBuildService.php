@@ -118,28 +118,40 @@ final class AdminFrontendBuildService
         $currentPath = $appRoot.\DIRECTORY_SEPARATOR.'storage'.\DIRECTORY_SEPARATOR.'app'.\DIRECTORY_SEPARATOR.'ptadmin'.\DIRECTORY_SEPARATOR.'frontend'.\DIRECTORY_SEPARATOR.'admin'.\DIRECTORY_SEPARATOR.'current';
         $currentConfigPath = $currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js';
         $runtimeConfig = is_file($currentConfigPath) ? (string) file_get_contents($currentConfigPath) : null;
+        $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
+        $preservedModulesPath = $this->preservePath($modulesPath);
 
-        $this->deletePath($currentPath);
-        $this->ensureDirectory(\dirname($currentPath));
-        $this->copyDirectory($sourcePath, $currentPath);
+        try {
+            $this->deletePath($currentPath);
+            $this->ensureDirectory(\dirname($currentPath));
+            $this->copyDirectory($sourcePath, $currentPath);
 
-        if (null !== $runtimeConfig) {
-            file_put_contents($currentConfigPath, $runtimeConfig);
-        } else {
-            $lock = $this->readLockFile($sourcePath);
-            $this->writeRuntimeConfig($currentConfigPath, [
-                'app_name' => (string) config('app.name', 'PTAdmin'),
-                'app_url' => (string) config('app.url', ''),
-                'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : (string) config('ptadmin.api_prefix', config('app.prefix', 'system')),
-                'web_prefix' => \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'),
-                'version' => (string) ($lock['version'] ?? 'bundled'),
-            ]);
+            if (null !== $runtimeConfig) {
+                file_put_contents($currentConfigPath, $runtimeConfig);
+            } else {
+                $lock = $this->readLockFile($sourcePath);
+                $this->writeRuntimeConfig($currentConfigPath, [
+                    'app_name' => (string) config('app.name', 'PTAdmin'),
+                    'app_url' => (string) config('app.url', ''),
+                    'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : (string) config('ptadmin.api_prefix', config('app.prefix', 'system')),
+                    'web_prefix' => \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'),
+                    'version' => (string) ($lock['version'] ?? 'bundled'),
+                ]);
+            }
+
+            $this->restorePreservedPath($preservedModulesPath, $modulesPath);
+            $preservedModulesPath = null;
+        } finally {
+            if (null !== $preservedModulesPath) {
+                $this->deletePath($preservedModulesPath);
+            }
         }
 
         return [
             'source_path' => $sourcePath,
             'current_path' => $currentPath,
             'runtime_config' => null !== $runtimeConfig ? 'preserved' : 'generated',
+            'modules' => is_dir($modulesPath) || is_link($modulesPath) ? 'preserved' : 'none',
         ];
     }
 
@@ -396,6 +408,34 @@ final class AdminFrontendBuildService
             }
             $this->ensureDirectory(\dirname($targetPath));
             copy($item->getPathname(), $targetPath);
+        }
+    }
+
+    private function preservePath(string $path): ?string
+    {
+        if (!file_exists($path) && !is_link($path)) {
+            return null;
+        }
+
+        $temporaryPath = \dirname(\dirname($path)).\DIRECTORY_SEPARATOR.'.'.basename(\dirname($path)).'-'.basename($path).'-preserve-'.uniqid();
+        if (!@rename($path, $temporaryPath)) {
+            throw new \RuntimeException(sprintf('Unable to preserve frontend runtime path: %s', $path));
+        }
+
+        return $temporaryPath;
+    }
+
+    private function restorePreservedPath(?string $preservedPath, string $targetPath): void
+    {
+        if (null === $preservedPath) {
+            return;
+        }
+
+        $this->deletePath($targetPath);
+        $this->ensureDirectory(\dirname($targetPath));
+
+        if (!@rename($preservedPath, $targetPath)) {
+            throw new \RuntimeException(sprintf('Unable to restore frontend runtime path: %s', $targetPath));
         }
     }
 

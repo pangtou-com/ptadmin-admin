@@ -109,6 +109,28 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertFalse(is_link($currentPath));
     }
 
+    public function test_admin_frontend_build_service_preserves_runtime_modules_on_publish(): void
+    {
+        $service = new AdminFrontendBuildService();
+        $currentPath = storage_path('app/ptadmin/frontend/admin/current');
+        $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
+        $moduleFile = $modulesPath.\DIRECTORY_SEPARATOR.'cms'.\DIRECTORY_SEPARATOR.'dist'.\DIRECTORY_SEPARATOR.'index.js';
+
+        $this->deletePath($currentPath);
+        mkdir(\dirname($moduleFile), 0755, true);
+        file_put_contents($moduleFile, 'console.log("cms");');
+        chmod($modulesPath, 0770);
+
+        $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
+
+        self::assertSame('preserved', $result['modules']);
+        self::assertSame('console.log("cms");', file_get_contents($moduleFile));
+        self::assertSame('770', substr(sprintf('%o', fileperms($modulesPath)), -3));
+        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
+        self::assertFalse(is_link($currentPath));
+    }
+
     public function test_project_frontend_pull_command_is_registered(): void
     {
         $commands = \Illuminate\Support\Facades\Artisan::all();
