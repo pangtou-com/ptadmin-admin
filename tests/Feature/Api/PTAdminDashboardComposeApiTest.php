@@ -83,7 +83,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
                     'frontend_version' => '0.1.12',
                     'frontend_latest_version' => '0.1.12',
                     'frontend_update_required' => false,
-                    'backend_version' => '1.1.8',
+                    'backend_version' => '1.1.18',
                     'backend_latest_version' => '1.1.8',
                     'backend_update_required' => false,
                     'update_required' => false,
@@ -171,7 +171,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.summary.addon_update_pending', true)
             ->assertJsonPath('data.summary.frontend_version', '0.1.12')
-            ->assertJsonPath('data.summary.backend_version', '1.1.8');
+            ->assertJsonPath('data.summary.backend_version', '1.1.18');
     }
 
     public function test_dashboard_console_summary_marks_update_required_when_platform_has_newer_frontend(): void

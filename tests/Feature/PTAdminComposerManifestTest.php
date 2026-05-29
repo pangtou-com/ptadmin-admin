@@ -21,8 +21,8 @@ class PTAdminComposerManifestTest extends TestCase
         self::assertSame(['src/Support/Helpers/helpers.php'], $manifest['autoload']['files'] ?? null);
         self::assertSame('tests/', $manifest['autoload-dev']['psr-4']['PTAdmin\\Admin\\Tests\\'] ?? null);
         self::assertSame('vendor/bin/phpunit -c phpunit.xml.dist', $manifest['scripts']['test'] ?? null);
-        self::assertSame('^1.1.2', $manifest['require']['ptadmin/addon'] ?? null);
-        self::assertSame('^1.1.2', $manifest['require']['ptadmin/easy'] ?? null);
+        self::assertSame('^1.1.8', $manifest['require']['ptadmin/addon'] ?? null);
+        self::assertSame('^1.1.8', $manifest['require']['ptadmin/easy'] ?? null);
         self::assertArrayHasKey('require-dev', $manifest);
         self::assertFileExists(__DIR__.'/../../README.md');
         self::assertFileExists(__DIR__.'/../../phpunit.xml.dist');
