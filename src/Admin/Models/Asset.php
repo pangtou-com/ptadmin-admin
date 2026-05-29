@@ -26,7 +26,6 @@ namespace PTAdmin\Admin\Models;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use PTAdmin\Addon\Addon;
-use PTAdmin\Support\Utils\ThumbService;
 
 /**
  * @property string $title
@@ -67,24 +66,23 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
         if ($this->isAddonDriver()) {
             return Str::startsWith((string) ($this->attributes['mime'] ?? ''), 'image')
                 ? $this->getUrlAttribute()
-                : (string) config('constant.file_image', '');
+                : '';
         }
 
         $disk = $this->resolveLocalDisk();
 
-        if (Str::startsWith($this->attributes['mime'], 'image')) {
-            if (file_exists(Storage::disk($disk)->path($this->attributes['path']))) {
-                $thumbPath = ThumbService::save((string) $this->attributes['path'], 100, 100, 'middle', $disk);
+        if (Str::startsWith((string) ($this->attributes['mime'] ?? ''), 'image')) {
+            $path = (string) ($this->attributes['path'] ?? '');
+            if ('' !== $path && Storage::disk($disk)->exists($path)) {
+                $previewPath = $this->findExistingPreviewPath($disk, $path);
 
-                return null === $thumbPath
-                    ? (string) config('constant.empty_image', '')
-                    : url(Storage::disk($disk)->url($thumbPath));
+                return url(Storage::disk($disk)->url($previewPath ?? $path));
             }
 
             return (string) config('constant.empty_image', '');
         }
 
-        return (string) config('constant.file_image', '');
+        return '';
     }
 
     public function getUrlAttribute(): string
@@ -146,5 +144,37 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
         $driver = trim((string) ($this->attributes['driver'] ?? ''));
 
         return '' === $driver ? (string) config('ptadmin.upload_local_disk', 'public') : $driver;
+    }
+
+    private function findExistingPreviewPath(string $disk, string $path): ?string
+    {
+        $type = $this->thumbImageType();
+        if (null === $type) {
+            return null;
+        }
+
+        $directory = pathinfo($path, PATHINFO_DIRNAME);
+        $filename = basename($path, '.'.$type);
+        $thumbPath = ('.' === $directory ? '' : $directory.\DIRECTORY_SEPARATOR).$filename.'_thumb_100_100.'.$type;
+
+        return Storage::disk($disk)->exists($thumbPath) ? $thumbPath : null;
+    }
+
+    private function thumbImageType(): ?string
+    {
+        $mime = strtolower((string) ($this->attributes['mime'] ?? ''));
+        if ('image/jpeg' === $mime || 'image/jpg' === $mime) {
+            return 'jpeg';
+        }
+
+        if ('image/png' === $mime) {
+            return 'png';
+        }
+
+        if ('image/gif' === $mime) {
+            return 'gif';
+        }
+
+        return null;
     }
 }

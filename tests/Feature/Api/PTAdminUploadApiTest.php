@@ -300,6 +300,7 @@ class PTAdminUploadApiTest extends TestCase
 
         self::assertSame('使用手册', $listResponse->json('data.results.0.title'));
         self::assertSame('docs', $listResponse->json('data.results.0.groups'));
+        self::assertSame('', $listResponse->json('data.results.0.preview'));
 
         $pickerResponse = $this->withHeaders($this->jsonApiHeaders($token))
             ->getJson('/system/assets/picker?groups=docs');
@@ -320,6 +321,41 @@ class PTAdminUploadApiTest extends TestCase
 
         Storage::disk('public')->assertMissing('public/docs/manual.txt');
         self::assertNull(Asset::query()->find($document->id));
+    }
+
+    public function test_asset_listing_does_not_generate_image_thumbnails(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createAssetsTable();
+
+        Storage::disk('public')->putFileAs('images', UploadedFile::fake()->image('banner.png'), 'banner.png');
+
+        Asset::query()->create([
+            'title' => 'banner.png',
+            'md5' => md5('banner'),
+            'mime' => 'image/png',
+            'suffix' => 'png',
+            'driver' => 'public',
+            'size' => 6,
+            'path' => 'images/banner.png',
+            'groups' => 'images',
+        ]);
+
+        $token = $this->issueFounderToken();
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/system/assets?groups=images');
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'total' => 1,
+            ],
+        ]);
+
+        self::assertSame(url('/storage/images/banner.png'), $response->json('data.results.0.preview'));
+        Storage::disk('public')->assertMissing('images/banner_thumb_100_100.png');
     }
 
     private function issueFounderToken(): string
