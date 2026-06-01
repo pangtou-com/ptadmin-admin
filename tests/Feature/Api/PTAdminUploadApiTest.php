@@ -209,7 +209,7 @@ class PTAdminUploadApiTest extends TestCase
         self::assertStringStartsWith(url('/storage/'), (string) $response->json('data.url'));
     }
 
-    public function test_image_upload_preview_uses_public_disk_when_default_filesystem_is_local(): void
+    public function test_image_upload_preview_returns_original_image_url_when_default_filesystem_is_local(): void
     {
         config()->set('filesystems.default', 'local');
         Storage::fake('local');
@@ -236,14 +236,9 @@ class PTAdminUploadApiTest extends TestCase
         ]);
 
         $asset = Asset::query()->findOrFail((int) $response->json('data.id'));
-        $thumbPath = preg_replace('#^'.preg_quote(url('/storage/'), '#').'/?#', '', (string) $response->json('data.preview'));
-
         Storage::disk('public')->assertExists((string) $asset->path);
-        if (null !== $thumbPath && '' !== $thumbPath) {
-            Storage::disk('public')->assertExists($thumbPath);
-            Storage::disk('local')->assertMissing($thumbPath);
-        }
-
+        Storage::disk('local')->assertMissing((string) $asset->path);
+        self::assertSame($response->json('data.url'), $response->json('data.preview'));
         self::assertStringStartsWith(url('/storage/'), (string) $response->json('data.preview'));
     }
 
@@ -323,7 +318,7 @@ class PTAdminUploadApiTest extends TestCase
         self::assertNull(Asset::query()->find($document->id));
     }
 
-    public function test_asset_listing_does_not_generate_image_thumbnails(): void
+    public function test_asset_listing_returns_original_image_url(): void
     {
         $this->createAdminsTable();
         $this->createUserTokensTable();
@@ -355,7 +350,6 @@ class PTAdminUploadApiTest extends TestCase
         ]);
 
         self::assertSame(url('/storage/images/banner.png'), $response->json('data.results.0.preview'));
-        Storage::disk('public')->assertMissing('images/banner_thumb_100_100.png');
     }
 
     private function issueFounderToken(): string

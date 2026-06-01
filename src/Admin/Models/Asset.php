@@ -74,9 +74,7 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
         if (Str::startsWith((string) ($this->attributes['mime'] ?? ''), 'image')) {
             $path = (string) ($this->attributes['path'] ?? '');
             if ('' !== $path && Storage::disk($disk)->exists($path)) {
-                $previewPath = $this->findExistingPreviewPath($disk, $path);
-
-                return url(Storage::disk($disk)->url($previewPath ?? $path));
+                return url(Storage::disk($disk)->url($path));
             }
 
             return (string) config('constant.empty_image', '');
@@ -144,37 +142,5 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
         $driver = trim((string) ($this->attributes['driver'] ?? ''));
 
         return '' === $driver ? (string) config('ptadmin.upload_local_disk', 'public') : $driver;
-    }
-
-    private function findExistingPreviewPath(string $disk, string $path): ?string
-    {
-        $type = $this->thumbImageType();
-        if (null === $type) {
-            return null;
-        }
-
-        $directory = pathinfo($path, PATHINFO_DIRNAME);
-        $filename = basename($path, '.'.$type);
-        $thumbPath = ('.' === $directory ? '' : $directory.\DIRECTORY_SEPARATOR).$filename.'_thumb_100_100.'.$type;
-
-        return Storage::disk($disk)->exists($thumbPath) ? $thumbPath : null;
-    }
-
-    private function thumbImageType(): ?string
-    {
-        $mime = strtolower((string) ($this->attributes['mime'] ?? ''));
-        if ('image/jpeg' === $mime || 'image/jpg' === $mime) {
-            return 'jpeg';
-        }
-
-        if ('image/png' === $mime) {
-            return 'png';
-        }
-
-        if ('image/gif' === $mime) {
-            return 'gif';
-        }
-
-        return null;
     }
 }
