@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use PTAdmin\Admin\Models\Asset;
+use PTAdmin\Admin\Services\AssetService;
 use PTAdmin\Admin\Services\UploadService;
 use PTAdmin\Admin\Tests\TestCase;
 
@@ -122,6 +123,82 @@ class PTAdminUploadApiTest extends TestCase
                 'code' => 419,
                 'message' => '未登录',
             ]);
+    }
+
+    public function test_remote_asset_endpoint_can_store_remote_url_without_downloading(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createAssetsTable();
+        $token = $this->issueFounderToken();
+
+        $url = 'https://www.pangtou.com/storage/default/20241012/UEjSEcVq108t1feZSFZaUzsw0M54p6KBRnnS3XC4.png';
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/system/asset/remote', [
+                'url' => $url,
+                'is_local_save' => false,
+            ]);
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'title' => 'UEjSEcVq108t1feZSFZaUzsw0M54p6KBRnnS3XC4.png',
+                'driver' => 'remote',
+                'path' => $url,
+                'url' => $url,
+                'preview' => $url,
+                'groups' => 'default',
+                'suffix' => 'png',
+                'mime' => 'image/png',
+            ],
+        ]);
+
+        self::assertSame(1, Asset::query()->count());
+        self::assertSame($url, (string) Asset::query()->firstOrFail()->path);
+    }
+
+    public function test_remote_asset_endpoint_can_download_remote_url_to_local_storage(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createAssetsTable();
+        $token = $this->issueFounderToken();
+
+        $url = 'https://www.pangtou.com/storage/default/20241012/banner.png';
+        $this->app->instance(AssetService::class, new class() extends AssetService {
+            protected function fetchRemoteContent(string $url): array
+            {
+                return [
+                    'content' => 'remote-image-content',
+                    'content_type' => 'image/png',
+                ];
+            }
+        });
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/system/asset/remote', [
+                'url' => $url,
+                'is_local_save' => true,
+                'group' => 'remote',
+            ]);
+
+        $response->assertOk()->assertJson([
+            'code' => 0,
+            'data' => [
+                'title' => 'banner.png',
+                'driver' => 'public',
+                'groups' => 'remote',
+                'suffix' => 'png',
+                'mime' => 'image/png',
+            ],
+        ]);
+
+        $asset = Asset::query()->findOrFail((int) $response->json('data.id'));
+        Storage::disk('public')->assertExists((string) $asset->path);
+        self::assertStringStartsWith('remote/', (string) $asset->path);
+        self::assertStringStartsWith(url('/storage/'), (string) $response->json('data.url'));
+        self::assertSame($response->json('data.url'), $response->json('data.preview'));
     }
 
     public function test_upload_endpoint_can_switch_to_addon_storage_by_system_config(): void

@@ -48,6 +48,7 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     admin_audit_route(Route::post('upload/tiny', [Admin\UploadController::class, 'tiny']), 'system.assets');
 
     // 上传资源列表
+    admin_audit_route(Route::post('asset/remote', [Admin\AssetController::class, 'remote']), 'system.assets');
     admin_audit_route(Route::get('assets', [Admin\AssetController::class, 'index']), 'system.assets');
     admin_audit_route(Route::delete('assets/{id?}', [Admin\AssetController::class, 'delete']), 'system.assets');
     admin_audit_route(Route::get('assets/picker', [Admin\AssetController::class, 'picker']), 'system.assets');
@@ -155,6 +156,7 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     admin_audit_route(Route::delete('setting-field/{id}', [Admin\SettingsController::class, 'deleteField']), 'system.config');
     admin_audit_route(Route::post('setting-field/{name}', [Admin\SettingsController::class, 'saveField']), 'system.config');
     admin_audit_route(Route::post('setting-config/{name}', [Admin\SettingsController::class, 'saveConfig']), 'system.config');
+    admin_audit_route(Route::post('cache/clear', [Admin\CacheController::class, 'clear']), 'system.config');
     
     // 本地服务
     admin_audit_route(Route::get('cloud/local/apps', [Admin\AddonController::class, 'local']), 'cloud.apps');

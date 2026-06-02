@@ -313,6 +313,13 @@ class SystemConfigService
         return $data;
     }
 
+    public static function refreshSystemConfigCache(): ?array
+    {
+        Cache::forget(self::CACHE_KEY);
+
+        return self::updateSystemConfigCache();
+    }
+
     private static function buildSectionKey(string $groupName, ?string $addonCode = null): string
     {
         $groupName = trim($groupName);

@@ -79,12 +79,13 @@ window.ptconfig = {
         popoverWidth: 360,
         emptyText: '暂无消息',
         showReadAll: true,
-        showViewAll: false,
-        viewAllPath: '',
+        showViewAll: true,
+        viewAllPath: '/_message/notifications',
         labels: {
             notice: '通知',
             message: '消息',
             todo: '待办',
+            alert: '告警',
         },
     },
 
@@ -116,6 +117,10 @@ window.ptconfig = {
     baseURL: undefined,
     // 为空时，运行时会按 {baseURL}/upload 自动推导上传地址
     uploadURL: undefined,
+    // 平台首页地址；为空时优先使用 baseURL 的域名根地址，再回退到当前访问地址的域名根地址
+    homeUrl: '',
+    // 是否禁用右上角平台首页快捷入口
+    homeUrlDisable: false,
     // 仅请求真实后端
     requestMode: 'http',
     // 云平台入口开关。显式配置为 true 时禁用；未配置或为 false 时，创始人可见。

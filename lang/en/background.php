@@ -27,6 +27,7 @@ return [
     'delete_config_items_first' => 'Please delete config items before deleting the group',
     'remote_driver_invalid' => 'Remote storage driver configuration is invalid',
     'remote_delete_failed' => 'Failed to delete the remote file',
+    'remote_download_failed' => 'Failed to download the remote file',
     'invalid_file' => 'Invalid file',
     'upload_storage_not_configured' => 'Upload storage plugin is not configured',
     'directory_not_writable' => 'Directory is not writable. Check permissions: :path',

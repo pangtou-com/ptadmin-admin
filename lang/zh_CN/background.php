@@ -27,6 +27,7 @@ return [
     'delete_config_items_first' => '请删除配置项后再删除分类',
     'remote_driver_invalid' => '远程存储驱动配置错误',
     'remote_delete_failed' => '远程文件删除失败',
+    'remote_download_failed' => '远程资源下载失败',
     'invalid_file' => '无效的文件',
     'upload_storage_not_configured' => '上传存储插件未配置',
     'directory_not_writable' => '目录不可写，请检查权限：:path',

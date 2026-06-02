@@ -1,9 +1,9 @@
 {
     "name": "console-build",
     "version": "0.1.12",
-    "backend_version": "1.1.12",
+    "backend_version": "1.1.21",
     "manifest_url": "https://cloud.api.pangtou.com/storage/starter/console-build.json",
     "archive_url": "https://cloud.api.pangtou.com/storage/starter/console-build/console-build-v0.1.12.zip",
-    "sha256": "ddb27f92a23376a2425f6e58a2d7094e9531dbdbf8f39bbde0561252282c9315",
-    "synced_at": "2026-05-27T08:53:46+00:00"
+    "sha256": "009765cac37726c8dfd3e254563bc3de8a1aee56cbe544935900d9ce12537d6b",
+    "synced_at": "2026-06-01T11:18:33+00:00"
 }

@@ -63,6 +63,12 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
      */
     public function getPreviewAttribute(): string
     {
+        if ($this->isRemoteDriver()) {
+            return Str::startsWith((string) ($this->attributes['mime'] ?? ''), 'image')
+                ? $this->getUrlAttribute()
+                : '';
+        }
+
         if ($this->isAddonDriver()) {
             return Str::startsWith((string) ($this->attributes['mime'] ?? ''), 'image')
                 ? $this->getUrlAttribute()
@@ -85,6 +91,10 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
 
     public function getUrlAttribute(): string
     {
+        if ($this->isRemoteDriver()) {
+            return (string) ($this->attributes['path'] ?? '');
+        }
+
         $addonDriver = $this->parseAddonDriver();
         if (null !== $addonDriver) {
             try {
@@ -114,6 +124,11 @@ class Asset extends \PTAdmin\Foundation\Database\Models\AbstractModel
     private function isAddonDriver(): bool
     {
         return Str::startsWith((string) ($this->attributes['driver'] ?? ''), 'addon:');
+    }
+
+    private function isRemoteDriver(): bool
+    {
+        return 'remote' === (string) ($this->attributes['driver'] ?? '');
     }
 
     /**

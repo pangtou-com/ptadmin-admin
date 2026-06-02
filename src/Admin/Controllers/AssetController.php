@@ -25,6 +25,7 @@ namespace PTAdmin\Admin\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use PTAdmin\Admin\Services\AssetService;
 use PTAdmin\Foundation\Response\AdminResponse;
 
@@ -64,5 +65,34 @@ class AssetController extends AbstractBackgroundController
     public function picker(Request $request): JsonResponse
     {
         return AdminResponse::pages($this->assetService->page($request->all()));
+    }
+
+    /**
+     * 通过远程 URL 创建资源记录。
+     */
+    public function remote(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'url' => 'required|url|max:255',
+            'is_local_save' => 'nullable|boolean',
+            'group' => 'nullable|string|max:50',
+        ], [
+            'url.required' => '请输入资源地址',
+            'url.url' => '资源地址格式不正确',
+            'url.max' => '资源地址最多255个字符',
+            'group.max' => '上传分组最多50个字符',
+        ]);
+
+        if ($validator->fails()) {
+            $message = collect($validator->errors()->toArray())
+                ->map(static function (array $item): string {
+                    return implode('|', $item);
+                })
+                ->implode('');
+
+            return AdminResponse::fail($message, 20000);
+        }
+
+        return AdminResponse::success($this->assetService->remote($validator->validated()));
     }
 }
