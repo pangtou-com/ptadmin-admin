@@ -17,7 +17,7 @@ return new class() extends Migration {
             $table->string('suffix', 20)->default('');
             $table->string('driver', 50)->default('local');
             $table->unsignedBigInteger('size')->default(0);
-            $table->string('path', 255)->default('');
+            $table->string('path', 500)->default('');
             $table->string('groups', 50)->default('default');
             $table->unsignedInteger('quote')->default(0);
             $table->unsignedInteger('created_at')->default(0);
