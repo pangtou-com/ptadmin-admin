@@ -69,8 +69,45 @@ class PTAdminConsoleCommandTest extends TestCase
     {
         $commands = \Illuminate\Support\Facades\Artisan::all();
 
+        self::assertArrayHasKey('admin:fix', $commands);
         self::assertArrayHasKey('admin:fe:pull', $commands);
         self::assertArrayHasKey('admin:fe:update', $commands);
+    }
+
+    public function test_admin_fix_command_repairs_configured_directory_and_file_permissions(): void
+    {
+        $directory = storage_path('app/ptadmin-fix-test');
+        $nested = $directory.\DIRECTORY_SEPARATOR.'nested';
+        $file = $nested.\DIRECTORY_SEPARATOR.'cache.php';
+
+        $this->deletePath($directory);
+        mkdir($nested, 0700, true);
+        file_put_contents($file, '<?php return [];');
+        chmod($directory, 0700);
+        chmod($nested, 0700);
+        chmod($file, 0600);
+
+        config()->set('ptadmin.fix_directory_mode', '0775');
+        config()->set('ptadmin.fix_file_mode', '0664');
+        config()->set('ptadmin.fix_paths', [
+            'test_runtime' => [
+                'path' => $directory,
+                'type' => 'directory',
+                'recursive' => true,
+            ],
+        ]);
+
+        $this->artisan('admin:fix')
+            ->expectsOutput('PTAdmin fix completed. fixed=3 skipped=0 failed=0')
+            ->assertExitCode(0);
+
+        clearstatcache(true, $directory);
+        clearstatcache(true, $nested);
+        clearstatcache(true, $file);
+
+        self::assertSame('775', substr(sprintf('%o', fileperms($directory)), -3));
+        self::assertSame('775', substr(sprintf('%o', fileperms($nested)), -3));
+        self::assertSame('664', substr(sprintf('%o', fileperms($file)), -3));
     }
 
     public function test_admin_frontend_build_service_can_publish_bundled_assets_to_current_storage(): void

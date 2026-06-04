@@ -25,6 +25,56 @@ return [
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),
     'addons_storage_path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),
     'upload_local_disk' => env('PTADMIN_UPLOAD_LOCAL_DISK', 'public'),
+    'fix_directory_mode' => env('PTADMIN_FIX_DIRECTORY_MODE', '0775'),
+    'fix_file_mode' => env('PTADMIN_FIX_FILE_MODE', '0664'),
+    'fix_paths' => [
+        'storage' => [
+            'path' => storage_path(),
+            'type' => 'directory',
+            'recursive' => true,
+            'create' => true,
+        ],
+        'bootstrap_cache' => [
+            'path' => base_path('bootstrap/cache'),
+            'type' => 'directory',
+            'recursive' => true,
+            'create' => true,
+        ],
+        'bootstrap_addons_cache' => [
+            'path' => base_path('bootstrap/cache/addons.php'),
+            'type' => 'file',
+        ],
+        'ptadmin_storage' => [
+            'path' => storage_path('app/ptadmin'),
+            'type' => 'directory',
+            'recursive' => true,
+            'create' => true,
+        ],
+        'admin_frontend_current' => [
+            'path' => storage_path('app/ptadmin/frontend/admin/current'),
+            'type' => 'directory',
+            'recursive' => true,
+            'create' => true,
+        ],
+        'admin_public' => [
+            'path' => public_path(env('PTADMIN_WEB_PREFIX', 'admin')),
+            'type' => 'directory',
+            'recursive' => true,
+            'create' => false,
+        ],
+        'addons_storage' => [
+            'path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),
+            'type' => 'directory',
+            'recursive' => true,
+            'create' => true,
+        ],
+        'project_frontend_storage' => [
+            'path' => env('PTADMIN_PROJECT_FRONTEND_STORAGE_PATH', storage_path('app/ptadmin/modules/'.env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'))),
+            'type' => 'directory',
+            'recursive' => true,
+            'create' => true,
+        ],
+    ],
 
     'notifications' => [
         'delivery' => [
