@@ -26,10 +26,6 @@
                     <span class="install-field-label">{{ __('ptadmin::install.fields.web_prefix') }}</span>
                     <input type="text" name="ptadmin_web_prefix" value="{!! \Illuminate\Support\Str::random(8) !!}" autocomplete="off" class="install-input">
                 </label>
-                <label class="install-field">
-                    <span class="install-field-label">{{ __('ptadmin::install.fields.api_prefix') }}</span>
-                    <input type="text" name="ptadmin_api_prefix" value="{!! \Illuminate\Support\Str::random(8) !!}" autocomplete="off" class="install-input">
-                </label>
             </div>
         </div>
 

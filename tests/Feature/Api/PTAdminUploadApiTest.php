@@ -29,7 +29,7 @@ class PTAdminUploadApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $uploadResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/upload', [
+            ->post('/ptadmin/upload', [
                 'group' => 'docs',
                 'file' => UploadedFile::fake()->createWithContent('manual.txt', 'same-file-content'),
             ]);
@@ -50,7 +50,7 @@ class PTAdminUploadApiTest extends TestCase
         self::assertSame(1, Asset::query()->count());
 
         $duplicateResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/upload', [
+            ->post('/ptadmin/upload', [
                 'group' => 'docs',
                 'file' => UploadedFile::fake()->createWithContent('copy.txt', 'same-file-content'),
             ]);
@@ -63,7 +63,7 @@ class PTAdminUploadApiTest extends TestCase
         self::assertSame(1, Asset::query()->count());
 
         $imageResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/upload', [
+            ->post('/ptadmin/upload', [
                 'group' => 'images',
                 'file' => UploadedFile::fake()->image('banner.png'),
             ]);
@@ -80,7 +80,7 @@ class PTAdminUploadApiTest extends TestCase
         self::assertStringStartsWith(url('/storage/'), (string) $imageResponse->json('data.preview'));
 
         $tinyResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/upload/tiny', [
+            ->post('/ptadmin/upload/tiny', [
                 'group' => 'editor',
                 'file' => UploadedFile::fake()->createWithContent('editor.txt', 'tiny-content'),
             ]);
@@ -98,7 +98,7 @@ class PTAdminUploadApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/upload', [
+            ->postJson('/ptadmin/upload', [
                 'group' => 'docs',
             ])
             ->assertStatus(200)
@@ -114,7 +114,7 @@ class PTAdminUploadApiTest extends TestCase
         $this->createAssetsTable();
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->post('/system/upload', [
+            ->post('/ptadmin/upload', [
                 'group' => 'docs',
                 'file' => UploadedFile::fake()->createWithContent('manual.txt', 'same-file-content'),
             ])
@@ -135,7 +135,7 @@ class PTAdminUploadApiTest extends TestCase
         $url = 'https://www.pangtou.com/storage/default/20241012/UEjSEcVq108t1feZSFZaUzsw0M54p6KBRnnS3XC4.png';
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/asset/remote', [
+            ->postJson('/ptadmin/asset/remote', [
                 'url' => $url,
                 'is_local_save' => false,
             ]);
@@ -177,7 +177,7 @@ class PTAdminUploadApiTest extends TestCase
         });
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/asset/remote', [
+            ->postJson('/ptadmin/asset/remote', [
                 'url' => $url,
                 'is_local_save' => true,
                 'group' => 'remote',
@@ -234,7 +234,7 @@ class PTAdminUploadApiTest extends TestCase
         });
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/upload', [
+            ->post('/ptadmin/upload', [
                 'group' => 'images',
                 'file' => UploadedFile::fake()->createWithContent('banner.png', 'oss-content'),
             ]);
@@ -265,7 +265,7 @@ class PTAdminUploadApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/upload', [
+            ->post('/ptadmin/upload', [
                 'group' => 'docs',
                 'file' => UploadedFile::fake()->createWithContent('manual.txt', 'public-only-content'),
             ]);
@@ -297,7 +297,7 @@ class PTAdminUploadApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/upload', [
+            ->post('/ptadmin/upload', [
                 'group' => 'images',
                 'file' => UploadedFile::fake()->image('banner.png'),
             ]);
@@ -326,7 +326,7 @@ class PTAdminUploadApiTest extends TestCase
         $this->createAssetsTable();
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/assets')
+            ->getJson('/ptadmin/assets')
             ->assertOk()
             ->assertJson([
                 'code' => 419,
@@ -361,7 +361,7 @@ class PTAdminUploadApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $listResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/assets?groups=docs');
+            ->getJson('/ptadmin/assets?groups=docs');
 
         $listResponse->assertOk()->assertJson([
             'code' => 0,
@@ -375,7 +375,7 @@ class PTAdminUploadApiTest extends TestCase
         self::assertSame('', $listResponse->json('data.results.0.preview'));
 
         $pickerResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/assets/picker?groups=docs');
+            ->getJson('/ptadmin/assets/picker?groups=docs');
 
         $pickerResponse->assertOk()->assertJson([
             'code' => 0,
@@ -385,7 +385,7 @@ class PTAdminUploadApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/assets/'.$document->id)
+            ->deleteJson('/ptadmin/assets/'.$document->id)
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -417,7 +417,7 @@ class PTAdminUploadApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/assets?groups=images');
+            ->getJson('/ptadmin/assets?groups=images');
 
         $response->assertOk()->assertJson([
             'code' => 0,

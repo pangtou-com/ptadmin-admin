@@ -72,7 +72,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard');
+            ->getJson('/ptadmin/dashboard');
 
         $response->assertOk()->assertJson(array(
             'code' => 0,
@@ -83,7 +83,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
                     'frontend_version' => '0.1.12',
                     'frontend_latest_version' => '0.1.12',
                     'frontend_update_required' => false,
-                    'backend_version' => '1.1.18',
+                    'backend_version' => '1.1.26',
                     'backend_latest_version' => '1.1.8',
                     'backend_update_required' => false,
                     'update_required' => false,
@@ -166,12 +166,12 @@ class PTAdminDashboardComposeApiTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard');
+            ->getJson('/ptadmin/dashboard');
 
         $response->assertOk()
             ->assertJsonPath('data.summary.addon_update_pending', true)
             ->assertJsonPath('data.summary.frontend_version', '0.1.12')
-            ->assertJsonPath('data.summary.backend_version', '1.1.18');
+            ->assertJsonPath('data.summary.backend_version', '1.1.26');
     }
 
     public function test_dashboard_console_summary_marks_update_required_when_platform_has_newer_frontend(): void
@@ -202,7 +202,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard');
+            ->getJson('/ptadmin/dashboard');
 
         $response->assertOk()
             ->assertJsonPath('data.summary.frontend_version', '0.1.12')
@@ -281,7 +281,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
         ));
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard');
+            ->getJson('/ptadmin/dashboard');
 
         $response->assertOk()->assertJson(array(
             'code' => 0,
@@ -367,7 +367,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
         ), 23);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard?tenant_id=23');
+            ->getJson('/ptadmin/dashboard?tenant_id=23');
 
         $response->assertOk()->assertJson(array(
             'code' => 0,

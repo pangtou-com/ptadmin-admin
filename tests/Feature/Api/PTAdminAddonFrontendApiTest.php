@@ -36,7 +36,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         Addon::swap(new FakeAddonFrontendManager([]));
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/auth/frontends')
+            ->getJson('/ptadmin/auth/frontends')
             ->assertOk()
             ->assertJson([
                 'code' => 419,
@@ -46,7 +46,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $token = $this->issueFrontendToken();
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends')
+            ->getJson('/ptadmin/auth/frontends')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -158,7 +158,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $token = $this->issueFrontendToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends');
+            ->getJson('/ptadmin/auth/frontends');
 
         $response->assertOk()
             ->assertJson([
@@ -261,7 +261,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $token = $this->issueFrontendToken();
 
         $first = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends');
+            ->getJson('/ptadmin/auth/frontends');
 
         $first->assertOk();
         self::assertSame('内容管理', $first->json('data.0.title'));
@@ -296,7 +296,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         ]));
 
         $second = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends');
+            ->getJson('/ptadmin/auth/frontends');
 
         $second->assertOk();
         self::assertSame('内容管理', $second->json('data.0.title'));
@@ -337,7 +337,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $token = $this->issueFrontendToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends');
+            ->getJson('/ptadmin/auth/frontends');
 
         $response->assertOk()->assertJson([
             'code' => 0,
@@ -407,7 +407,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $token = $this->issueFrontendToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends');
+            ->getJson('/ptadmin/auth/frontends');
 
         $response->assertOk();
         self::assertSame('develop-frontend', $response->json('data.0.key'));
@@ -477,7 +477,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $token = $this->issueFrontendToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends');
+            ->getJson('/ptadmin/auth/frontends');
 
         $response->assertOk();
         self::assertSame('deploy-root', $response->json('data.0.key'));
@@ -529,7 +529,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $token = $this->issueFrontendToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends');
+            ->getJson('/ptadmin/auth/frontends');
 
         $response->assertOk();
         self::assertSame('https://demo.example.com/admin/modules/cms/dist/assets/remoteEntry.js', $response->json('data.0.entry.federation.entry'));
@@ -565,7 +565,7 @@ class PTAdminAddonFrontendApiTest extends TestCase
         $token = $this->issueFrontendToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/frontends');
+            ->getJson('/ptadmin/auth/frontends');
 
         $response->assertOk()
             ->assertJson([

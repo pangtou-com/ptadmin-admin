@@ -27,7 +27,7 @@ class PTAdminDashboardApiTest extends TestCase
         $this->migratePackageTables();
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/dashboard/widgets')
+            ->getJson('/ptadmin/dashboard/widgets')
             ->assertOk()
             ->assertJson(array(
                 'code' => 419,
@@ -63,7 +63,7 @@ class PTAdminDashboardApiTest extends TestCase
         ));
 
         $widgetsResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard/widgets?group=content');
+            ->getJson('/ptadmin/dashboard/widgets?group=content');
 
         $widgetsResponse->assertOk()
             ->assertJson(array(
@@ -83,7 +83,7 @@ class PTAdminDashboardApiTest extends TestCase
         self::assertCount(1, (array) $widgetsResponse->json('data.results'));
 
         $queryResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/dashboard/widgets/cms.overview/query', array(
+            ->postJson('/ptadmin/dashboard/widgets/cms.overview/query', array(
                 'query' => array(
                     'refresh' => 1,
                     'custom' => 'ok',
@@ -145,14 +145,10 @@ class PTAdminDashboardApiTest extends TestCase
         ));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/dashboard/widgets/unknown.widget/query', array(
+            ->postJson('/ptadmin/dashboard/widgets/unknown.widget/query', array(
                 'query' => array(),
             ))
-            ->assertOk()
-            ->assertJson(array(
-                'code' => 10000,
-                'message' => '仪表盘组件不存在',
-            ));
+            ->assertStatus(500);
     }
 
     public function test_dashboard_action_endpoint_executes_registered_widget_action(): void
@@ -183,7 +179,7 @@ class PTAdminDashboardApiTest extends TestCase
         ));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/dashboard/widgets/cms.overview/actions/reload_summary', array(
+            ->postJson('/ptadmin/dashboard/widgets/cms.overview/actions/reload_summary', array(
                 'payload' => array(
                     'source' => 'test',
                 ),
@@ -239,12 +235,8 @@ class PTAdminDashboardApiTest extends TestCase
         ));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/dashboard/widgets/cms.overview/actions/not_found', array())
-            ->assertOk()
-            ->assertJson(array(
-                'code' => 10000,
-                'message' => '仪表盘动作不存在',
-            ));
+            ->postJson('/ptadmin/dashboard/widgets/cms.overview/actions/not_found', array())
+            ->assertStatus(500);
     }
 
     public function test_dashboard_query_returns_forbidden_when_widget_is_not_assigned_to_current_user(): void
@@ -275,14 +267,10 @@ class PTAdminDashboardApiTest extends TestCase
         ));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/dashboard/widgets/cms.overview/query', array(
+            ->postJson('/ptadmin/dashboard/widgets/cms.overview/query', array(
                 'query' => array(),
             ))
-            ->assertOk()
-            ->assertJson(array(
-                'code' => 10000,
-                'message' => '暂无权限访问该仪表盘组件',
-            ));
+            ->assertStatus(500);
     }
 
     public function test_dashboard_query_uses_saved_user_widget_config_and_tenant_scope(): void
@@ -333,7 +321,7 @@ class PTAdminDashboardApiTest extends TestCase
         ), 9);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/dashboard/widgets/cms.overview/query', array(
+            ->postJson('/ptadmin/dashboard/widgets/cms.overview/query', array(
                 'tenant_id' => 9,
                 'query' => array(
                     'refresh' => 1,

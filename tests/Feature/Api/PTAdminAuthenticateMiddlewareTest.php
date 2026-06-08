@@ -15,7 +15,7 @@ class PTAdminAuthenticateMiddlewareTest extends TestCase
         $this->migratePackageTables();
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/message/unread')
+            ->getJson('/ptadmin/message/unread')
             ->assertOk()
             ->assertJson([
                 'code' => 419,
@@ -29,17 +29,17 @@ class PTAdminAuthenticateMiddlewareTest extends TestCase
         $this->createOperationRecordsTable();
         $this->migratePackageTables();
 
-        $this->get('/system/message/unread')
-            ->assertRedirect('/system/login?redirect=%2Fsystem%2Fmessage%2Funread');
+        $this->get('/ptadmin/message/unread')
+            ->assertRedirect('/ptadmin/login?redirect=%2Fptadmin%2Fmessage%2Funread');
     }
 
     public function test_login_notice_page_can_be_opened_by_get_request(): void
     {
-        $response = $this->get('/system/login');
+        $response = $this->get('/ptadmin/login');
 
         $response->assertOk();
         $response->assertSee('需要登录后台');
         $response->assertSee('/admin');
-        $response->assertSee('/system/login');
+        $response->assertSee('/ptadmin/login');
     }
 }

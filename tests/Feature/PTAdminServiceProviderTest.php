@@ -20,7 +20,7 @@ class PTAdminServiceProviderTest extends TestCase
     public function test_provider_registers_config_routes_and_middlewares(): void
     {
         self::assertSame('api', config('ptadmin.guard'));
-        self::assertSame('system', config('ptadmin.api_prefix'));
+        self::assertSame('ptadmin', config('ptadmin.api_prefix'));
         self::assertSame('admin', config('ptadmin.web_prefix'));
 
         $middleware = app(Router::class)->getMiddleware();
@@ -30,7 +30,7 @@ class PTAdminServiceProviderTest extends TestCase
         self::assertSame(AuthorizationMiddleware::class, $middleware['ptadmin.resource'] ?? null);
         self::assertSame(OperationRecordMiddleware::class, $middleware['ptadmin.operation.record'] ?? null);
         self::assertSame('操作成功', __('ptadmin::common.success'));
-        self::assertSame('/system/login', route('admin_login', [], false));
+        self::assertSame('/ptadmin/login', route('admin_login', [], false));
         self::assertSame('/admin', route('ptadmin.web.index', [], false));
     }
 

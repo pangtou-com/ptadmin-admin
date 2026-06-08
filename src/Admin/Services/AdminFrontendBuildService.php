@@ -80,7 +80,7 @@ final class AdminFrontendBuildService
         }
 
         $webPrefix = $this->normalizePrefix((string) ($options['web_prefix'] ?? 'admin'));
-        $apiPrefix = $this->normalizePrefix((string) ($options['api_prefix'] ?? 'system'));
+        $apiPrefix = $this->normalizePrefix((string) ($options['api_prefix'] ?? 'ptadmin'));
         $appUrl = rtrim((string) ($options['app_url'] ?? ''), '/');
         $appName = (string) ($options['app_name'] ?? 'PTAdmin');
 
@@ -134,7 +134,7 @@ final class AdminFrontendBuildService
                 $this->writeRuntimeConfig($currentConfigPath, [
                     'app_name' => (string) config('app.name', 'PTAdmin'),
                     'app_url' => (string) config('app.url', ''),
-                    'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : (string) config('ptadmin.api_prefix', config('app.prefix', 'system')),
+                    'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : 'ptadmin',
                     'web_prefix' => \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'),
                     'version' => (string) ($lock['version'] ?? 'bundled'),
                 ]);

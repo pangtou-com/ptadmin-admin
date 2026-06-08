@@ -126,7 +126,7 @@ class Complete
         $result = (new AdminFrontendBuildService())->installBundled(dirname(__DIR__, 5), base_path(), [
             'app_name' => (string) ($data['app_name'] ?? config('app.name', 'PTAdmin')),
             'app_url' => (string) ($data['app_url'] ?? config('app.url', '')),
-            'api_prefix' => (string) ($data['ptadmin_api_prefix'] ?? admin_api_prefix()),
+            'api_prefix' => admin_api_prefix(),
             'web_prefix' => (string) ($data['ptadmin_web_prefix'] ?? admin_web_prefix()),
         ]);
 

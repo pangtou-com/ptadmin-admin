@@ -92,7 +92,6 @@ class PTAdminInstallCompleteTest extends TestCase
             'app_name' => 'PTAdmin',
             'app_url' => 'http://example.test',
             'ptadmin_web_prefix' => 'admin-web',
-            'ptadmin_api_prefix' => 'admin-api',
             '__install_env_path' => $envPath,
             '__install_env_content' => "APP_NAME=PTAdmin\nAPP_ENV=local\n",
         ], function () use (&$nextCalled): void {
@@ -107,7 +106,7 @@ class PTAdminInstallCompleteTest extends TestCase
         $frontendVersion = (string) ($lock['version'] ?? 'bundled');
         self::assertFileExists(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/index.html'));
         self::assertTrue(is_link(public_path('admin-web')) || is_dir(public_path('admin-web')));
-        self::assertStringContainsString('admin-api', (string) file_get_contents(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/ptconfig.js')));
+        self::assertStringContainsString('/ptadmin/', (string) file_get_contents(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/ptconfig.js')));
         self::assertSame("APP_NAME=PTAdmin\nAPP_ENV=local\n", file_get_contents($envPath));
         self::assertStringContainsString('安装成功', $output);
         self::assertStringContainsString('保存配置文件', $output);

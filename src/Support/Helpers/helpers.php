@@ -42,7 +42,7 @@ if (!function_exists('admin_api_prefix')) {
      */
     function admin_api_prefix(): string
     {
-        return trim((string) config('ptadmin.api_prefix', config('ptadmin.route_prefix', config('app.prefix', 'system'))), '/');
+        return 'ptadmin';
     }
 }
 

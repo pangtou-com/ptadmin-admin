@@ -19,10 +19,10 @@ class PTAdminPackageBootstrapTest extends TestCase
     public function test_package_registers_config_routes_translations_and_middlewares(): void
     {
         self::assertSame('api', config('ptadmin.guard'));
-        self::assertSame('system', config('ptadmin.api_prefix'));
+        self::assertSame('ptadmin', config('ptadmin.api_prefix'));
         self::assertSame('admin', config('ptadmin.web_prefix'));
-        self::assertSame('system', admin_route_prefix());
-        self::assertSame('system', admin_api_prefix());
+        self::assertSame('ptadmin', admin_route_prefix());
+        self::assertSame('ptadmin', admin_api_prefix());
         self::assertSame('admin', admin_web_prefix());
         self::assertSame('vendor/ptadmin/admin', admin_web_asset_path());
 
@@ -35,7 +35,7 @@ class PTAdminPackageBootstrapTest extends TestCase
 
         self::assertSame('操作成功', __('ptadmin::common.success'));
         self::assertSame('登录失败，账户密码错误', __('ptadmin::background.login.fail'));
-        self::assertSame('/system/login', route('admin_login', [], false));
+        self::assertSame('/ptadmin/login', route('admin_login', [], false));
         self::assertSame('/admin', route('ptadmin.web.index', [], false));
         self::assertSame('/admin/ptconfig.js', route('ptadmin.web.config', [], false));
     }

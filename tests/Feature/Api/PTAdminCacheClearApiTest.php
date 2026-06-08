@@ -60,7 +60,7 @@ class PTAdminCacheClearApiTest extends TestCase
         ]));
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/cache/clear');
+            ->postJson('/ptadmin/cache/clear');
 
         $response->assertOk()
             ->assertJsonPath('code', 0)

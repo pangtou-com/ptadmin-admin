@@ -10,7 +10,7 @@ use PTAdmin\Admin\Services\Auth\Resolvers\WorkflowGuardResolver;
 
 return [
     'guard' => env('PTADMIN_GUARD', config('auth.app_guard_name', 'api')),
-    'api_prefix' => env('PTADMIN_API_PREFIX', env('PTADMIN_ROUTE_PREFIX', config('app.prefix', 'system'))),
+    'api_prefix' => 'ptadmin',
     'web_prefix' => env('PTADMIN_WEB_PREFIX', 'admin'),
     'web_asset_path' => env('PTADMIN_WEB_ASSET_PATH', 'vendor/ptadmin/admin'),
     'module_manifest_cache_ttl' => (int) env('PTADMIN_MODULE_MANIFEST_CACHE_TTL', 300),
@@ -21,7 +21,7 @@ return [
     'project_frontend_storage_path' => env('PTADMIN_PROJECT_FRONTEND_STORAGE_PATH', storage_path('app/ptadmin/modules/'.env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'))),
     'platform_snapshot_path' => env('PTADMIN_PLATFORM_SNAPSHOT_PATH', storage_path('app/ptadmin/platform/snapshot.json')),
     'platform_snapshot_ttl' => (int) env('PTADMIN_PLATFORM_SNAPSHOT_TTL', 86400),
-    'route_prefix' => env('PTADMIN_API_PREFIX', env('PTADMIN_ROUTE_PREFIX', config('app.prefix', 'system'))),
+    'route_prefix' => 'ptadmin',
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),
     'addons_storage_path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),
     'upload_local_disk' => env('PTADMIN_UPLOAD_LOCAL_DISK', 'public'),

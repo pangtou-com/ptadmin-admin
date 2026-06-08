@@ -37,14 +37,14 @@ class PTAdminAuthorizationApiTest extends TestCase
     public function test_authorization_initialization_routes_are_not_exposed_as_api_endpoints(): void
     {
         $this->withHeaders($this->jsonApiHeaders())
-            ->postJson('/system/auth/bootstrap-founder', [
+            ->postJson('/ptadmin/auth/bootstrap-founder', [
                 'username' => 'root',
                 'password' => 'secret123',
             ])
             ->assertNotFound();
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->postJson('/system/auth/bootstrap', [
+            ->postJson('/ptadmin/auth/bootstrap', [
                 'role_code' => 'super_admin',
             ])
             ->assertNotFound();
@@ -56,7 +56,7 @@ class PTAdminAuthorizationApiTest extends TestCase
         $this->migratePackageTables();
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/auth/status')
+            ->getJson('/ptadmin/auth/status')
             ->assertOk()
             ->assertJson([
                 'code' => 419,
@@ -80,7 +80,7 @@ class PTAdminAuthorizationApiTest extends TestCase
 
         $loginResponse = $this->withHeaders(array_merge($this->jsonApiHeaders(), [
             'User-Agent' => 'PTAdminTest/1.0',
-        ]))->postJson('/system/login', [
+        ]))->postJson('/ptadmin/login', [
             'username' => 'founder',
             'password' => 'secret123',
         ]);
@@ -93,7 +93,7 @@ class PTAdminAuthorizationApiTest extends TestCase
         self::assertNotSame('', $token);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/status')
+            ->getJson('/ptadmin/auth/status')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -105,7 +105,7 @@ class PTAdminAuthorizationApiTest extends TestCase
             ]);
 
         $resourceResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/resources');
+            ->getJson('/ptadmin/auth/resources');
 
         $resourceResponse->assertOk()->assertJson([
             'code' => 0,
@@ -116,11 +116,10 @@ class PTAdminAuthorizationApiTest extends TestCase
 
         $resources = (array) $resourceResponse->json('data.resources');
         self::assertGreaterThan(0, count($resources));
-        self::assertSame('console', $resources[0]['name'] ?? null);
-        self::assertSame('/dashboard', $resources[0]['route'] ?? null);
-        self::assertSame('dashboard.page.home', $resources[0]['page_key'] ?? null);
-        self::assertSame('HomeFilled', $resources[0]['icon'] ?? null);
-        self::assertSame(1, $resources[0]['keep_alive'] ?? null);
+        self::assertSame('system', $resources[0]['name'] ?? null);
+        self::assertSame('系统管理', $resources[0]['title'] ?? null);
+        self::assertSame('Setting', $resources[0]['icon'] ?? null);
+        self::assertSame(0, data_get($resources[0], 'meta_json.keep_alive'));
         self::assertContains('system', array_column($resources, 'name'));
         $systemNode = collect($resources)->firstWhere('name', 'system');
         self::assertIsArray($systemNode);
@@ -143,7 +142,7 @@ class PTAdminAuthorizationApiTest extends TestCase
 
         $this->withHeaders(array_merge($this->jsonApiHeaders(), [
             'User-Agent' => 'PTAdminTest/1.0',
-        ]))->postJson('/system/login', [
+        ]))->postJson('/ptadmin/login', [
             'username' => 'ghost',
             'password' => 'secret123',
         ]);
@@ -237,7 +236,7 @@ class PTAdminAuthorizationApiTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/resources');
+            ->getJson('/ptadmin/auth/resources');
 
         $response->assertOk()->assertJson([
             'code' => 0,
@@ -339,7 +338,7 @@ class PTAdminAuthorizationApiTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/resources');
+            ->getJson('/ptadmin/auth/resources');
 
         $response->assertOk()->assertJson([
             'code' => 0,
@@ -402,7 +401,7 @@ class PTAdminAuthorizationApiTest extends TestCase
         $parent->update(['status' => 0]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/resources');
+            ->getJson('/ptadmin/auth/resources');
 
         $response->assertOk()->assertJson([
             'code' => 0,
@@ -482,7 +481,7 @@ class PTAdminAuthorizationApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/auth/resources');
+            ->getJson('/ptadmin/auth/resources');
 
         $response->assertOk()->assertJson([
             'code' => 0,

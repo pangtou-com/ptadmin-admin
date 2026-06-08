@@ -55,7 +55,7 @@ class PTAdminNotificationApiTest extends TestCase
         ]);
 
         $unread = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/message/unread');
+            ->getJson('/ptadmin/message/unread');
 
         $unread->assertOk()->assertJson([
             'code' => 0,
@@ -71,7 +71,7 @@ class PTAdminNotificationApiTest extends TestCase
         ]);
 
         $list = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/message?'.http_build_query([
+            ->getJson('/ptadmin/message?'.http_build_query([
                 'keyword' => '文章',
                 'limit' => 10,
             ]));
@@ -97,7 +97,7 @@ class PTAdminNotificationApiTest extends TestCase
         ]);
 
         $detail = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/message/'.$message['id']);
+            ->getJson('/ptadmin/message/'.$message['id']);
 
         $detail->assertOk()->assertJson([
             'code' => 0,
@@ -132,30 +132,30 @@ class PTAdminNotificationApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/message/'.$first['id'].'/read')
+            ->putJson('/ptadmin/message/'.$first['id'].'/read')
             ->assertOk()
             ->assertJson(['code' => 0]);
 
         self::assertNotNull(NotificationReceipt::query()->where('notification_id', $first['id'])->value('read_at'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/message/unread')
+            ->getJson('/ptadmin/message/unread')
             ->assertOk()
             ->assertJsonPath('data.total', 1)
             ->assertJsonPath('data.levels.error', 1);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/message/read')
+            ->putJson('/ptadmin/message/read')
             ->assertOk()
             ->assertJsonPath('data.updated', 1);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/message/'.$second['id'])
+            ->deleteJson('/ptadmin/message/'.$second['id'])
             ->assertOk()
             ->assertJson(['code' => 0]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/message')
+            ->getJson('/ptadmin/message')
             ->assertOk()
             ->assertJsonPath('data.total', 1);
     }
@@ -188,11 +188,11 @@ class PTAdminNotificationApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/message/'.$notice['id'].'/read')
+            ->putJson('/ptadmin/message/'.$notice['id'].'/read')
             ->assertOk();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/message/categories');
+            ->getJson('/ptadmin/message/categories');
 
         $response->assertOk()->assertJson([
             'code' => 0,

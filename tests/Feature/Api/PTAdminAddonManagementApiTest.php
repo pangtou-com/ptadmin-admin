@@ -72,7 +72,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $listResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/cloud/local/apps');
+            ->getJson('/ptadmin/cloud/local/apps');
 
         $listResponse->assertOk()->assertJson([
             'code' => 0,
@@ -96,7 +96,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         ]);
 
         $statusResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/addons/cms/status');
+            ->getJson('/ptadmin/addons/cms/status');
 
         $statusResponse->assertOk()->assertJson([
             'code' => 0,
@@ -108,7 +108,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         ]);
 
         $configResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/addons/cms/config');
+            ->getJson('/ptadmin/addons/cms/config');
 
         $configResponse->assertOk()->assertJson([
             'code' => 0,
@@ -116,7 +116,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/addons/cms/config', [
+            ->putJson('/ptadmin/addons/cms/config', [
                 'values' => [
                     'admin_route_prefix' => 'cms-admin',
                 ],
@@ -125,7 +125,7 @@ class PTAdminAddonManagementApiTest extends TestCase
             ->assertJsonPath('message', '插件[cms]未提供通用配置');
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/addons/cms/config')
+            ->getJson('/ptadmin/addons/cms/config')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -184,13 +184,13 @@ class PTAdminAddonManagementApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/cloud/local/apps')
+            ->getJson('/ptadmin/cloud/local/apps')
             ->assertOk()
             ->assertJsonPath('data.results.0.code', 'shop')
             ->assertJsonPath('data.results.0.configurable', 0);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/addons/shop/status')
+            ->getJson('/ptadmin/addons/shop/status')
             ->assertOk()
             ->assertJsonPath('data.code', 'shop')
             ->assertJsonPath('data.configurable', 0);
@@ -223,13 +223,13 @@ class PTAdminAddonManagementApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/cloud/local/apps')
+            ->getJson('/ptadmin/cloud/local/apps')
             ->assertOk()
             ->assertJsonPath('data.results.0.code', 'toolbox')
             ->assertJsonPath('data.results.0.configurable', 0);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/addons/toolbox/status')
+            ->getJson('/ptadmin/addons/toolbox/status')
             ->assertOk()
             ->assertJsonPath('data.code', 'toolbox')
             ->assertJsonPath('data.configurable', 0);
@@ -272,7 +272,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         $this->app->instance(AddonPlatformService::class, $service);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/addons/install/cloud', [
+            ->post('/ptadmin/addons/install/cloud', [
                 'code' => 'cms',
                 'addon_version_id' => 12,
                 'force' => true,
@@ -331,7 +331,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         $this->app->instance(AddonPlatformService::class, $service);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/addons/init', [
+            ->post('/ptadmin/addons/init', [
                 'code' => 'cms',
                 'title' => 'CMS Demo',
                 'force' => true,
@@ -390,7 +390,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         $this->app->instance(AddonPlatformService::class, $service);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->post('/system/addons/cms/frontend/pull', [
+            ->post('/ptadmin/addons/cms/frontend/pull', [
                 'template' => 'vue3-admin',
                 'ref' => 'main',
                 'source' => 'gitee',
@@ -437,7 +437,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         $this->app->instance(AddonPlatformService::class, $service);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/addons/cms/resources/sync')
+            ->postJson('/ptadmin/addons/cms/resources/sync')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -497,7 +497,7 @@ class PTAdminAddonManagementApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/addon-uninstall/cms')
+            ->deleteJson('/ptadmin/addon-uninstall/cms')
             ->assertOk()
             ->assertJsonPath('data.code', 'cms')
             ->assertJsonPath('data.uninstalled', true);

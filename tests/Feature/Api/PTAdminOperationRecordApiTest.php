@@ -18,7 +18,7 @@ class PTAdminOperationRecordApiTest extends TestCase
         $this->migratePackageTables();
 
         $this->withHeaders($this->jsonApiHeaders())
-            ->getJson('/system/operations')
+            ->getJson('/ptadmin/operations')
             ->assertOk()
             ->assertJson([
                 'code' => 419,
@@ -46,7 +46,7 @@ class PTAdminOperationRecordApiTest extends TestCase
             'nickname' => $founder->nickname,
             'ip' => '127.0.0.1',
             'user_agent' => 'PHPUnit',
-            'url' => '/system/roles',
+            'url' => '/ptadmin/roles',
             'title' => '角色管理',
             'resource_name' => 'system.role',
             'method' => 'GET',
@@ -68,7 +68,7 @@ class PTAdminOperationRecordApiTest extends TestCase
             'nickname' => $founder->nickname,
             'ip' => '127.0.0.2',
             'user_agent' => 'PHPUnit',
-            'url' => '/system/resources',
+            'url' => '/ptadmin/resources',
             'title' => '资源管理',
             'resource_name' => 'system.resources',
             'method' => 'POST',
@@ -85,7 +85,7 @@ class PTAdminOperationRecordApiTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/operations?'.http_build_query([
+            ->getJson('/ptadmin/operations?'.http_build_query([
                 'filters' => [
                     ['field' => 'status', 'operator' => 'eq', 'value' => 'success'],
                 ],
@@ -103,7 +103,7 @@ class PTAdminOperationRecordApiTest extends TestCase
 
         self::assertCount(1, (array) $response->json('data.results'));
         self::assertSame('founder_operation_list', $response->json('data.results.0.admin_username'));
-        self::assertSame('/system/resources', $response->json('data.results.0.url'));
+        self::assertSame('/ptadmin/resources', $response->json('data.results.0.url'));
         self::assertSame('POST', $response->json('data.results.0.method'));
         self::assertSame('system.resources', $response->json('data.results.0.resource_name'));
         self::assertSame('资源管理', $response->json('data.results.0.title'));
@@ -130,7 +130,7 @@ class PTAdminOperationRecordApiTest extends TestCase
             'nickname' => $founder->nickname,
             'ip' => '127.0.0.10',
             'user_agent' => 'PHPUnit',
-            'url' => '/system/admins/10',
+            'url' => '/ptadmin/admins/10',
             'title' => '账号详情',
             'resource_name' => 'system.admins',
             'method' => 'PUT',
@@ -147,7 +147,7 @@ class PTAdminOperationRecordApiTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/operations/'.$record->id);
+            ->getJson('/ptadmin/operations/'.$record->id);
 
         $response->assertOk()->assertJson([
             'code' => 0,
@@ -156,7 +156,7 @@ class PTAdminOperationRecordApiTest extends TestCase
                 'admin_id' => $founder->id,
                 'admin_username' => 'founder_operation_details',
                 'nickname' => $founder->nickname,
-                'url' => '/system/admins/10',
+                'url' => '/ptadmin/admins/10',
                 'title' => '账号详情',
                 'resource_name' => 'system.admins',
                 'method' => 'PUT',
@@ -176,7 +176,7 @@ class PTAdminOperationRecordApiTest extends TestCase
     {
         $this->migratePackageTables();
 
-        $request = Request::create('/system/operations', 'GET');
+        $request = Request::create('/ptadmin/operations', 'GET');
         $route = app('router')->getRoutes()->match($request);
         $service = new OperationRecordService();
         $method = new \ReflectionMethod(OperationRecordService::class, 'resolveResourceMeta');

@@ -38,7 +38,7 @@ class PTAdminSystemApiTest extends TestCase
             'sort' => 2,
         ]);
 
-        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/admins', [
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/ptadmin/admins', [
             'username' => 'operator',
             'nickname' => 'Operator',
             'password' => 'secret123',
@@ -58,7 +58,7 @@ class PTAdminSystemApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/admins?'.http_build_query([
+            ->getJson('/ptadmin/admins?'.http_build_query([
                 'filters' => [
                     ['field' => 'status', 'operator' => '=', 'value' => 1],
                     ['field' => 'username', 'operator' => 'like', 'value' => '%oper%'],
@@ -95,7 +95,7 @@ class PTAdminSystemApiTest extends TestCase
             ]);
 
         $detailResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/admins/'.$admin->id);
+            ->getJson('/ptadmin/admins/'.$admin->id);
 
         $detailResponse->assertOk()->assertJson([
             'code' => 0,
@@ -108,7 +108,7 @@ class PTAdminSystemApiTest extends TestCase
         ]);
         self::assertContains($roleA->id, (array) $detailResponse->json('data.role_ids'));
 
-        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/admins/'.$admin->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/ptadmin/admins/'.$admin->id, [
             'username' => 'operator',
             'nickname' => 'Operator Updated',
             'role_id' => $roleB->id,
@@ -121,10 +121,10 @@ class PTAdminSystemApiTest extends TestCase
         self::assertSame('Operator Updated', $admin->nickname);
 
         $updatedDetailResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/admins/'.$admin->id);
+            ->getJson('/ptadmin/admins/'.$admin->id);
         self::assertSame([$roleB->id], array_values((array) $updatedDetailResponse->json('data.role_ids')));
 
-        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/admins-role/'.$admin->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/ptadmin/admins-role/'.$admin->id, [
             'role_id' => [$roleA->id, $roleB->id],
         ])->assertOk()->assertJson([
             'code' => 0,
@@ -136,7 +136,7 @@ class PTAdminSystemApiTest extends TestCase
         );
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/admins-status/'.$admin->id.'?value=0')
+            ->putJson('/ptadmin/admins-status/'.$admin->id.'?value=0')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -145,7 +145,7 @@ class PTAdminSystemApiTest extends TestCase
         self::assertSame(0, (int) $admin->fresh()->status);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/system/admins/'.$admin->id)
+            ->deleteJson('/ptadmin/admins/'.$admin->id)
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -177,7 +177,7 @@ class PTAdminSystemApiTest extends TestCase
         $token = $this->issueAdminToken($founder);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/admins/'.$member->id, [
+            ->putJson('/ptadmin/admins/'.$member->id, [
                 'username' => 'member_login_at_edit',
                 'nickname' => 'After Update',
                 'login_at' => '2026-04-29 14:27:59',
@@ -209,7 +209,7 @@ class PTAdminSystemApiTest extends TestCase
         $token = $this->issueAdminToken($founder);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/admins?'.http_build_query([
+            ->getJson('/ptadmin/admins?'.http_build_query([
                 'filters' => [
                     ['field' => 'id', 'operator' => '=', 'value' => $founder->id],
                 ],

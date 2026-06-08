@@ -107,11 +107,14 @@ class ConfigEnv
 
                 continue;
             }
-            if (\in_array($key, ['PTADMIN_WEB_PREFIX', 'PTADMIN_API_PREFIX'], true)) {
+            if ('PTADMIN_WEB_PREFIX' === $key) {
                 if (!isset($data[$k]) || blank($data[$k])) {
                     $data[$k] = Str::random(8);
                 }
                 $data[$k] = $this->normalizePrefix((string) $data[$k]);
+            }
+            if ('PTADMIN_API_PREFIX' === $key) {
+                $data[$k] = 'ptadmin';
             }
             $value = $data[$k] ?? $value;
             $results[] = "{$key}={$value}";

@@ -74,7 +74,7 @@ return [
 
         '',
         '后台接口路径',
-        'PTADMIN_API_PREFIX' => '',
+        'PTADMIN_API_PREFIX' => 'ptadmin',
 
         '',
         '日志配置',
@@ -115,8 +115,7 @@ return [
             'app_url' => 'required',
             'username' => 'required|max:20',
             'password' => 'required|min:6|max:255',
-            'ptadmin_web_prefix' => ['nullable', 'string', 'max:50', 'different:ptadmin_api_prefix', 'regex:/^[A-Za-z0-9][A-Za-z0-9_\\/-]*$/'],
-            'ptadmin_api_prefix' => ['nullable', 'string', 'max:50', 'different:ptadmin_web_prefix', 'regex:/^[A-Za-z0-9][A-Za-z0-9_\\/-]*$/'],
+            'ptadmin_web_prefix' => ['nullable', 'string', 'max:50', 'not_in:ptadmin', 'regex:/^[A-Za-z0-9][A-Za-z0-9_\\/-]*$/'],
             'db_connection' => 'required|string|in:mysql|max:50',
             'db_host' => 'required|string|max:50',
             'db_port' => 'required|numeric',
@@ -130,7 +129,6 @@ return [
             'email' => '邮箱',
             'password' => '管理密码',
             'ptadmin_web_prefix' => '后台页面路径',
-            'ptadmin_api_prefix' => '后台接口路径',
             'db_connection' => '数据库',
             'db_host' => '数据库主机',
             'db_port' => '数据库端口',

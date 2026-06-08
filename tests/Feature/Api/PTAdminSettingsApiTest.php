@@ -47,7 +47,7 @@ class PTAdminSettingsApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/settings');
+            ->getJson('/ptadmin/settings');
 
         $response->assertOk()
             ->assertJsonPath('code', 0)
@@ -65,7 +65,7 @@ class PTAdminSettingsApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/settings/'.$section->name);
+            ->getJson('/ptadmin/settings/'.$section->name);
 
         $response->assertOk()
             ->assertJsonPath('code', 0)
@@ -88,7 +88,7 @@ class PTAdminSettingsApiTest extends TestCase
         $token = $this->issueFounderToken();
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->postJson('/system/setting-config/basic', [
+            ->postJson('/ptadmin/setting-config/basic', [
                 'site_title' => 'PTAdmin Next',
                 'login_captcha' => 0,
             ])
@@ -118,7 +118,7 @@ class PTAdminSettingsApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/addons/cms/config')
+            ->getJson('/ptadmin/addons/cms/config')
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -178,7 +178,7 @@ class PTAdminSettingsApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/addons/cms/config');
+            ->getJson('/ptadmin/addons/cms/config');
 
         $response->assertOk()
             ->assertJsonPath('code', 0)
@@ -190,7 +190,7 @@ class PTAdminSettingsApiTest extends TestCase
         self::assertSame(1, $response->json('data.values.enabled'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/addons/cms/config', [
+            ->putJson('/ptadmin/addons/cms/config', [
                 'values' => [
                     'title' => 'CMS Updated',
                     'enabled' => 0,
@@ -222,7 +222,7 @@ class PTAdminSettingsApiTest extends TestCase
         Addon::swap(new AddonManager());
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/addons/cms/config', [
+            ->putJson('/ptadmin/addons/cms/config', [
                 'values' => [
                     'title' => 'CMS Updated',
                 ],

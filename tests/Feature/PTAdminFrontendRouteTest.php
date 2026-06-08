@@ -40,10 +40,10 @@ class PTAdminFrontendRouteTest extends TestCase
         $response->assertHeader('Content-Type', 'application/javascript; charset=UTF-8');
         $response->assertSee('window.__PTADMIN__', false);
         $response->assertSee('"webBase":"/admin"', false);
-        $response->assertSee('"apiBase":"/system"', false);
-        $response->assertSee('"loginPath":"/system/login"', false);
-        $response->assertSee('"userResourcesPath":"/system/auth/resources"', false);
-        $response->assertSee('"moduleManifestPath":"/system/auth/frontends"', false);
+        $response->assertSee('"apiBase":"/ptadmin"', false);
+        $response->assertSee('"loginPath":"/ptadmin/login"', false);
+        $response->assertSee('"userResourcesPath":"/ptadmin/auth/resources"', false);
+        $response->assertSee('"moduleManifestPath":"/ptadmin/auth/frontends"', false);
     }
 
     public function test_frontend_entry_falls_back_to_published_dist_when_available(): void

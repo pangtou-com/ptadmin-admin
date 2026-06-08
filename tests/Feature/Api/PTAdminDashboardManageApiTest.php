@@ -57,7 +57,7 @@ class PTAdminDashboardManageApiTest extends TestCase
         ));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/dashboard/roles/'.$role->id.'/widgets', array(
+            ->putJson('/ptadmin/dashboard/roles/'.$role->id.'/widgets', array(
                 'widgets' => array(
                     array(
                         'widget_code' => 'cms.overview',
@@ -81,7 +81,7 @@ class PTAdminDashboardManageApiTest extends TestCase
             ));
 
         $roleResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard/roles/'.$role->id.'/widgets');
+            ->getJson('/ptadmin/dashboard/roles/'.$role->id.'/widgets');
 
         $roleResponse->assertOk()->assertJson(array(
             'code' => 0,
@@ -101,7 +101,7 @@ class PTAdminDashboardManageApiTest extends TestCase
         self::assertSame(20, $roleResponse->json('data.selected_widgets.0.sort'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/dashboard/users/'.$member->id.'/widgets', array(
+            ->putJson('/ptadmin/dashboard/users/'.$member->id.'/widgets', array(
                 'widgets' => array(
                     array(
                         'widget_code' => 'cms.overview',
@@ -125,7 +125,7 @@ class PTAdminDashboardManageApiTest extends TestCase
             ));
 
         $userResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard/users/'.$member->id.'/widgets');
+            ->getJson('/ptadmin/dashboard/users/'.$member->id.'/widgets');
 
         $userResponse->assertOk()->assertJson(array(
             'code' => 0,
@@ -175,7 +175,7 @@ class PTAdminDashboardManageApiTest extends TestCase
         ));
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/dashboard/me/widgets', array(
+            ->putJson('/ptadmin/dashboard/me/widgets', array(
                 'widgets' => array(
                     array(
                         'widget_code' => 'cms.overview',
@@ -199,7 +199,7 @@ class PTAdminDashboardManageApiTest extends TestCase
             ));
 
         $meResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard/me/widgets');
+            ->getJson('/ptadmin/dashboard/me/widgets');
 
         $meResponse->assertOk()->assertJson(array(
             'code' => 0,
@@ -228,7 +228,7 @@ class PTAdminDashboardManageApiTest extends TestCase
         ));
 
         $consoleResponse = $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/dashboard');
+            ->getJson('/ptadmin/dashboard');
 
         $consoleResponse->assertOk()->assertJson(array(
             'code' => 0,

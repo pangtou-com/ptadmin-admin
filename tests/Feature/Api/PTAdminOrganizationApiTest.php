@@ -24,7 +24,7 @@ class PTAdminOrganizationApiTest extends TestCase
             'is_founder' => 1,
         ]));
 
-        $tenantResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/tenants', [
+        $tenantResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/ptadmin/tenants', [
             'code' => 'tenant_a',
             'name' => '租户A',
             'status' => 1,
@@ -44,7 +44,7 @@ class PTAdminOrganizationApiTest extends TestCase
         /** @var AdminTenant $tenant */
         $tenant = AdminTenant::query()->where('code', 'tenant_a')->firstOrFail();
 
-        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/tenants/'.$tenant->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/ptadmin/tenants/'.$tenant->id, [
             'name' => '租户A-已更新',
             'status' => 0,
         ])->assertOk()->assertJson([
@@ -57,11 +57,11 @@ class PTAdminOrganizationApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/tenants')
+            ->getJson('/ptadmin/tenants')
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
-        $organizationResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/organizations', [
+        $organizationResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/ptadmin/organizations', [
             'tenant_id' => $tenant->id,
             'code' => 'org_a',
             'name' => '组织A',
@@ -83,7 +83,7 @@ class PTAdminOrganizationApiTest extends TestCase
         /** @var AdminOrganization $organization */
         $organization = AdminOrganization::query()->where('code', 'org_a')->firstOrFail();
 
-        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/organizations/'.$organization->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/ptadmin/organizations/'.$organization->id, [
             'name' => '组织A-已更新',
             'sort' => 20,
         ])->assertOk()->assertJson([
@@ -96,11 +96,11 @@ class PTAdminOrganizationApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/organizations?tenant_id='.$tenant->id)
+            ->getJson('/ptadmin/organizations?tenant_id='.$tenant->id)
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
-        $departmentResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/departments', [
+        $departmentResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/ptadmin/departments', [
             'tenant_id' => $tenant->id,
             'organization_id' => $organization->id,
             'code' => 'dept_a',
@@ -123,7 +123,7 @@ class PTAdminOrganizationApiTest extends TestCase
         /** @var AdminDepartment $department */
         $department = AdminDepartment::query()->where('code', 'dept_a')->firstOrFail();
 
-        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/system/departments/'.$department->id, [
+        $this->withHeaders($this->jsonApiHeaders($token))->putJson('/ptadmin/departments/'.$department->id, [
             'name' => '部门A-已更新',
             'status' => 0,
         ])->assertOk()->assertJson([
@@ -136,7 +136,7 @@ class PTAdminOrganizationApiTest extends TestCase
         ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/departments?organization_id='.$organization->id)
+            ->getJson('/ptadmin/departments?organization_id='.$organization->id)
             ->assertOk()
             ->assertJsonCount(1, 'data');
     }
@@ -199,7 +199,7 @@ class PTAdminOrganizationApiTest extends TestCase
             'sort' => 1,
         ]);
 
-        $syncResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/system/admins-org/'.$member->id, [
+        $syncResponse = $this->withHeaders($this->jsonApiHeaders($token))->postJson('/ptadmin/admins-org/'.$member->id, [
             'tenant_id' => $tenant->id,
             'relations' => [
                 [
@@ -234,7 +234,7 @@ class PTAdminOrganizationApiTest extends TestCase
         ;
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->putJson('/system/admins-org-primary/'.$secondaryRelation->id)
+            ->putJson('/ptadmin/admins-org-primary/'.$secondaryRelation->id)
             ->assertOk()
             ->assertJson([
                 'code' => 0,
@@ -245,7 +245,7 @@ class PTAdminOrganizationApiTest extends TestCase
             ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
-            ->getJson('/system/admins-org/'.$member->id.'?tenant_id='.$tenant->id)
+            ->getJson('/ptadmin/admins-org/'.$member->id.'?tenant_id='.$tenant->id)
             ->assertOk()
             ->assertJsonCount(2, 'data');
 
