@@ -13,6 +13,8 @@ return [
     'api_prefix' => 'ptadmin',
     'web_prefix' => env('PTADMIN_WEB_PREFIX', 'admin'),
     'web_asset_path' => env('PTADMIN_WEB_ASSET_PATH', 'vendor/ptadmin/admin'),
+    'asset_url' => env('PTADMIN_ASSET_URL', ''),
+    'module_asset_url' => env('PTADMIN_MODULE_ASSET_URL', ''),
     'module_manifest_cache_ttl' => (int) env('PTADMIN_MODULE_MANIFEST_CACHE_TTL', 300),
     'project_frontend_code' => env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'),
     'project_frontend_dev_url' => env('PTADMIN_PROJECT_FRONTEND_DEV_URL', ''),

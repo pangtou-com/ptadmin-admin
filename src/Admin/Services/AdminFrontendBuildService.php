@@ -99,7 +99,7 @@ final class AdminFrontendBuildService
         ]);
 
         $this->replaceLinkOrCopy($currentPath, $releasePath);
-        $this->replaceLinkOrCopy($publicPath, $currentPath);
+        $this->copyPublicFrontend($currentPath, $publicPath);
 
         return [
             'version' => $version,
@@ -117,7 +117,6 @@ final class AdminFrontendBuildService
 
         $currentPath = $appRoot.\DIRECTORY_SEPARATOR.'storage'.\DIRECTORY_SEPARATOR.'app'.\DIRECTORY_SEPARATOR.'ptadmin'.\DIRECTORY_SEPARATOR.'frontend'.\DIRECTORY_SEPARATOR.'admin'.\DIRECTORY_SEPARATOR.'current';
         $currentConfigPath = $currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js';
-        $runtimeConfig = is_file($currentConfigPath) ? (string) file_get_contents($currentConfigPath) : null;
         $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
         $preservedModulesPath = $this->preservePath($modulesPath);
         $modulesState = null !== $preservedModulesPath ? 'preserved' : 'created';
@@ -127,18 +126,16 @@ final class AdminFrontendBuildService
             $this->ensureDirectory(\dirname($currentPath));
             $this->copyDirectory($sourcePath, $currentPath);
 
-            if (null !== $runtimeConfig) {
-                file_put_contents($currentConfigPath, $runtimeConfig);
-            } else {
-                $lock = $this->readLockFile($sourcePath);
-                $this->writeRuntimeConfig($currentConfigPath, [
-                    'app_name' => (string) config('app.name', 'PTAdmin'),
-                    'app_url' => (string) config('app.url', ''),
-                    'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : 'ptadmin',
-                    'web_prefix' => \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'),
-                    'version' => (string) ($lock['version'] ?? 'bundled'),
-                ]);
-            }
+            $lock = $this->readLockFile($sourcePath);
+            $this->writeRuntimeConfig($currentConfigPath, [
+                'app_name' => (string) config('app.name', 'PTAdmin'),
+                'app_url' => (string) config('app.url', ''),
+                'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : 'ptadmin',
+                'web_prefix' => \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'),
+                'asset_url' => (string) config('ptadmin.asset_url', ''),
+                'module_asset_url' => (string) config('ptadmin.module_asset_url', ''),
+                'version' => (string) ($lock['version'] ?? 'bundled'),
+            ]);
 
             $this->restorePreservedPath($preservedModulesPath, $modulesPath);
             $preservedModulesPath = null;
@@ -152,7 +149,7 @@ final class AdminFrontendBuildService
         return [
             'source_path' => $sourcePath,
             'current_path' => $currentPath,
-            'runtime_config' => null !== $runtimeConfig ? 'preserved' : 'generated',
+            'runtime_config' => 'generated',
             'modules' => $modulesState,
         ];
     }
@@ -360,6 +357,14 @@ final class AdminFrontendBuildService
         $webPrefix = $this->normalizePrefix((string) $options['web_prefix']);
         $apiBase = ('' !== $appUrl ? $appUrl : '').'/'.$apiPrefix.'/';
         $webBase = '/'.$webPrefix.'/';
+        $assetBase = rtrim((string) ($options['asset_url'] ?? ''), '/');
+        if ('' === $assetBase) {
+            $assetBase = '/'.trim((string) config('ptadmin.web_asset_path', 'vendor/ptadmin/admin'), '/');
+        }
+        $moduleAssetBase = rtrim((string) ($options['module_asset_url'] ?? ''), '/');
+        if ('' === $moduleAssetBase) {
+            $moduleAssetBase = rtrim($assetBase, '/').'/modules';
+        }
 
         $override = [
             'title' => (string) $options['app_name'],
@@ -370,6 +375,8 @@ final class AdminFrontendBuildService
             'baseURL' => $apiBase,
             'uploadURL' => $apiBase.'upload',
             'basePath' => $webBase,
+            'assetBase' => $assetBase,
+            'moduleAssetBase' => $moduleAssetBase,
             'bootstrap' => [
                 'loginEndpoint' => '/login',
                 'profileEndpoint' => '/auth/profile',
@@ -396,14 +403,36 @@ final class AdminFrontendBuildService
 
     private function copyDirectory(string $source, string $target): void
     {
+        $this->copyDirectoryExcept($source, $target);
+    }
+
+    private function copyPublicFrontend(string $source, string $target): void
+    {
+        $this->deletePath($target);
+        $this->copyDirectoryExcept($source, $target, ['ptconfig.js']);
+    }
+
+    /**
+     * @param array<int, string> $excludedRelativePaths
+     */
+    private function copyDirectoryExcept(string $source, string $target, array $excludedRelativePaths = []): void
+    {
         $this->ensureDirectory($target);
+        $excluded = array_fill_keys(array_map(static function (string $path): string {
+            return str_replace(['/', '\\'], \DIRECTORY_SEPARATOR, trim($path, '/\\'));
+        }, $excludedRelativePaths), true);
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($source, \FilesystemIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::SELF_FIRST
         );
 
         foreach ($iterator as $item) {
-            $targetPath = $target.\DIRECTORY_SEPARATOR.$iterator->getSubPathName();
+            $relativePath = $iterator->getSubPathName();
+            if (isset($excluded[$relativePath])) {
+                continue;
+            }
+
+            $targetPath = $target.\DIRECTORY_SEPARATOR.$relativePath;
             if ($item->isDir()) {
                 $this->ensureDirectory($targetPath);
                 continue;

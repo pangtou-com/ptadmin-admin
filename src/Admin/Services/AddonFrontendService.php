@@ -91,6 +91,7 @@ class AddonFrontendService
                 'code' => $this->projectFrontendCode(),
                 'version' => (string) data_get($projectDefinitions, '0.version', ''),
                 'develop' => $this->projectFrontendDevelop(),
+                'asset_url' => $this->assetFingerprint(),
                 'modules' => array_values($projectDefinitions),
             ];
         }
@@ -100,6 +101,7 @@ class AddonFrontendService
                 'code' => (string) ($addonInfo['code'] ?? $addonCode),
                 'version' => (string) ($addonInfo['version'] ?? ''),
                 'develop' => !empty($addonInfo['develop']),
+                'asset_url' => $this->assetFingerprint(),
                 'modules' => array_values($this->extractModuleDefinitions((string) $addonCode, $addonInfo)),
             ];
         }
@@ -441,6 +443,11 @@ class AddonFrontendService
             return $this->defaultFederationEntry($addonCode);
         }
 
+        $moduleAssetUrl = $this->rewriteModuleAssetUrl($entry, $addonCode);
+        if (null !== $moduleAssetUrl) {
+            return $moduleAssetUrl;
+        }
+
         if (0 === strpos($entry, '/addons/'.$addonCode.'/')) {
             return $this->addonPublicModuleUrl($addonCode, substr($entry, \strlen('/addons/'.$addonCode.'/')));
         }
@@ -489,6 +496,11 @@ class AddonFrontendService
 
         if ('' === $url || $this->isLocalDevelopmentUrl($url)) {
             return $this->addonPublicModuleUrl($addonCode, 'dist/');
+        }
+
+        $moduleAssetUrl = $this->rewriteModuleAssetUrl($url, $addonCode);
+        if (null !== $moduleAssetUrl) {
+            return $moduleAssetUrl;
         }
 
         if (0 === strpos($url, '/addons/'.$addonCode.'/')) {
@@ -559,11 +571,41 @@ class AddonFrontendService
 
     protected function addonPublicModuleUrl(string $addonCode, string $path = ''): string
     {
+        $configured = trim((string) config('ptadmin.module_asset_url', ''));
+        if ('' !== $configured) {
+            $url = rtrim($configured, '/').'/'.$addonCode.'/'.ltrim($path, '/');
+
+            return '' !== $path && '/' === substr($path, -1) ? $url.'/' : rtrim($url, '/');
+        }
+
         $url = admin_web_url('modules/'.$addonCode.'/'.ltrim($path, '/'));
 
         $url = '' !== $path && '/' === substr($path, -1) ? $url.'/' : $url;
 
         return $this->makeAbsoluteUrl($url);
+    }
+
+    protected function rewriteModuleAssetUrl(string $url, string $addonCode): ?string
+    {
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?: $url);
+        $path = '/'.ltrim($path, '/');
+        $webPrefix = trim(\function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'), '/');
+        $prefix = '/'.$webPrefix.'/modules/'.$addonCode.'/';
+        if (0 !== strpos($path, $prefix)) {
+            return null;
+        }
+
+        return $this->addonPublicModuleUrl($addonCode, substr($path, \strlen($prefix)));
+    }
+
+    protected function assetFingerprint(): array
+    {
+        return [
+            'app_url' => (string) config('app.url', ''),
+            'web_prefix' => \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'),
+            'asset_url' => (string) config('ptadmin.asset_url', ''),
+            'module_asset_url' => (string) config('ptadmin.module_asset_url', ''),
+        ];
     }
 
     protected function projectFrontendCode(): string

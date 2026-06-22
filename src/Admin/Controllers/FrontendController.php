@@ -21,7 +21,7 @@ class FrontendController
         $html = File::get($this->resolveDistPath('index.html'));
         $html = str_replace(
             ['__PTADMIN_WEB_ASSET_BASE__', '__PTADMIN_APP_NAME__'],
-            ['/'.trim(admin_web_asset_path(), '/').'/assets', (string) config('app.name', 'PTAdmin')],
+            [$this->assetBaseUrl('assets'), (string) config('app.name', 'PTAdmin')],
             $html
         );
 
@@ -32,19 +32,47 @@ class FrontendController
 
     public function config(): Response
     {
-        $payload = [
-            'appName' => (string) config('app.name', 'PTAdmin'),
-            'webBase' => admin_web_url(),
-            'apiBase' => admin_api_url(),
-            'assetBase' => '/'.admin_web_asset_path(),
-            'loginPath' => admin_api_url('login'),
-            'logoutPath' => admin_api_url('logout'),
-            'uploadPath' => admin_api_url('upload'),
-            'userResourcesPath' => admin_api_url('auth/resources'),
-            'moduleManifestPath' => admin_api_url('auth/frontends'),
+        $appName = (string) config('app.name', 'PTAdmin');
+        $apiBase = $this->absoluteUrl(admin_api_url());
+        $webBase = $this->absoluteUrl(admin_web_url());
+        $assetBase = $this->assetBaseUrl();
+        $moduleAssetBase = $this->moduleAssetBaseUrl();
+
+        $ptconfig = [
+            'title' => $appName,
+            'shortTitle' => $appName,
+            'baseURL' => $this->ensureTrailingSlash($apiBase),
+            'uploadURL' => $this->joinUrl($apiBase, 'upload'),
+            'basePath' => $this->ensureTrailingSlash(admin_web_url()),
+            'assetBase' => $assetBase,
+            'moduleAssetBase' => $moduleAssetBase,
+            'bootstrap' => [
+                'loginEndpoint' => '/login',
+                'profileEndpoint' => '/auth/profile',
+                'frontendsEndpoint' => '/auth/frontends',
+                'resourcesEndpoint' => '/auth/resources',
+            ],
         ];
 
-        $script = 'window.__PTADMIN__ = '.json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).';';
+        $payload = [
+            'appName' => (string) config('app.name', 'PTAdmin'),
+            'webBase' => $webBase,
+            'apiBase' => $this->ensureTrailingSlash($apiBase),
+            'assetBase' => $assetBase,
+            'moduleAssetBase' => $moduleAssetBase,
+            'loginPath' => $this->joinUrl($apiBase, 'login'),
+            'logoutPath' => $this->joinUrl($apiBase, 'logout'),
+            'uploadPath' => $this->joinUrl($apiBase, 'upload'),
+            'userResourcesPath' => $this->joinUrl($apiBase, 'auth/resources'),
+            'moduleManifestPath' => $this->joinUrl($apiBase, 'auth/frontends'),
+        ];
+
+        $script = implode("\n", [
+            'window.ptconfig = window.ptconfig || {};',
+            'window.ptconfig.bootstrap = Object.assign(window.ptconfig.bootstrap || {}, '.json_encode($ptconfig['bootstrap'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).');',
+            'window.ptconfig = Object.assign(window.ptconfig, '.json_encode(array_diff_key($ptconfig, ['bootstrap' => true]), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).');',
+            'window.__PTADMIN__ = Object.assign(window.__PTADMIN__ || {}, '.json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).');',
+        ])."\n";
 
         return response($script, 200, [
             'Content-Type' => 'application/javascript; charset=UTF-8',
@@ -60,5 +88,52 @@ class FrontendController
         }
 
         return __DIR__.'/../../../resources/admin-frontend/'.$file;
+    }
+
+    private function assetBaseUrl(string $path = ''): string
+    {
+        $configured = trim((string) config('ptadmin.asset_url', ''));
+        $base = '' !== $configured ? rtrim($configured, '/') : '/'.trim(admin_web_asset_path(), '/');
+
+        return $this->joinUrl($base, $path);
+    }
+
+    private function moduleAssetBaseUrl(string $path = ''): string
+    {
+        $configured = trim((string) config('ptadmin.module_asset_url', ''));
+        $base = '' !== $configured ? rtrim($configured, '/') : $this->assetBaseUrl('modules');
+
+        return $this->joinUrl($base, $path);
+    }
+
+    private function absoluteUrl(string $path): string
+    {
+        $baseUrl = rtrim((string) config('app.url', ''), '/');
+        if ('' === $baseUrl && request()) {
+            $baseUrl = rtrim(request()->getSchemeAndHttpHost(), '/');
+        }
+
+        if ('' === $baseUrl || preg_match('#^https?://#i', $path)) {
+            return $path;
+        }
+
+        return $baseUrl.'/'.ltrim($path, '/');
+    }
+
+    private function joinUrl(string $base, string $path = ''): string
+    {
+        $base = rtrim($base, '/');
+        $path = trim($path, '/');
+
+        if ('' === $path) {
+            return $base;
+        }
+
+        return $base.'/'.$path;
+    }
+
+    private function ensureTrailingSlash(string $url): string
+    {
+        return rtrim($url, '/').'/';
     }
 }

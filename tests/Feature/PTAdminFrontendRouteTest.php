@@ -34,16 +34,23 @@ class PTAdminFrontendRouteTest extends TestCase
 
     public function test_frontend_config_script_returns_runtime_prefixes(): void
     {
+        config()->set('app.url', 'https://admin.example.com');
+        config()->set('ptadmin.asset_url', 'https://static.example.com/ptadmin/admin');
+        config()->set('ptadmin.module_asset_url', 'https://static.example.com/ptadmin/modules');
+
         $response = $this->get('/admin/ptconfig.js');
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/javascript; charset=UTF-8');
+        $response->assertSee('window.ptconfig', false);
         $response->assertSee('window.__PTADMIN__', false);
-        $response->assertSee('"webBase":"/admin"', false);
-        $response->assertSee('"apiBase":"/ptadmin"', false);
-        $response->assertSee('"loginPath":"/ptadmin/login"', false);
-        $response->assertSee('"userResourcesPath":"/ptadmin/auth/resources"', false);
-        $response->assertSee('"moduleManifestPath":"/ptadmin/auth/frontends"', false);
+        $response->assertSee('"baseURL":"https://admin.example.com/ptadmin/"', false);
+        $response->assertSee('"basePath":"/admin/"', false);
+        $response->assertSee('"assetBase":"https://static.example.com/ptadmin/admin"', false);
+        $response->assertSee('"moduleAssetBase":"https://static.example.com/ptadmin/modules"', false);
+        $response->assertSee('"apiBase":"https://admin.example.com/ptadmin/"', false);
+        $response->assertSee('"loginPath":"https://admin.example.com/ptadmin/login"', false);
+        $response->assertSee('"moduleManifestPath":"https://admin.example.com/ptadmin/auth/frontends"', false);
     }
 
     public function test_frontend_entry_falls_back_to_published_dist_when_available(): void

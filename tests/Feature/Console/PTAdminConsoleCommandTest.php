@@ -126,7 +126,7 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertFalse(is_link($currentPath));
     }
 
-    public function test_admin_frontend_build_service_preserves_existing_runtime_config_on_publish(): void
+    public function test_admin_frontend_build_service_regenerates_runtime_config_on_publish(): void
     {
         $service = new AdminFrontendBuildService();
         $currentPath = storage_path('app/ptadmin/frontend/admin/current');
@@ -139,8 +139,9 @@ class PTAdminConsoleCommandTest extends TestCase
 
         $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
 
-        self::assertSame('preserved', $result['runtime_config']);
-        self::assertSame($runtimeConfig, file_get_contents($configPath));
+        self::assertSame('generated', $result['runtime_config']);
+        self::assertStringNotContainsString('tenant.example.test', (string) file_get_contents($configPath));
+        self::assertStringContainsString('window.ptconfig', (string) file_get_contents($configPath));
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
         self::assertFalse(is_link($currentPath));
