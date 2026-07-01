@@ -122,6 +122,9 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js');
         self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
+        $indexHtml = (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertStringContainsString('/admin/ptconfig.js', $indexHtml);
+        self::assertStringNotContainsString('__PTADMIN_CONFIG_URL__', $indexHtml);
         self::assertSame('generated', $result['runtime_config']);
         self::assertFalse(is_link($currentPath));
     }
@@ -143,6 +146,7 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertStringNotContainsString('tenant.example.test', (string) file_get_contents($configPath));
         self::assertStringContainsString('window.ptconfig', (string) file_get_contents($configPath));
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertStringContainsString('/admin/ptconfig.js', (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html'));
         self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
         self::assertFalse(is_link($currentPath));
     }

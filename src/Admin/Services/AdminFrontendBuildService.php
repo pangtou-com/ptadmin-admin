@@ -90,6 +90,7 @@ final class AdminFrontendBuildService
 
         $this->deletePath($releasePath);
         $this->copyDirectory($sourcePath, $releasePath);
+        $this->writeRuntimeIndex($releasePath.\DIRECTORY_SEPARATOR.'index.html', $webPrefix);
         $this->writeRuntimeConfig($releasePath.\DIRECTORY_SEPARATOR.'ptconfig.js', [
             'app_name' => $appName,
             'app_url' => $appUrl,
@@ -127,6 +128,7 @@ final class AdminFrontendBuildService
             $this->copyDirectory($sourcePath, $currentPath);
 
             $lock = $this->readLockFile($sourcePath);
+            $this->writeRuntimeIndex($currentPath.\DIRECTORY_SEPARATOR.'index.html', \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'));
             $this->writeRuntimeConfig($currentConfigPath, [
                 'app_name' => (string) config('app.name', 'PTAdmin'),
                 'app_url' => (string) config('app.url', ''),
@@ -387,6 +389,19 @@ final class AdminFrontendBuildService
 
         $script = $existing.PHP_EOL.PHP_EOL.'window.ptconfig = Object.assign(window.ptconfig || {}, '.json_encode($override, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).');'.PHP_EOL;
         file_put_contents($path, $script);
+    }
+
+    private function writeRuntimeIndex(string $path, string $webPrefix): void
+    {
+        if (!is_file($path)) {
+            return;
+        }
+
+        $prefix = $this->normalizePrefix($webPrefix);
+        $configUrl = '' === $prefix ? '/ptconfig.js' : '/'.$prefix.'/ptconfig.js';
+        $html = (string) file_get_contents($path);
+        $html = str_replace('__PTADMIN_CONFIG_URL__', $configUrl, $html);
+        file_put_contents($path, $html);
     }
 
     private function replaceLinkOrCopy(string $linkPath, string $targetPath): void
