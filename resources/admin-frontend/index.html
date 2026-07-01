@@ -10,7 +10,7 @@
             window.__PTADMIN_PTCONFIG_LOADED__ = false
             window.__PTADMIN_PTCONFIG_READY__ = new Promise((resolve) => {
                 const script = document.createElement('script')
-                script.src = `__PTADMIN_CONFIG_URL__?v=${Date.now()}`
+                script.src = `./ptconfig.js?v=${Date.now()}`
                 script.async = false
                 script.onload = () => {
                     window.__PTADMIN_PTCONFIG_LOADED__ = true
