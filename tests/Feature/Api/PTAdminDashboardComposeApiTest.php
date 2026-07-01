@@ -83,7 +83,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
                     'frontend_version' => '0.1.12',
                     'frontend_latest_version' => '0.1.12',
                     'frontend_update_required' => false,
-                    'backend_version' => '1.1.28',
+                    'backend_version' => $this->currentPackageVersion(),
                     'backend_latest_version' => '1.1.8',
                     'backend_update_required' => false,
                     'update_required' => false,
@@ -171,7 +171,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.summary.addon_update_pending', true)
             ->assertJsonPath('data.summary.frontend_version', '0.1.12')
-            ->assertJsonPath('data.summary.backend_version', '1.1.28');
+            ->assertJsonPath('data.summary.backend_version', $this->currentPackageVersion());
     }
 
     public function test_dashboard_console_summary_marks_update_required_when_platform_has_newer_frontend(): void
@@ -403,6 +403,11 @@ class PTAdminDashboardComposeApiTest extends TestCase
         $path = (string) config('ptadmin.platform_snapshot_path');
         File::ensureDirectoryExists(dirname($path));
         file_put_contents($path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).PHP_EOL);
+    }
+
+    private function currentPackageVersion(): string
+    {
+        return get_frame_version();
     }
 
 }
