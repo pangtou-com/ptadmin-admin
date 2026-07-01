@@ -16,8 +16,8 @@
         "ext-openssl": "*",
         "ext-zip": "*",
         "laravel/framework": "^8.75",
-        "ptadmin/addon": "^1.1.14",
-        "ptadmin/easy": "^1.1.14"
+        "ptadmin/addon": "^1.1.15",
+        "ptadmin/easy": "^1.1.15"
     },
     "require-dev": {
         "orchestra/testbench": "^6.44",
@@ -54,5 +54,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "version": "1.1.28"
+    "version": "1.1.29"
 }
