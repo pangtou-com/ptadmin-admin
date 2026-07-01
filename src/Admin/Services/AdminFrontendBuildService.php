@@ -47,6 +47,7 @@ final class AdminFrontendBuildService
 
             $this->deletePath($targetPath);
             $this->copyDirectory($sourcePath, $targetPath);
+            $this->prepareBundledIndex($targetPath.\DIRECTORY_SEPARATOR.'index.html');
 
             $lock = [
                 'name' => (string) ($manifest['name'] ?? 'console-build'),
@@ -118,6 +119,8 @@ final class AdminFrontendBuildService
 
         $currentPath = $appRoot.\DIRECTORY_SEPARATOR.'storage'.\DIRECTORY_SEPARATOR.'app'.\DIRECTORY_SEPARATOR.'ptadmin'.\DIRECTORY_SEPARATOR.'frontend'.\DIRECTORY_SEPARATOR.'admin'.\DIRECTORY_SEPARATOR.'current';
         $currentConfigPath = $currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js';
+        $webPrefix = \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin');
+        $publicPath = $appRoot.\DIRECTORY_SEPARATOR.'public'.\DIRECTORY_SEPARATOR.$this->normalizePrefix($webPrefix);
         $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
         $preservedModulesPath = $this->preservePath($modulesPath);
         $modulesState = null !== $preservedModulesPath ? 'preserved' : 'created';
@@ -128,12 +131,12 @@ final class AdminFrontendBuildService
             $this->copyDirectory($sourcePath, $currentPath);
 
             $lock = $this->readLockFile($sourcePath);
-            $this->writeRuntimeIndex($currentPath.\DIRECTORY_SEPARATOR.'index.html', \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'));
+            $this->writeRuntimeIndex($currentPath.\DIRECTORY_SEPARATOR.'index.html', $webPrefix);
             $this->writeRuntimeConfig($currentConfigPath, [
                 'app_name' => (string) config('app.name', 'PTAdmin'),
                 'app_url' => (string) config('app.url', ''),
                 'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : 'ptadmin',
-                'web_prefix' => \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin'),
+                'web_prefix' => $webPrefix,
                 'asset_url' => (string) config('ptadmin.asset_url', ''),
                 'module_asset_url' => (string) config('ptadmin.module_asset_url', ''),
                 'version' => (string) ($lock['version'] ?? 'bundled'),
@@ -142,6 +145,7 @@ final class AdminFrontendBuildService
             $this->restorePreservedPath($preservedModulesPath, $modulesPath);
             $preservedModulesPath = null;
             $this->ensureRuntimeDirectory($modulesPath);
+            $this->copyPublicFrontend($currentPath, $publicPath);
         } finally {
             if (null !== $preservedModulesPath) {
                 $this->deletePath($preservedModulesPath);
@@ -151,6 +155,7 @@ final class AdminFrontendBuildService
         return [
             'source_path' => $sourcePath,
             'current_path' => $currentPath,
+            'public_path' => $publicPath,
             'runtime_config' => 'generated',
             'modules' => $modulesState,
         ];
@@ -400,7 +405,18 @@ final class AdminFrontendBuildService
         $prefix = $this->normalizePrefix($webPrefix);
         $configUrl = '' === $prefix ? '/ptconfig.js' : '/'.$prefix.'/ptconfig.js';
         $html = (string) file_get_contents($path);
-        $html = str_replace('__PTADMIN_CONFIG_URL__', $configUrl, $html);
+        $html = str_replace(['__PTADMIN_CONFIG_URL__', './ptconfig.js'], $configUrl, $html);
+        file_put_contents($path, $html);
+    }
+
+    private function prepareBundledIndex(string $path): void
+    {
+        if (!is_file($path)) {
+            return;
+        }
+
+        $html = (string) file_get_contents($path);
+        $html = str_replace('./ptconfig.js', '__PTADMIN_CONFIG_URL__', $html);
         file_put_contents($path, $html);
     }
 
@@ -424,7 +440,7 @@ final class AdminFrontendBuildService
     private function copyPublicFrontend(string $source, string $target): void
     {
         $this->deletePath($target);
-        $this->copyDirectoryExcept($source, $target, ['ptconfig.js']);
+        $this->copyDirectoryExcept($source, $target);
     }
 
     /**

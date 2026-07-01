@@ -110,7 +110,9 @@ class PTAdminInstallCompleteTest extends TestCase
         self::assertStringNotContainsString('__PTADMIN_CONFIG_URL__', $releaseIndexHtml);
         self::assertTrue(is_link(public_path('admin-web')) || is_dir(public_path('admin-web')));
         self::assertFileExists(public_path('admin-web/index.html'));
+        self::assertFileExists(public_path('admin-web/ptconfig.js'));
         self::assertStringContainsString('/admin-web/ptconfig.js', (string) file_get_contents(public_path('admin-web/index.html')));
+        self::assertStringContainsString('/ptadmin/', (string) file_get_contents(public_path('admin-web/ptconfig.js')));
         self::assertStringContainsString('/ptadmin/', (string) file_get_contents(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/ptconfig.js')));
         self::assertSame("APP_NAME=PTAdmin\nAPP_ENV=local\n", file_get_contents($envPath));
         self::assertStringContainsString('安装成功', $output);

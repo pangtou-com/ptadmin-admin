@@ -17,6 +17,7 @@ class PTAdminConsoleCommandTest extends TestCase
     protected function tearDown(): void
     {
         $this->deletePath(storage_path('app/ptadmin/frontend/admin/current'));
+        $this->deletePath(public_path('admin'));
 
         parent::tearDown();
     }
@@ -125,6 +126,9 @@ class PTAdminConsoleCommandTest extends TestCase
         $indexHtml = (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertStringContainsString('/admin/ptconfig.js', $indexHtml);
         self::assertStringNotContainsString('__PTADMIN_CONFIG_URL__', $indexHtml);
+        self::assertSame(public_path('admin'), $result['public_path']);
+        self::assertFileExists(public_path('admin/index.html'));
+        self::assertFileExists(public_path('admin/ptconfig.js'));
         self::assertSame('generated', $result['runtime_config']);
         self::assertFalse(is_link($currentPath));
     }
@@ -146,7 +150,10 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertStringNotContainsString('tenant.example.test', (string) file_get_contents($configPath));
         self::assertStringContainsString('window.ptconfig', (string) file_get_contents($configPath));
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
-        self::assertStringContainsString('/admin/ptconfig.js', (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html'));
+        $indexHtml = (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertStringContainsString('/admin/ptconfig.js', $indexHtml);
+        self::assertStringNotContainsString('./ptconfig.js', $indexHtml);
+        self::assertFileExists(public_path('admin/ptconfig.js'));
         self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
         self::assertFalse(is_link($currentPath));
     }

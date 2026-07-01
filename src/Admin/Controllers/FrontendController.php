@@ -20,8 +20,8 @@ class FrontendController
     {
         $html = File::get($this->resolveDistPath('index.html'));
         $html = str_replace(
-            ['__PTADMIN_WEB_ASSET_BASE__', '__PTADMIN_APP_NAME__', '__PTADMIN_CONFIG_URL__'],
-            [$this->assetBaseUrl('assets'), (string) config('app.name', 'PTAdmin'), admin_web_url('ptconfig.js')],
+            ['__PTADMIN_WEB_ASSET_BASE__', '__PTADMIN_APP_NAME__', '__PTADMIN_CONFIG_URL__', './ptconfig.js'],
+            [$this->assetBaseUrl('assets'), (string) config('app.name', 'PTAdmin'), admin_web_url('ptconfig.js'), admin_web_url('ptconfig.js')],
             $html
         );
 
