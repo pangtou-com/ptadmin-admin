@@ -101,23 +101,15 @@ class PTAdminDatabaseMigrationTest extends TestCase
             ->all();
 
         self::assertSame([
-            'console',
             'system',
-            'system.role',
+            'system.config',
             'system.admins',
+            'system.role',
             'system.resources',
+            'system.assets',
             'system.admin_login_logs',
             'system.operate',
-            'system.config',
-            'system.assets',
         ], $names);
-
-        /** @var AdminResource $console */
-        $console = AdminResource::query()->where('name', 'console')->firstOrFail();
-        self::assertSame('仪表盘', $console->title);
-        self::assertSame('dashboard', $console->module);
-        self::assertSame('dashboard.page.home', $console->page_key);
-        self::assertSame('/dashboard', $console->route);
 
         /** @var AdminResource $system */
         $system = AdminResource::query()->where('name', 'system')->firstOrFail();

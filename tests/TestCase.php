@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Orchestra\Testbench\TestCase as Orchestra;
+use PTAdmin\Addon\Providers\AddonServiceProvider;
 use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Providers\PTAdminServiceProvider;
 
@@ -18,6 +19,7 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
+            AddonServiceProvider::class,
             PTAdminServiceProvider::class,
         ];
     }
