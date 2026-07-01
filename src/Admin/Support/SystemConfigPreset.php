@@ -53,6 +53,15 @@ class SystemConfigPreset
                         'intro' => '用于站点页面标题、后台展示等场景',
                     ],
                     [
+                        'title' => '站点地址',
+                        'name' => 'site_url',
+                        'type' => 'text',
+                        'value' => config("app.url"),
+                        'default_val' => config("app.url"),
+                        'sort' => 100,
+                        'intro' => '站点域名地址',
+                    ],
+                    [
                         'title' => '站点描述',
                         'name' => 'site_description',
                         'type' => 'textarea',
