@@ -16,7 +16,7 @@
         "ext-openssl": "*",
         "ext-zip": "*",
         "laravel/framework": "^8.75",
-        "ptadmin/addon": "^1.1.16",
+        "ptadmin/addon": "^1.1.17",
         "ptadmin/easy": "^1.1.15"
     },
     "require-dev": {
@@ -54,5 +54,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "version": "1.1.33"
+    "version": "1.1.34"
 }
