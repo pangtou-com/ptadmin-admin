@@ -7,6 +7,7 @@ namespace PTAdmin\Admin\Tests\Feature\Package;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
 use PTAdmin\Admin\Commands\AdminCommand;
+use PTAdmin\Admin\Commands\AdminUpgradeCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
 use PTAdmin\Admin\Http\Middleware\AuthorizationMiddleware;
 use PTAdmin\Admin\Http\Middleware\ExceptionResponseMiddleware;
@@ -80,6 +81,8 @@ class PTAdminPackageBootstrapTest extends TestCase
         self::assertArrayHasKey('admin:auth', $commands);
         self::assertArrayHasKey('admin:fe:pull', $commands);
         self::assertArrayHasKey('admin:fe:update', $commands);
+        self::assertArrayHasKey('admin:upgrade', $commands);
         self::assertInstanceOf(AdminCommand::class, $commands['admin:auth']);
+        self::assertInstanceOf(AdminUpgradeCommand::class, $commands['admin:upgrade']);
     }
 }

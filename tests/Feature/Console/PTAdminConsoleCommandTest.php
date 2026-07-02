@@ -73,6 +73,7 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertArrayHasKey('admin:fix', $commands);
         self::assertArrayHasKey('admin:fe:pull', $commands);
         self::assertArrayHasKey('admin:fe:update', $commands);
+        self::assertArrayHasKey('admin:upgrade', $commands);
     }
 
     public function test_admin_fix_command_repairs_configured_directory_and_file_permissions(): void
