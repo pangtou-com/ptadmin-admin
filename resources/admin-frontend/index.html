@@ -7,21 +7,9 @@
         <title>Pangtou Console</title>
         <script>
             window.ptconfig = window.ptconfig || {}
-            window.__PTADMIN_PTCONFIG_LOADED__ = false
-            window.__PTADMIN_PTCONFIG_READY__ = new Promise((resolve) => {
-                const script = document.createElement('script')
-                script.src = `__PTADMIN_CONFIG_URL__?v=${Date.now()}`
-                script.async = false
-                script.onload = () => {
-                    window.__PTADMIN_PTCONFIG_LOADED__ = true
-                    resolve()
-                }
-                script.onerror = () => {
-                    window.__PTADMIN_PTCONFIG_LOADED__ = false
-                    resolve()
-                }
-                document.head.appendChild(script)
-            })
+            /* __PTADMIN_RUNTIME_CONFIG_SCRIPT__ */
+            window.__PTADMIN_PTCONFIG_LOADED__ = true
+            window.__PTADMIN_PTCONFIG_READY__ = Promise.resolve()
         </script>
         <style>
             .ptadmin-loader-container {

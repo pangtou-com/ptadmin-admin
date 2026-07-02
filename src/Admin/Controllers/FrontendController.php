@@ -7,6 +7,7 @@ namespace PTAdmin\Admin\Controllers;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\File;
+use PTAdmin\Admin\Support\RuntimeConfigIndex;
 
 class FrontendController
 {
@@ -19,9 +20,10 @@ class FrontendController
     public function index(): Response
     {
         $html = File::get($this->resolveDistPath('index.html'));
+        $html = RuntimeConfigIndex::inject($html, $this->runtimeConfigScript());
         $html = str_replace(
-            ['__PTADMIN_WEB_ASSET_BASE__', '__PTADMIN_APP_NAME__', '__PTADMIN_CONFIG_URL__', './ptconfig.js'],
-            [$this->assetBaseUrl('assets'), (string) config('app.name', 'PTAdmin'), admin_web_url('ptconfig.js'), admin_web_url('ptconfig.js')],
+            ['__PTADMIN_WEB_ASSET_BASE__', '__PTADMIN_APP_NAME__'],
+            [$this->assetBaseUrl('assets'), (string) config('app.name', 'PTAdmin')],
             $html
         );
 
@@ -31,6 +33,14 @@ class FrontendController
     }
 
     public function config(): Response
+    {
+        return response($this->runtimeConfigScript(), 200, [
+            'Content-Type' => 'application/javascript; charset=UTF-8',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ]);
+    }
+
+    private function runtimeConfigScript(): string
     {
         $appName = (string) config('app.name', 'PTAdmin');
         $apiBase = $this->absoluteUrl(admin_api_url());
@@ -74,10 +84,7 @@ class FrontendController
             'window.__PTADMIN__ = Object.assign(window.__PTADMIN__ || {}, '.json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).');',
         ])."\n";
 
-        return response($script, 200, [
-            'Content-Type' => 'application/javascript; charset=UTF-8',
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-        ]);
+        return $script;
     }
 
     private function resolveDistPath(string $file): string

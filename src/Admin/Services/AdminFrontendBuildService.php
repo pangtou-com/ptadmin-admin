@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services;
 
+use PTAdmin\Admin\Support\RuntimeConfigIndex;
+
 final class AdminFrontendBuildService
 {
     public const DEFAULT_MANIFEST_URL = 'https://cloud.api.pangtou.com/storage/starter/console-build.json';
@@ -91,14 +93,14 @@ final class AdminFrontendBuildService
 
         $this->deletePath($releasePath);
         $this->copyDirectory($sourcePath, $releasePath);
-        $this->writeRuntimeIndex($releasePath.\DIRECTORY_SEPARATOR.'index.html', $webPrefix);
-        $this->writeRuntimeConfig($releasePath.\DIRECTORY_SEPARATOR.'ptconfig.js', [
+        $runtimeScript = $this->writeRuntimeConfig($releasePath.\DIRECTORY_SEPARATOR.'ptconfig.js', [
             'app_name' => $appName,
             'app_url' => $appUrl,
             'api_prefix' => $apiPrefix,
             'web_prefix' => $webPrefix,
             'version' => $version,
         ]);
+        $this->writeRuntimeIndex($releasePath.\DIRECTORY_SEPARATOR.'index.html', $runtimeScript);
 
         $this->replaceLinkOrCopy($currentPath, $releasePath);
         $this->copyPublicFrontend($currentPath, $publicPath);
@@ -131,8 +133,7 @@ final class AdminFrontendBuildService
             $this->copyDirectory($sourcePath, $currentPath);
 
             $lock = $this->readLockFile($sourcePath);
-            $this->writeRuntimeIndex($currentPath.\DIRECTORY_SEPARATOR.'index.html', $webPrefix);
-            $this->writeRuntimeConfig($currentConfigPath, [
+            $runtimeScript = $this->writeRuntimeConfig($currentConfigPath, [
                 'app_name' => (string) config('app.name', 'PTAdmin'),
                 'app_url' => (string) config('app.url', ''),
                 'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : 'ptadmin',
@@ -141,6 +142,7 @@ final class AdminFrontendBuildService
                 'module_asset_url' => (string) config('ptadmin.module_asset_url', ''),
                 'version' => (string) ($lock['version'] ?? 'bundled'),
             ]);
+            $this->writeRuntimeIndex($currentPath.\DIRECTORY_SEPARATOR.'index.html', $runtimeScript);
 
             $this->restorePreservedPath($preservedModulesPath, $modulesPath);
             $preservedModulesPath = null;
@@ -356,7 +358,7 @@ final class AdminFrontendBuildService
         return \is_array($payload) ? $payload : [];
     }
 
-    private function writeRuntimeConfig(string $path, array $options): void
+    private function writeRuntimeConfig(string $path, array $options): string
     {
         $existing = is_file($path) ? (string) file_get_contents($path) : "/** @type {Window['ptconfig']} */\nwindow.ptconfig = window.ptconfig || {};\n";
         $appUrl = rtrim((string) $options['app_url'], '/');
@@ -394,18 +396,18 @@ final class AdminFrontendBuildService
 
         $script = $existing.PHP_EOL.PHP_EOL.'window.ptconfig = Object.assign(window.ptconfig || {}, '.json_encode($override, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).');'.PHP_EOL;
         file_put_contents($path, $script);
+
+        return $script;
     }
 
-    private function writeRuntimeIndex(string $path, string $webPrefix): void
+    private function writeRuntimeIndex(string $path, string $runtimeScript): void
     {
         if (!is_file($path)) {
             return;
         }
 
-        $prefix = $this->normalizePrefix($webPrefix);
-        $configUrl = '' === $prefix ? '/ptconfig.js' : '/'.$prefix.'/ptconfig.js';
         $html = (string) file_get_contents($path);
-        $html = str_replace(['__PTADMIN_CONFIG_URL__', './ptconfig.js'], $configUrl, $html);
+        $html = RuntimeConfigIndex::inject($html, $runtimeScript);
         file_put_contents($path, $html);
     }
 
@@ -416,7 +418,7 @@ final class AdminFrontendBuildService
         }
 
         $html = (string) file_get_contents($path);
-        $html = str_replace('./ptconfig.js', '__PTADMIN_CONFIG_URL__', $html);
+        $html = RuntimeConfigIndex::prepare($html);
         file_put_contents($path, $html);
     }
 

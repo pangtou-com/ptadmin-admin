@@ -28,16 +28,20 @@ class PTAdminFrontendRouteTest extends TestCase
         $response = $this->get('/admin');
 
         $response->assertOk();
-        $response->assertSee('/admin/ptconfig.js', false);
+        $response->assertSee('window.__PTADMIN_PTCONFIG_READY__ = Promise.resolve()', false);
+        $response->assertSee('"basePath":"/admin/"', false);
+        $response->assertDontSee('/admin/ptconfig.js', false);
         $response->assertSee('./assets/', false);
     }
 
-    public function test_frontend_deep_route_uses_rooted_runtime_config_url(): void
+    public function test_frontend_deep_route_inlines_runtime_config(): void
     {
         $response = $this->get('/admin/dashboard');
 
         $response->assertOk();
-        $response->assertSee('/admin/ptconfig.js', false);
+        $response->assertSee('window.ptconfig = Object.assign', false);
+        $response->assertSee('"basePath":"/admin/"', false);
+        $response->assertDontSee('/admin/ptconfig.js', false);
         $response->assertDontSee('./ptconfig.js', false);
     }
 

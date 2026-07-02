@@ -124,7 +124,11 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js');
         self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
         $indexHtml = (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html');
-        self::assertStringContainsString('/admin/ptconfig.js', $indexHtml);
+        self::assertStringContainsString('window.__PTADMIN_PTCONFIG_READY__ = Promise.resolve()', $indexHtml);
+        self::assertStringContainsString('window.ptconfig = Object.assign', $indexHtml);
+        self::assertStringContainsString('"basePath": "/admin/"', $indexHtml);
+        self::assertStringNotContainsString('/admin/ptconfig.js', $indexHtml);
+        self::assertStringNotContainsString('__PTADMIN_RUNTIME_CONFIG_SCRIPT__', $indexHtml);
         self::assertStringNotContainsString('__PTADMIN_CONFIG_URL__', $indexHtml);
         self::assertSame(public_path('admin'), $result['public_path']);
         self::assertFileExists(public_path('admin/index.html'));
@@ -151,7 +155,9 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertStringContainsString('window.ptconfig', (string) file_get_contents($configPath));
         self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
         $indexHtml = (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html');
-        self::assertStringContainsString('/admin/ptconfig.js', $indexHtml);
+        self::assertStringContainsString('window.ptconfig = Object.assign', $indexHtml);
+        self::assertStringContainsString('"basePath": "/admin/"', $indexHtml);
+        self::assertStringNotContainsString('/admin/ptconfig.js', $indexHtml);
         self::assertStringNotContainsString('./ptconfig.js', $indexHtml);
         self::assertFileExists(public_path('admin/ptconfig.js'));
         self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
