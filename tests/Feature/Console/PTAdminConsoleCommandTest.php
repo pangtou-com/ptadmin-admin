@@ -111,41 +111,42 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertSame('664', substr(sprintf('%o', fileperms($file)), -3));
     }
 
-    public function test_admin_frontend_build_service_can_publish_bundled_assets_to_current_storage(): void
+    public function test_admin_frontend_build_service_can_publish_bundled_assets_to_public_path(): void
     {
         $service = new AdminFrontendBuildService();
-        $currentPath = storage_path('app/ptadmin/frontend/admin/current');
-        $this->deletePath($currentPath);
+        $publicPath = public_path('admin');
+        $legacyCurrentPath = storage_path('app/ptadmin/frontend/admin/current');
+        $this->deletePath($publicPath);
+        $this->deletePath($legacyCurrentPath);
 
         $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
 
-        self::assertSame($currentPath, $result['current_path']);
-        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
-        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js');
-        self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
-        $indexHtml = (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertSame($publicPath, $result['public_path']);
+        self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'ptconfig.js');
+        self::assertDirectoryExists($publicPath.\DIRECTORY_SEPARATOR.'assets');
+        self::assertDirectoryExists($publicPath.\DIRECTORY_SEPARATOR.'modules');
+        $indexHtml = (string) file_get_contents($publicPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertStringContainsString('window.__PTADMIN_PTCONFIG_READY__ = Promise.resolve()', $indexHtml);
         self::assertStringContainsString('window.ptconfig = Object.assign', $indexHtml);
         self::assertStringContainsString('"basePath": "/admin/"', $indexHtml);
         self::assertStringNotContainsString('/admin/ptconfig.js', $indexHtml);
         self::assertStringNotContainsString('__PTADMIN_RUNTIME_CONFIG_SCRIPT__', $indexHtml);
         self::assertStringNotContainsString('__PTADMIN_CONFIG_URL__', $indexHtml);
-        self::assertSame(public_path('admin'), $result['public_path']);
-        self::assertFileExists(public_path('admin/index.html'));
-        self::assertFileExists(public_path('admin/ptconfig.js'));
+        self::assertDirectoryDoesNotExist($legacyCurrentPath);
         self::assertSame('generated', $result['runtime_config']);
-        self::assertFalse(is_link($currentPath));
+        self::assertFalse(is_link($publicPath));
     }
 
     public function test_admin_frontend_build_service_regenerates_runtime_config_on_publish(): void
     {
         $service = new AdminFrontendBuildService();
-        $currentPath = storage_path('app/ptadmin/frontend/admin/current');
-        $configPath = $currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js';
+        $publicPath = public_path('admin');
+        $configPath = $publicPath.\DIRECTORY_SEPARATOR.'ptconfig.js';
         $runtimeConfig = "window.ptconfig = { baseURL: 'https://tenant.example.test/custom-api/' };\n";
 
-        $this->deletePath($currentPath);
-        mkdir($currentPath, 0755, true);
+        $this->deletePath($publicPath);
+        mkdir($publicPath, 0755, true);
         file_put_contents($configPath, $runtimeConfig);
 
         $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
@@ -153,25 +154,24 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertSame('generated', $result['runtime_config']);
         self::assertStringNotContainsString('tenant.example.test', (string) file_get_contents($configPath));
         self::assertStringContainsString('window.ptconfig', (string) file_get_contents($configPath));
-        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
-        $indexHtml = (string) file_get_contents($currentPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'index.html');
+        $indexHtml = (string) file_get_contents($publicPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertStringContainsString('window.ptconfig = Object.assign', $indexHtml);
         self::assertStringContainsString('"basePath": "/admin/"', $indexHtml);
         self::assertStringNotContainsString('/admin/ptconfig.js', $indexHtml);
         self::assertStringNotContainsString('./ptconfig.js', $indexHtml);
-        self::assertFileExists(public_path('admin/ptconfig.js'));
-        self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
-        self::assertFalse(is_link($currentPath));
+        self::assertDirectoryExists($publicPath.\DIRECTORY_SEPARATOR.'assets');
+        self::assertFalse(is_link($publicPath));
     }
 
     public function test_admin_frontend_build_service_preserves_runtime_modules_on_publish(): void
     {
         $service = new AdminFrontendBuildService();
-        $currentPath = storage_path('app/ptadmin/frontend/admin/current');
-        $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
+        $publicPath = public_path('admin');
+        $modulesPath = $publicPath.\DIRECTORY_SEPARATOR.'modules';
         $moduleFile = $modulesPath.\DIRECTORY_SEPARATOR.'cms'.\DIRECTORY_SEPARATOR.'dist'.\DIRECTORY_SEPARATOR.'index.js';
 
-        $this->deletePath($currentPath);
+        $this->deletePath($publicPath);
         mkdir(\dirname($moduleFile), 0755, true);
         file_put_contents($moduleFile, 'console.log("cms");');
         chmod($modulesPath, 0770);
@@ -183,18 +183,18 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertSame('preserved', $result['modules']);
         self::assertSame('console.log("cms");', file_get_contents($moduleFile));
         self::assertSame('777', substr(sprintf('%o', fileperms($modulesPath)), -3));
-        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
-        self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
-        self::assertFalse(is_link($currentPath));
+        self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertDirectoryExists($publicPath.\DIRECTORY_SEPARATOR.'assets');
+        self::assertFalse(is_link($publicPath));
     }
 
     public function test_admin_frontend_build_service_creates_writable_runtime_modules_on_publish(): void
     {
         $service = new AdminFrontendBuildService();
-        $currentPath = storage_path('app/ptadmin/frontend/admin/current');
-        $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
+        $publicPath = public_path('admin');
+        $modulesPath = $publicPath.\DIRECTORY_SEPARATOR.'modules';
 
-        $this->deletePath($currentPath);
+        $this->deletePath($publicPath);
 
         $result = $service->publishBundled(dirname(__DIR__, 3), base_path());
 
@@ -203,9 +203,9 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertSame('created', $result['modules']);
         self::assertDirectoryExists($modulesPath);
         self::assertSame('777', substr(sprintf('%o', fileperms($modulesPath)), -3));
-        self::assertFileExists($currentPath.\DIRECTORY_SEPARATOR.'index.html');
-        self::assertDirectoryExists($currentPath.\DIRECTORY_SEPARATOR.'assets');
-        self::assertFalse(is_link($currentPath));
+        self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertDirectoryExists($publicPath.\DIRECTORY_SEPARATOR.'assets');
+        self::assertFalse(is_link($publicPath));
     }
 
     public function test_project_frontend_pull_command_is_registered(): void
@@ -214,6 +214,36 @@ class PTAdminConsoleCommandTest extends TestCase
 
         self::assertArrayHasKey('admin:pf:pull', $commands);
         self::assertArrayHasKey('admin:pf:publish', $commands);
+    }
+
+    public function test_project_frontend_publish_command_writes_directly_to_public_modules(): void
+    {
+        $sourcePath = storage_path('app/project-frontend-dist');
+        $manifestPath = storage_path('app/project-frontend.json');
+        $publicPath = public_path('admin/modules/custom-app');
+
+        $this->deletePath($sourcePath);
+        $this->deletePath($publicPath);
+        if (!is_dir($sourcePath.\DIRECTORY_SEPARATOR.'assets')) {
+            mkdir($sourcePath.\DIRECTORY_SEPARATOR.'assets', 0755, true);
+        }
+        file_put_contents($sourcePath.\DIRECTORY_SEPARATOR.'assets'.\DIRECTORY_SEPARATOR.'app.js', 'console.log("app");');
+        file_put_contents($manifestPath, '{"code":"custom-app","version":"1.0.0"}');
+
+        config()->set('ptadmin.project_frontend_manifest', $manifestPath);
+
+        $this->artisan('admin:pf:publish', [
+            '--source' => $sourcePath,
+            '--code' => 'custom-app',
+        ])->assertExitCode(0);
+
+        self::assertDirectoryExists($publicPath);
+        self::assertFalse(is_link($publicPath));
+        self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'frontend.json');
+        self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'dist'.\DIRECTORY_SEPARATOR.'assets'.\DIRECTORY_SEPARATOR.'app.js');
+
+        $this->deletePath($sourcePath);
+        @unlink($manifestPath);
     }
 
     private function deletePath(string $path): void

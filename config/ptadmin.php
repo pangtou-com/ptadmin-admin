@@ -52,26 +52,14 @@ return [
             'recursive' => true,
             'create' => true,
         ],
-        'admin_frontend_current' => [
-            'path' => storage_path('app/ptadmin/frontend/admin/current'),
-            'type' => 'directory',
-            'recursive' => true,
-            'create' => true,
-        ],
         'admin_public' => [
             'path' => public_path(env('PTADMIN_WEB_PREFIX', 'admin')),
             'type' => 'directory',
             'recursive' => true,
-            'create' => false,
-        ],
-        'addons_storage' => [
-            'path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),
-            'type' => 'directory',
-            'recursive' => true,
             'create' => true,
         ],
-        'project_frontend_storage' => [
-            'path' => env('PTADMIN_PROJECT_FRONTEND_STORAGE_PATH', storage_path('app/ptadmin/modules/'.env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'))),
+        'admin_public_modules' => [
+            'path' => public_path(env('PTADMIN_WEB_PREFIX', 'admin').'/modules'),
             'type' => 'directory',
             'recursive' => true,
             'create' => true,

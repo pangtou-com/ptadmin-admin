@@ -72,7 +72,7 @@ class PTAdminPackageBootstrapTest extends TestCase
 
         self::assertCount(1, $assetPublishes);
         self::assertSame('admin-frontend', basename((string) array_key_first($assetPublishes)));
-        self::assertSame('current', basename((string) current($assetPublishes)));
+        self::assertSame('admin', basename((string) current($assetPublishes)));
         self::assertSame($configPublishes + $migrationPublishes + $langPublishes + $assetPublishes, $allPublishes);
 
         $commands = Artisan::all();

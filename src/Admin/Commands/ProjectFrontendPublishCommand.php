@@ -11,16 +11,16 @@ class ProjectFrontendPublishCommand extends Command
 {
     protected $signature = 'admin:pf:publish
     {--source= : 项目二开前端构建产物目录，默认读取 ptadmin.project_frontend_dist_path}
-    {--target= : 项目二开前端运行目录，默认读取 ptadmin.project_frontend_storage_path}
+    {--target= : 项目二开前端最终发布目录，默认后台 public modules 目录}
     {--code= : 项目二开前端模块标识，默认读取 ptadmin.project_frontend_code}';
 
-    protected $description = '发布项目二开前端构建产物到后台宿主模块目录';
+    protected $description = '发布项目二开前端构建产物到后台 public 模块目录';
 
     public function handle(Filesystem $filesystem): int
     {
         $code = $this->normalizeCode((string) ($this->option('code') ?: config('ptadmin.project_frontend_code', '__app__')));
         $source = $this->normalizePath((string) ($this->option('source') ?: config('ptadmin.project_frontend_dist_path', base_path('resources/ptadmin/frontend/dist'))));
-        $target = $this->normalizePath((string) ($this->option('target') ?: config('ptadmin.project_frontend_storage_path', storage_path('app/ptadmin/modules/'.$code))));
+        $target = $this->normalizePath((string) ($this->option('target') ?: public_path(trim(admin_web_prefix(), '/').\DIRECTORY_SEPARATOR.'modules'.\DIRECTORY_SEPARATOR.$code)));
         $manifest = $this->normalizePath((string) config('ptadmin.project_frontend_manifest', base_path('resources/ptadmin/frontend/frontend.json')));
 
         if (!is_dir($source)) {
@@ -41,14 +41,10 @@ class ProjectFrontendPublishCommand extends Command
         $filesystem->copyDirectory($source, $target.\DIRECTORY_SEPARATOR.'dist');
         $filesystem->copy($manifest, $target.\DIRECTORY_SEPARATOR.'frontend.json');
 
-        $publicPath = public_path(trim(admin_web_prefix(), '/').\DIRECTORY_SEPARATOR.'modules'.\DIRECTORY_SEPARATOR.$code);
-        $this->replaceLinkOrCopy($filesystem, $publicPath, $target);
-
         $this->info('Project frontend published.');
         $this->line('Code: '.$code);
         $this->line('Source: '.$source);
         $this->line('Target: '.$target);
-        $this->line('Public: '.$publicPath);
 
         return 0;
     }
@@ -72,18 +68,6 @@ class ProjectFrontendPublishCommand extends Command
         }
 
         return rtrim(base_path($path), \DIRECTORY_SEPARATOR);
-    }
-
-    private function replaceLinkOrCopy(Filesystem $filesystem, string $linkPath, string $targetPath): void
-    {
-        $this->deletePath($filesystem, $linkPath);
-        $filesystem->ensureDirectoryExists(\dirname($linkPath));
-
-        if (@symlink($targetPath, $linkPath)) {
-            return;
-        }
-
-        $filesystem->copyDirectory($targetPath, $linkPath);
     }
 
     private function deletePath(Filesystem $filesystem, string $path): void

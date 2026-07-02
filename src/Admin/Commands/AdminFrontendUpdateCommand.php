@@ -33,7 +33,7 @@ class AdminFrontendUpdateCommand extends Command
         $this->info('Admin frontend build updated.');
         $this->line('Version: '.$pulled['version']);
         $this->line('Source: '.$published['source_path']);
-        $this->line('Current: '.$published['current_path']);
+        $this->line('Public: '.$published['public_path']);
 
         return 0;
     }

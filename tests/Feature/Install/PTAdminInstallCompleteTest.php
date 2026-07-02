@@ -64,6 +64,7 @@ class PTAdminInstallCompleteTest extends TestCase
     {
         $commands = [];
         $envPath = storage_path('install-test.env');
+        $this->deletePath(storage_path('app/ptadmin/frontend/admin'));
 
         Artisan::shouldReceive('all')
             ->once()
@@ -102,22 +103,19 @@ class PTAdminInstallCompleteTest extends TestCase
         self::assertTrue($nextCalled);
         self::assertFileExists($this->installedMarkerPath());
         self::assertFileExists($envPath);
-        $lock = json_decode((string) file_get_contents(dirname(__DIR__, 3).'/resources/admin-frontend/.release-lock.json'), true);
-        $frontendVersion = (string) ($lock['version'] ?? 'bundled');
-        self::assertFileExists(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/index.html'));
-        $releaseIndexHtml = (string) file_get_contents(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/index.html'));
-        self::assertStringContainsString('window.__PTADMIN_PTCONFIG_READY__ = Promise.resolve()', $releaseIndexHtml);
-        self::assertStringContainsString('window.ptconfig = Object.assign', $releaseIndexHtml);
-        self::assertStringContainsString('"basePath": "/admin-web/"', $releaseIndexHtml);
-        self::assertStringNotContainsString('/admin-web/ptconfig.js', $releaseIndexHtml);
-        self::assertStringNotContainsString('__PTADMIN_RUNTIME_CONFIG_SCRIPT__', $releaseIndexHtml);
-        self::assertStringNotContainsString('__PTADMIN_CONFIG_URL__', $releaseIndexHtml);
-        self::assertTrue(is_link(public_path('admin-web')) || is_dir(public_path('admin-web')));
+        self::assertDirectoryDoesNotExist(storage_path('app/ptadmin/frontend/admin'));
+        self::assertTrue(is_dir(public_path('admin-web')));
+        self::assertFalse(is_link(public_path('admin-web')));
         self::assertFileExists(public_path('admin-web/index.html'));
         self::assertFileExists(public_path('admin-web/ptconfig.js'));
-        self::assertStringContainsString('"basePath": "/admin-web/"', (string) file_get_contents(public_path('admin-web/index.html')));
+        $publicIndexHtml = (string) file_get_contents(public_path('admin-web/index.html'));
+        self::assertStringContainsString('window.__PTADMIN_PTCONFIG_READY__ = Promise.resolve()', $publicIndexHtml);
+        self::assertStringContainsString('window.ptconfig = Object.assign', $publicIndexHtml);
+        self::assertStringContainsString('"basePath": "/admin-web/"', $publicIndexHtml);
+        self::assertStringNotContainsString('/admin-web/ptconfig.js', $publicIndexHtml);
+        self::assertStringNotContainsString('__PTADMIN_RUNTIME_CONFIG_SCRIPT__', $publicIndexHtml);
+        self::assertStringNotContainsString('__PTADMIN_CONFIG_URL__', $publicIndexHtml);
         self::assertStringContainsString('/ptadmin/', (string) file_get_contents(public_path('admin-web/ptconfig.js')));
-        self::assertStringContainsString('/ptadmin/', (string) file_get_contents(storage_path('app/ptadmin/frontend/admin/releases/'.$frontendVersion.'/ptconfig.js')));
         self::assertSame("APP_NAME=PTAdmin\nAPP_ENV=local\n", file_get_contents($envPath));
         self::assertStringContainsString('安装成功', $output);
         self::assertStringContainsString('保存配置文件', $output);

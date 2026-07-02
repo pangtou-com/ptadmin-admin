@@ -87,30 +87,20 @@ final class AdminFrontendBuildService
         $appUrl = rtrim((string) ($options['app_url'] ?? ''), '/');
         $appName = (string) ($options['app_name'] ?? 'PTAdmin');
 
-        $releasePath = $appRoot.\DIRECTORY_SEPARATOR.'storage'.\DIRECTORY_SEPARATOR.'app'.\DIRECTORY_SEPARATOR.'ptadmin'.\DIRECTORY_SEPARATOR.'frontend'.\DIRECTORY_SEPARATOR.'admin'.\DIRECTORY_SEPARATOR.'releases'.\DIRECTORY_SEPARATOR.$version;
-        $currentPath = $appRoot.\DIRECTORY_SEPARATOR.'storage'.\DIRECTORY_SEPARATOR.'app'.\DIRECTORY_SEPARATOR.'ptadmin'.\DIRECTORY_SEPARATOR.'frontend'.\DIRECTORY_SEPARATOR.'admin'.\DIRECTORY_SEPARATOR.'current';
-        $publicPath = $appRoot.\DIRECTORY_SEPARATOR.'public'.\DIRECTORY_SEPARATOR.$webPrefix;
-
-        $this->deletePath($releasePath);
-        $this->copyDirectory($sourcePath, $releasePath);
-        $runtimeScript = $this->writeRuntimeConfig($releasePath.\DIRECTORY_SEPARATOR.'ptconfig.js', [
+        $publicPath = $this->publicFrontendPath($appRoot, $webPrefix);
+        $modulesState = $this->publishToPublic($sourcePath, $publicPath, [
             'app_name' => $appName,
             'app_url' => $appUrl,
             'api_prefix' => $apiPrefix,
             'web_prefix' => $webPrefix,
             'version' => $version,
         ]);
-        $this->writeRuntimeIndex($releasePath.\DIRECTORY_SEPARATOR.'index.html', $runtimeScript);
-
-        $this->replaceLinkOrCopy($currentPath, $releasePath);
-        $this->copyPublicFrontend($currentPath, $publicPath);
 
         return [
             'version' => $version,
-            'release_path' => $releasePath,
-            'current_path' => $currentPath,
             'public_path' => $publicPath,
             'web_prefix' => $webPrefix,
+            'modules' => $modulesState,
         ];
     }
 
@@ -119,44 +109,21 @@ final class AdminFrontendBuildService
         $sourcePath = $this->bundledFrontendPath($packageRoot);
         $this->assertFrontendBuild($sourcePath);
 
-        $currentPath = $appRoot.\DIRECTORY_SEPARATOR.'storage'.\DIRECTORY_SEPARATOR.'app'.\DIRECTORY_SEPARATOR.'ptadmin'.\DIRECTORY_SEPARATOR.'frontend'.\DIRECTORY_SEPARATOR.'admin'.\DIRECTORY_SEPARATOR.'current';
-        $currentConfigPath = $currentPath.\DIRECTORY_SEPARATOR.'ptconfig.js';
         $webPrefix = \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin');
-        $publicPath = $appRoot.\DIRECTORY_SEPARATOR.'public'.\DIRECTORY_SEPARATOR.$this->normalizePrefix($webPrefix);
-        $modulesPath = $currentPath.\DIRECTORY_SEPARATOR.'modules';
-        $preservedModulesPath = $this->preservePath($modulesPath);
-        $modulesState = null !== $preservedModulesPath ? 'preserved' : 'created';
-
-        try {
-            $this->deletePath($currentPath);
-            $this->ensureDirectory(\dirname($currentPath));
-            $this->copyDirectory($sourcePath, $currentPath);
-
-            $lock = $this->readLockFile($sourcePath);
-            $runtimeScript = $this->writeRuntimeConfig($currentConfigPath, [
-                'app_name' => (string) config('app.name', 'PTAdmin'),
-                'app_url' => (string) config('app.url', ''),
-                'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : 'ptadmin',
-                'web_prefix' => $webPrefix,
-                'asset_url' => (string) config('ptadmin.asset_url', ''),
-                'module_asset_url' => (string) config('ptadmin.module_asset_url', ''),
-                'version' => (string) ($lock['version'] ?? 'bundled'),
-            ]);
-            $this->writeRuntimeIndex($currentPath.\DIRECTORY_SEPARATOR.'index.html', $runtimeScript);
-
-            $this->restorePreservedPath($preservedModulesPath, $modulesPath);
-            $preservedModulesPath = null;
-            $this->ensureRuntimeDirectory($modulesPath);
-            $this->copyPublicFrontend($currentPath, $publicPath);
-        } finally {
-            if (null !== $preservedModulesPath) {
-                $this->deletePath($preservedModulesPath);
-            }
-        }
+        $publicPath = $this->publicFrontendPath($appRoot, $webPrefix);
+        $lock = $this->readLockFile($sourcePath);
+        $modulesState = $this->publishToPublic($sourcePath, $publicPath, [
+            'app_name' => (string) config('app.name', 'PTAdmin'),
+            'app_url' => (string) config('app.url', ''),
+            'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : 'ptadmin',
+            'web_prefix' => $webPrefix,
+            'asset_url' => (string) config('ptadmin.asset_url', ''),
+            'module_asset_url' => (string) config('ptadmin.module_asset_url', ''),
+            'version' => (string) ($lock['version'] ?? 'bundled'),
+        ]);
 
         return [
             'source_path' => $sourcePath,
-            'current_path' => $currentPath,
             'public_path' => $publicPath,
             'runtime_config' => 'generated',
             'modules' => $modulesState,
@@ -166,6 +133,45 @@ final class AdminFrontendBuildService
     public function bundledFrontendPath(string $packageRoot): string
     {
         return rtrim($packageRoot, \DIRECTORY_SEPARATOR).\DIRECTORY_SEPARATOR.'resources'.\DIRECTORY_SEPARATOR.'admin-frontend';
+    }
+
+    private function publicFrontendPath(string $appRoot, string $webPrefix): string
+    {
+        $prefix = $this->normalizePrefix($webPrefix);
+        if ('' === $prefix) {
+            throw new \RuntimeException('Admin web prefix cannot be empty when publishing frontend assets.');
+        }
+
+        return rtrim($appRoot, \DIRECTORY_SEPARATOR).\DIRECTORY_SEPARATOR.'public'.\DIRECTORY_SEPARATOR.$prefix;
+    }
+
+    /**
+     * @param array<string, mixed> $runtimeOptions
+     */
+    private function publishToPublic(string $sourcePath, string $publicPath, array $runtimeOptions): string
+    {
+        $modulesPath = $publicPath.\DIRECTORY_SEPARATOR.'modules';
+        $preservedModulesPath = $this->preservePath($modulesPath);
+        $modulesState = null !== $preservedModulesPath ? 'preserved' : 'created';
+
+        try {
+            $this->deletePath($publicPath);
+            $this->ensureDirectory(\dirname($publicPath));
+            $this->copyDirectory($sourcePath, $publicPath);
+
+            $runtimeScript = $this->writeRuntimeConfig($publicPath.\DIRECTORY_SEPARATOR.'ptconfig.js', $runtimeOptions);
+            $this->writeRuntimeIndex($publicPath.\DIRECTORY_SEPARATOR.'index.html', $runtimeScript);
+
+            $this->restorePreservedPath($preservedModulesPath, $modulesPath);
+            $preservedModulesPath = null;
+            $this->ensureRuntimeDirectory($modulesPath);
+        } finally {
+            if (null !== $preservedModulesPath) {
+                $this->deletePath($preservedModulesPath);
+            }
+        }
+
+        return $modulesState;
     }
 
     private function readJsonFromUrl(string $url): array
@@ -422,26 +428,8 @@ final class AdminFrontendBuildService
         file_put_contents($path, $html);
     }
 
-    private function replaceLinkOrCopy(string $linkPath, string $targetPath): void
-    {
-        $this->deletePath($linkPath);
-        $this->ensureDirectory(\dirname($linkPath));
-
-        if (@symlink($targetPath, $linkPath)) {
-            return;
-        }
-
-        $this->copyDirectory($targetPath, $linkPath);
-    }
-
     private function copyDirectory(string $source, string $target): void
     {
-        $this->copyDirectoryExcept($source, $target);
-    }
-
-    private function copyPublicFrontend(string $source, string $target): void
-    {
-        $this->deletePath($target);
         $this->copyDirectoryExcept($source, $target);
     }
 

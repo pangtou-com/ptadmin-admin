@@ -112,7 +112,7 @@ class PTAdminServiceProvider extends ServiceProvider
                 __DIR__.'/../../../lang' => resource_path('lang/vendor/ptadmin'),
             ];
             $assetPaths = [
-                __DIR__.'/../../../resources/admin-frontend' => storage_path('app/ptadmin/frontend/admin/current'),
+                __DIR__.'/../../../resources/admin-frontend' => public_path(env('PTADMIN_WEB_PREFIX', 'admin')),
             ];
 
             $this->publishes($configPaths, 'ptadmin');
