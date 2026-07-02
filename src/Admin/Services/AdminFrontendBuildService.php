@@ -116,6 +116,7 @@ final class AdminFrontendBuildService
             'app_name' => (string) config('app.name', 'PTAdmin'),
             'app_url' => (string) config('app.url', ''),
             'api_prefix' => \function_exists('admin_api_prefix') ? admin_api_prefix() : 'ptadmin',
+            'api_url' => (string) config('ptadmin.api_url', ''),
             'web_prefix' => $webPrefix,
             'asset_url' => (string) config('ptadmin.asset_url', ''),
             'module_asset_url' => (string) config('ptadmin.module_asset_url', ''),
@@ -367,10 +368,9 @@ final class AdminFrontendBuildService
     private function writeRuntimeConfig(string $path, array $options): string
     {
         $existing = is_file($path) ? (string) file_get_contents($path) : "/** @type {Window['ptconfig']} */\nwindow.ptconfig = window.ptconfig || {};\n";
-        $appUrl = rtrim((string) $options['app_url'], '/');
         $apiPrefix = $this->normalizePrefix((string) $options['api_prefix']);
         $webPrefix = $this->normalizePrefix((string) $options['web_prefix']);
-        $apiBase = ('' !== $appUrl ? $appUrl : '').'/'.$apiPrefix.'/';
+        $apiBase = $this->runtimeApiBase((string) ($options['api_url'] ?? ''), $apiPrefix);
         $webBase = '/'.$webPrefix.'/';
         $assetBase = rtrim((string) ($options['asset_url'] ?? ''), '/');
         if ('' === $assetBase) {
@@ -388,7 +388,7 @@ final class AdminFrontendBuildService
             'coreVersion' => (string) $options['version'],
             'core_version' => (string) $options['version'],
             'baseURL' => $apiBase,
-            'uploadURL' => $apiBase.'upload',
+            'uploadURL' => $this->joinRuntimeUrl($apiBase, 'upload'),
             'basePath' => $webBase,
             'assetBase' => $assetBase,
             'moduleAssetBase' => $moduleAssetBase,
@@ -530,6 +530,21 @@ final class AdminFrontendBuildService
     private function normalizePrefix(string $prefix): string
     {
         return trim($prefix, "/ \t\n\r\0\x0B");
+    }
+
+    private function runtimeApiBase(string $apiUrl, string $apiPrefix): string
+    {
+        $apiUrl = trim($apiUrl);
+        if ('' !== $apiUrl) {
+            return rtrim($apiUrl, '/').'/';
+        }
+
+        return '/'.$apiPrefix.'/';
+    }
+
+    private function joinRuntimeUrl(string $baseUrl, string $path): string
+    {
+        return rtrim($baseUrl, '/').'/'.ltrim($path, '/');
     }
 
     private function isValidSha256(string $value): bool

@@ -11,6 +11,7 @@ use PTAdmin\Admin\Services\Auth\Resolvers\WorkflowGuardResolver;
 return [
     'guard' => env('PTADMIN_GUARD', config('auth.app_guard_name', 'api')),
     'api_prefix' => 'ptadmin',
+    'api_url' => env('PTADMIN_API_URL', ''),
     'web_prefix' => env('PTADMIN_WEB_PREFIX', 'admin'),
     'web_asset_path' => env('PTADMIN_WEB_ASSET_PATH', 'vendor/ptadmin/admin'),
     'asset_url' => env('PTADMIN_ASSET_URL', ''),

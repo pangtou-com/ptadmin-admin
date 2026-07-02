@@ -130,7 +130,10 @@ class PTAdminConsoleCommandTest extends TestCase
         $indexHtml = (string) file_get_contents($publicPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertStringContainsString('window.__PTADMIN_PTCONFIG_READY__ = Promise.resolve()', $indexHtml);
         self::assertStringContainsString('window.ptconfig = Object.assign', $indexHtml);
+        self::assertStringContainsString('"baseURL": "/ptadmin/"', $indexHtml);
+        self::assertStringContainsString('"uploadURL": "/ptadmin/upload"', $indexHtml);
         self::assertStringContainsString('"basePath": "/admin/"', $indexHtml);
+        self::assertStringNotContainsString('web.ptadmin.local/ptadmin', $indexHtml);
         self::assertStringNotContainsString('/admin/ptconfig.js', $indexHtml);
         self::assertStringNotContainsString('__PTADMIN_RUNTIME_CONFIG_SCRIPT__', $indexHtml);
         self::assertStringNotContainsString('__PTADMIN_CONFIG_URL__', $indexHtml);
@@ -158,11 +161,28 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'index.html');
         $indexHtml = (string) file_get_contents($publicPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertStringContainsString('window.ptconfig = Object.assign', $indexHtml);
+        self::assertStringContainsString('"baseURL": "/ptadmin/"', $indexHtml);
+        self::assertStringContainsString('"uploadURL": "/ptadmin/upload"', $indexHtml);
         self::assertStringContainsString('"basePath": "/admin/"', $indexHtml);
         self::assertStringNotContainsString('/admin/ptconfig.js', $indexHtml);
         self::assertStringNotContainsString('./ptconfig.js', $indexHtml);
         self::assertDirectoryExists($publicPath.\DIRECTORY_SEPARATOR.'assets');
         self::assertFalse(is_link($publicPath));
+    }
+
+    public function test_admin_frontend_build_service_uses_explicit_api_url_when_configured(): void
+    {
+        $service = new AdminFrontendBuildService();
+        $publicPath = public_path('admin');
+
+        $this->deletePath($publicPath);
+        config()->set('ptadmin.api_url', 'https://api.example.test/custom-api');
+
+        $service->publishBundled(dirname(__DIR__, 3), base_path());
+
+        $indexHtml = (string) file_get_contents($publicPath.\DIRECTORY_SEPARATOR.'index.html');
+        self::assertStringContainsString('"baseURL": "https://api.example.test/custom-api/"', $indexHtml);
+        self::assertStringContainsString('"uploadURL": "https://api.example.test/custom-api/upload"', $indexHtml);
     }
 
     public function test_admin_frontend_build_service_preserves_runtime_modules_on_publish(): void
