@@ -69,6 +69,9 @@ class SystemConfigPreset
                         'default_val' => '',
                         'sort' => 90,
                         'intro' => '用于站点介绍、SEO 描述等场景',
+                        'extra' => [
+                            'maxlength' => 2000,
+                        ],
                     ],
                     [
                         'title' => '站点关键词',
@@ -78,6 +81,9 @@ class SystemConfigPreset
                         'default_val' => '',
                         'sort' => 80,
                         'intro' => '用于站点 SEO 关键词配置，多个关键词可按换行或分隔符组织',
+                        'extra' => [
+                            'maxlength' => 2000,
+                        ],
                     ],
                     [
                         'title' => '站点 Logo',
@@ -212,6 +218,9 @@ class SystemConfigPreset
                         'default_val' => '',
                         'sort' => 890,
                         'intro' => '允许上传的MIME类型，多个使用逗号分隔，如未设置则不限制',
+                        'extra' => [
+                            'maxlength' => 5000,
+                        ],
                     ],
                     // 分片上传
                     [

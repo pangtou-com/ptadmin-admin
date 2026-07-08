@@ -101,6 +101,76 @@ class PTAdminSettingsApiTest extends TestCase
         self::assertSame(0, SystemConfigService::value('basic.login_captcha'));
     }
 
+    public function test_textarea_setting_can_define_maxlength_and_save_long_value(): void
+    {
+        [, $section] = $this->seedSystemSettingFixtures();
+        $token = $this->issueFounderToken();
+
+        SystemConfig::query()->create([
+            'title' => '站点描述',
+            'name' => 'site_description',
+            'system_config_group_id' => $section->id,
+            'sort' => 80,
+            'type' => 'textarea',
+            'extra' => [
+                'maxlength' => 2000,
+            ],
+            'value' => '',
+            'default_val' => '',
+            'status' => 1,
+            'is_system' => 1,
+        ]);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/settings/'.$section->name);
+
+        $fields = $response->json('data.schema.schema.fields');
+        $description = collect($fields)->firstWhere('name', 'site_description');
+        self::assertSame(2000, $description['maxlength'] ?? null);
+
+        $longValue = str_repeat('站点描述', 180);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/setting-config/basic', [
+                'site_description' => $longValue,
+            ])
+            ->assertOk()
+            ->assertJsonPath('code', 0);
+
+        self::assertSame($longValue, SystemConfig::query()->where('name', 'site_description')->value('value'));
+        self::assertSame($longValue, SystemConfigService::value('basic.site_description'));
+    }
+
+    public function test_setting_field_management_normalizes_text_length_to_extra_maxlength(): void
+    {
+        [, $section] = $this->seedSystemSettingFixtures();
+        $token = $this->issueFounderToken();
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/setting-field/basic', [
+                'title' => '自定义备注',
+                'name' => 'custom_remark',
+                'system_config_group_id' => $section->id,
+                'type' => 'text',
+                'maxlength' => 1200,
+                'value' => '',
+                'default_val' => '',
+                'status' => 1,
+            ])
+            ->assertOk()
+            ->assertJsonPath('code', 0);
+
+        $config = SystemConfig::query()->where('name', 'custom_remark')->firstOrFail();
+        self::assertSame(['maxlength' => 1200], $config->extra);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/settings/'.$section->name);
+
+        $fields = $response->json('data.schema.schema.fields');
+        $remark = collect($fields)->firstWhere('name', 'custom_remark');
+        self::assertSame(1200, $remark['maxlength'] ?? null);
+    }
+
     public function test_addon_config_endpoint_returns_empty_when_plugin_has_no_initialized_group(): void
     {
         $this->migratePackageTables();

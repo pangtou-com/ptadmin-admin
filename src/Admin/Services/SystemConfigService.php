@@ -114,7 +114,7 @@ class SystemConfigService
     public function store($data)
     {
         $group = new SystemConfig();
-        $group->fill($data);
+        $group->fill($this->normalizeFieldPayload((array) $data));
         $group->save();
     }
     
@@ -122,6 +122,7 @@ class SystemConfigService
     {
         /** @var  SystemConfig $group */
         $group = SystemConfig::query()->where('id', $id)->firstOrFail();
+        $data = $this->normalizeFieldPayload((array) $data);
         if ($group->is_system && $data['name'] !== $group->name) {
             throw new BackgroundException("当前字段不允许编辑，字段标识");
         }
@@ -446,9 +447,10 @@ class SystemConfigService
      */
     private function buildEasyFieldSchema($setting): array
     {
-        $extra = $setting instanceof SystemConfig ? $setting->extra : (array) ($setting['extra'] ?? []);
-    
-        return [
+        $rawExtra = $setting instanceof SystemConfig ? $setting->extra : ($setting['extra'] ?? []);
+        $extra = \is_array($rawExtra) ? $rawExtra : [];
+
+        $schema = [
             'name' => data_get($setting, "name"),
             'type' => data_get($setting, "type"),
             'label' => data_get($setting, 'title'),
@@ -456,6 +458,60 @@ class SystemConfigService
             'help' => data_get($setting, 'intro'),
             'options' => $this->normalizeOptions($extra),
         ];
+
+        $length = $this->normalizeFieldLength($extra);
+        if (null !== $length && \in_array((string) data_get($setting, 'type'), ['text', 'textarea'], true)) {
+            $schema['maxlength'] = $length;
+        }
+
+        return $schema;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeFieldPayload(array $payload): array
+    {
+        $type = strtolower(trim((string) ($payload['type'] ?? '')));
+        if (!\in_array($type, ['text', 'textarea'], true)) {
+            return $payload;
+        }
+
+        $extra = \is_array($payload['extra'] ?? null) ? $payload['extra'] : [];
+        $length = $this->normalizeFieldLength($payload);
+        if (null === $length) {
+            $length = $this->normalizeFieldLength($extra);
+        }
+
+        if (null !== $length) {
+            $extra['maxlength'] = $length;
+            unset($extra['length'], $extra['maxLength'], $extra['max_length']);
+        }
+
+        $payload['extra'] = [] === $extra ? null : $extra;
+        unset($payload['length'], $payload['maxlength'], $payload['maxLength'], $payload['max_length']);
+
+        return $payload;
+    }
+
+    /**
+     * @param array<string, mixed> $source
+     */
+    private function normalizeFieldLength(array $source): ?int
+    {
+        foreach (['maxlength', 'maxLength', 'max_length', 'length'] as $key) {
+            if (!array_key_exists($key, $source) || !is_numeric($source[$key])) {
+                continue;
+            }
+
+            $length = (int) $source[$key];
+
+            return $length > 0 ? min($length, 65535) : null;
+        }
+
+        return null;
     }
 
     /**

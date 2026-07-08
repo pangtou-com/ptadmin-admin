@@ -169,8 +169,8 @@ return new class extends Migration
             $table->string('type', 20)->default('text');
             $table->string('intro', 255)->nullable();
             $table->json('extra')->nullable();
-            $table->string('value', 500)->nullable();
-            $table->string('default_val', 500)->nullable();
+            $table->text('value')->nullable();
+            $table->text('default_val')->nullable();
             $table->unsignedTinyInteger('status')->default(1);
             $table->unsignedInteger('created_at')->default(0);
             $table->unsignedInteger('updated_at')->default(0);

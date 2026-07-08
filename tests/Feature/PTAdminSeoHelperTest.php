@@ -106,4 +106,25 @@ BLADE
         self::assertSame('cms,ptadmin, activity', $context['keywords']);
         self::assertCount(2, $context['structured_data']);
     }
+
+    public function test_seo_favicon_renders_configurable_icon_links(): void
+    {
+        $html = seo_favicon('/favicon.ico');
+
+        self::assertSame(implode(PHP_EOL, [
+            '<link rel="icon" href="/favicon.ico" type="image/x-icon">',
+            '<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">',
+            '<link rel="apple-touch-icon" href="/favicon.ico">',
+        ]), $html);
+    }
+
+    public function test_seo_favicon_uses_default_embedded_svg_when_empty(): void
+    {
+        $html = seo_favicon('');
+
+        self::assertStringContainsString('href="data:image/svg+xml;base64,', $html);
+        self::assertStringContainsString('<link rel="icon"', $html);
+        self::assertStringContainsString('<link rel="shortcut icon"', $html);
+        self::assertStringContainsString('<link rel="apple-touch-icon"', $html);
+    }
 }

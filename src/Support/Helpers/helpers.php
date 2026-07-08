@@ -986,6 +986,7 @@ function seo_context(): array
         'description' => 'seo_description',
         'canonical' => 'seo_canonical',
         'robots' => 'seo_robots',
+        'favicon' => 'seo_favicon',
     ] as $field => $key) {
         $value = $view->shared($key);
         if (null === $value) {
@@ -1037,6 +1038,7 @@ function share_seo_context(array $context, bool $merge = true): array
         'description' => 'seo_description',
         'canonical' => 'seo_canonical',
         'robots' => 'seo_robots',
+        'favicon' => 'seo_favicon',
     ] as $field => $key) {
         if (array_key_exists($field, $normalized)) {
             app('view')->share($key, (string) $normalized[$field]);
@@ -1186,6 +1188,25 @@ function seo_meta_robots(?string $value = null, array $options = []): string
 }
 
 /**
+ * 输出 favicon 相关 link 标签。
+ */
+function seo_favicon(?string $value = null, array $options = []): string
+{
+    $href = seo_resolve_favicon_value($value, $options);
+    if ('' === $href) {
+        $href = seo_default_favicon_data_uri();
+    }
+
+    $href = e($href);
+
+    return implode(PHP_EOL, [
+        '<link rel="icon" href="'.$href.'" type="image/x-icon">',
+        '<link rel="shortcut icon" href="'.$href.'" type="image/x-icon">',
+        '<link rel="apple-touch-icon" href="'.$href.'">',
+    ]);
+}
+
+/**
  * 应用 SEO 覆盖并共享回视图上下文。
  *
  * @param array<string, mixed> $overrides
@@ -1279,7 +1300,7 @@ function seo_context_with_overrides(array $overrides = []): array
 {
     $context = seo_context();
 
-    foreach (['title', 'keywords', 'description', 'canonical', 'robots'] as $field) {
+    foreach (['title', 'keywords', 'description', 'canonical', 'robots', 'favicon'] as $field) {
         if (!array_key_exists($field, $overrides)) {
             continue;
         }
@@ -1381,6 +1402,50 @@ function seo_join_scalar_values(string $field, string $first, string $second): s
     }
 
     return trim($first.' '.$second);
+}
+
+/**
+ * @param array<string, mixed> $options
+ */
+function seo_resolve_favicon_value(?string $value = null, array $options = []): string
+{
+    $mode = (string) ($options['mode'] ?? seo_default_mode('favicon'));
+    $incoming = null === $value ? null : trim((string) $value);
+
+    if (null !== $incoming && '' !== $incoming && 'replace' === strtolower(trim($mode))) {
+        return $incoming;
+    }
+
+    $context = seo_context();
+    $current = trim((string) ($context['favicon'] ?? ''));
+    if ('' === $current) {
+        $current = seo_system_favicon_value();
+    }
+
+    if (null === $value) {
+        return $current;
+    }
+
+    return seo_apply_scalar_mode(
+        'favicon',
+        $current,
+        $incoming,
+        $mode
+    );
+}
+
+function seo_system_favicon_value(): string
+{
+    try {
+        return trim((string) system_config('basic.site_favicon', ''));
+    } catch (\Throwable $exception) {
+        return '';
+    }
+}
+
+function seo_default_favicon_data_uri(): string
+{
+    return 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNDEuNjUgMTQ4Ljg2Ij4KICAgIDxwYXRoIGZpbGw9IiMyMjc0ZmYiIGQ9Im0wLDMzLjU4djExNS4yN2MxMC4wNy0xMi45NiwyMi41LTIzLjA1LDM5LjY2LTIzLjA1aDYzLjA3YzM4Ljc1LjEzLDU0LjY0LTU5LjY4LDE5LjE0LTc3LjA1QzEyNC40MiwyMy44NSwxMDcsMCw4Ny43NSwwaC01MS4wOUMxNi4yOSwwLDAsMTcuODQsMCwzMy41OGgwWm0xMTIuNzEsMTMuNTFjMy41NCwwLDcuMjQuMjIsOS4wNCwxLjk4LS45MSwxOC43Ni0xNS45NSwzNC42My0zMi4zMywzNC42M2gtNDIuMjd2LTM2LjYxaDY1LjU3WiIvPgo8L3N2Zz4K';
 }
 
 
