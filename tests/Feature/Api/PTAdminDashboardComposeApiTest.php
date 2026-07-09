@@ -36,6 +36,8 @@ class PTAdminDashboardComposeApiTest extends TestCase
 
     public function test_dashboard_console_falls_back_to_default_enabled_widgets_for_founder_without_assignments(): void
     {
+        $frontendVersion = $this->currentFrontendVersion();
+
         $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
@@ -80,7 +82,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
                 'key' => 'dashboard.default',
                 'title' => '仪表盘',
                 'summary' => array(
-                    'frontend_version' => '0.1.12',
+                    'frontend_version' => $frontendVersion,
                     'frontend_latest_version' => '0.1.12',
                     'frontend_update_required' => false,
                     'backend_version' => $this->currentPackageVersion(),
@@ -117,6 +119,8 @@ class PTAdminDashboardComposeApiTest extends TestCase
 
     public function test_dashboard_console_summary_marks_authorized_and_pending_addon_updates(): void
     {
+        $frontendVersion = $this->currentFrontendVersion();
+
         $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
@@ -170,12 +174,15 @@ class PTAdminDashboardComposeApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('data.summary.addon_update_pending', true)
-            ->assertJsonPath('data.summary.frontend_version', '0.1.12')
+            ->assertJsonPath('data.summary.frontend_version', $frontendVersion)
             ->assertJsonPath('data.summary.backend_version', $this->currentPackageVersion());
     }
 
     public function test_dashboard_console_summary_marks_update_required_when_platform_has_newer_frontend(): void
     {
+        $frontendVersion = $this->currentFrontendVersion();
+        $newerFrontendVersion = $this->nextPatchVersion($frontendVersion);
+
         $this->createAdminsTable();
         $this->createUserTokensTable();
         $this->createOperationRecordsTable();
@@ -192,7 +199,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
         $this->writePlatformSnapshot([
             'synced_at' => date(DATE_ATOM),
             'latest' => [
-                'frontend_version' => '0.1.13',
+                'frontend_version' => $newerFrontendVersion,
                 'framework_version' => '1.1.8',
             ],
             'addons' => [],
@@ -205,7 +212,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
             ->getJson('/ptadmin/dashboard');
 
         $response->assertOk()
-            ->assertJsonPath('data.summary.frontend_version', '0.1.12')
+            ->assertJsonPath('data.summary.frontend_version', $frontendVersion)
             ->assertJsonPath('data.summary.update_required', true);
     }
 
@@ -408,6 +415,27 @@ class PTAdminDashboardComposeApiTest extends TestCase
     private function currentPackageVersion(): string
     {
         return get_frame_version();
+    }
+
+    private function currentFrontendVersion(): string
+    {
+        $lockPath = dirname(__DIR__, 3).'/resources/admin-frontend/.release-lock.json';
+        $lock = json_decode((string) file_get_contents($lockPath), true, 512, JSON_THROW_ON_ERROR);
+
+        return (string) ($lock['version'] ?? '');
+    }
+
+    private function nextPatchVersion(string $version): string
+    {
+        $parts = array_map('intval', explode('.', $version));
+
+        while (\count($parts) < 3) {
+            $parts[] = 0;
+        }
+
+        $parts[2]++;
+
+        return implode('.', array_slice($parts, 0, 3));
     }
 
 }
