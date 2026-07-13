@@ -1,4 +1,4 @@
-import{i as E}from"./_virtual___federation_fn_import-BCQXJC9C.js";import{_ as Be}from"./_plugin-vue_export-helper-DlAUqK2U.js";function mt(e,s,l){const t=e.slice(0,4),r=`
+import{i as E}from"./_virtual___federation_fn_import-0R3aKMze.js";import{_ as Be}from"./_plugin-vue_export-helper-DlAUqK2U.js";function mt(e,s,l){const t=e.slice(0,4),r=`
         <svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
             <defs>
                 <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
