@@ -429,6 +429,47 @@ class PTAdminUploadApiTest extends TestCase
         self::assertSame(url('/storage/images/banner.png'), $response->json('data.results.0.preview'));
     }
 
+    public function test_asset_listing_can_filter_builtin_resource_types(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createAssetsTable();
+
+        $assets = [
+            ['title' => 'cover.png', 'mime' => 'image/png', 'suffix' => 'png'],
+            ['title' => 'trailer.mp4', 'mime' => 'video/mp4', 'suffix' => 'mp4'],
+            ['title' => 'theme.mp3', 'mime' => 'audio/mpeg', 'suffix' => 'mp3'],
+            ['title' => 'manual.pdf', 'mime' => 'application/pdf', 'suffix' => 'pdf'],
+        ];
+
+        foreach ($assets as $asset) {
+            Asset::query()->create(array_merge($asset, [
+                'md5' => md5($asset['title']),
+                'driver' => 'public',
+                'size' => 10,
+                'path' => 'types/'.$asset['title'],
+                'groups' => 'types',
+            ]));
+        }
+
+        $token = $this->issueFounderToken();
+
+        foreach (['image' => 'cover.png', 'video' => 'trailer.mp4', 'audio' => 'theme.mp3', 'file' => 'manual.pdf'] as $type => $title) {
+            $response = $this->withHeaders($this->jsonApiHeaders($token))
+                ->getJson('/ptadmin/assets?type='.$type);
+
+            $response->assertOk()->assertJson([
+                'code' => 0,
+                'data' => [
+                    'total' => 1,
+                    'results' => [
+                        ['title' => $title],
+                    ],
+                ],
+            ]);
+        }
+    }
+
     private function issueFounderToken(): string
     {
         $founder = $this->createAdminAccount([

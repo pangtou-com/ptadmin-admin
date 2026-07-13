@@ -61,6 +61,17 @@ class AssetService
             $query->where('mime', 'like', "%{$mime}%");
         }
 
+        $type = strtolower(trim((string) ($search['type'] ?? '')));
+        if (\in_array($type, ['image', 'video', 'audio'], true)) {
+            $query->where('mime', 'like', $type.'/%');
+        } elseif ('file' === $type) {
+            $query->where(function ($query): void {
+                $query->where('mime', 'not like', 'image/%')
+                    ->where('mime', 'not like', 'video/%')
+                    ->where('mime', 'not like', 'audio/%');
+            });
+        }
+
         $suffix = trim((string) ($search['suffix'] ?? ''));
         if ('' !== $suffix) {
             $query->where('suffix', $suffix);
