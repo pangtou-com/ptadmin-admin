@@ -48,11 +48,16 @@ class AdminResourceService
 
     private AdminResourceServiceInterface $adminResourceService;
     private AdminGrantServiceInterface $adminGrantService;
+    private ProjectFrontendResourceService $projectFrontendResourceService;
 
-    public function __construct(AdminResourceServiceInterface $adminResourceService, AdminGrantServiceInterface $adminGrantService)
-    {
+    public function __construct(
+        AdminResourceServiceInterface $adminResourceService,
+        AdminGrantServiceInterface $adminGrantService,
+        ProjectFrontendResourceService $projectFrontendResourceService
+    ) {
         $this->adminResourceService = $adminResourceService;
         $this->adminGrantService = $adminGrantService;
+        $this->projectFrontendResourceService = $projectFrontendResourceService;
     }
 
     public function store($data): void
@@ -173,7 +178,7 @@ class AdminResourceService
         $resources = $this->resourceRows(['status' => StatusEnum::ENABLE]);
         
         if (1 === (int) $admin->is_founder) {
-            return $this->mergeDevelopAddonResources($resources, true);
+            return $this->mergeDevelopResources($resources, true);
         }
 
         $resourceMap = [];
@@ -207,7 +212,7 @@ class AdminResourceService
             }
         }
 
-        return $this->mergeDevelopAddonResources(array_values($results), false);
+        return $this->mergeDevelopResources(array_values($results), false);
     }
 
 
@@ -304,14 +309,14 @@ class AdminResourceService
     }
 
     /**
-     * 合并开发模式插件资源树
+     * 合并开发模式插件和项目二开资源树。
      * @param array<int, array<string, mixed>> $resources
      *
      * @return array<int, array<string, mixed>>
      */
-    private function mergeDevelopAddonResources(array $resources, bool $allowPreview): array
+    private function mergeDevelopResources(array $resources, bool $allowPreview): array
     {
-        $overlays = $this->developAddonResourceRows();
+        $overlays = $this->developResourceRows();
         if ([] === $overlays) {
             return $resources;
         }
@@ -355,6 +360,8 @@ class AdminResourceService
                 'type' => (string) ($overlay['type'] ?? MenuTypeEnum::NAV),
                 'is_nav' => (int) ($overlay['is_nav'] ?? 0),
                 'icon' => $overlay['icon'] ?? null,
+                'hidden' => (int) ($overlay['hidden'] ?? 0),
+                'keep_alive' => (int) ($overlay['keep_alive'] ?? 0),
             ];
             $idByName[$name] = $nextPreviewId;
             --$nextPreviewId;
@@ -402,62 +409,36 @@ class AdminResourceService
     /**
      * @return array<string, array<string, mixed>>
      */
-    private function developAddonResourceRows(): array
+    private function developResourceRows(): array
     {
-        if (!class_exists(Addon::class) || !app()->bound('addon')) {
-            return [];
-        }
-
         $rows = [];
-        foreach (Addon::getAddons() as $addonCode => $addonInfo) {
-            if (!\is_array($addonInfo)) {
-                continue;
-            }
-
-            $addonConfig = \is_array($addonInfo['addons'] ?? null) ? (array) $addonInfo['addons'] : $addonInfo;
-            if (!Addon::hasAddon((string) $addonCode)) {
-                continue;
-            }
-
-            if (empty($addonConfig['develop'])) {
-                continue;
-            }
-
-            $bootstrap = Addon::getAddonBootstrap((string) $addonCode);
-            if (null === $bootstrap || !method_exists($bootstrap, 'getAdminResourceDefinitions')) {
-                continue;
-            }
-
-            $definitions = $bootstrap->getAdminResourceDefinitions((string) $addonCode, $addonConfig);
-            if (!\is_array($definitions)) {
-                continue;
-            }
-
-            foreach ($definitions as $definition) {
-                if (!\is_array($definition)) {
+        if (class_exists(Addon::class) && app()->bound('addon')) {
+            foreach (Addon::getAddons() as $addonCode => $addonInfo) {
+                if (!\is_array($addonInfo)) {
                     continue;
                 }
 
-                $name = trim((string) ($definition['name'] ?? ''));
-                if ('' === $name) {
+                $addonConfig = \is_array($addonInfo['addons'] ?? null) ? (array) $addonInfo['addons'] : $addonInfo;
+                if (!Addon::hasAddon((string) $addonCode) || empty($addonConfig['develop'])) {
                     continue;
                 }
 
-                $rows[$name] = [
-                    'name' => $name,
-                    'title' => (string) ($definition['title'] ?? $name),
-                    'parent_name' => trim((string) ($definition['parent'] ?? self::TOP_RESOURCE_NAME)) ?: self::TOP_RESOURCE_NAME,
-                    'status' => isset($definition['status']) ? (int) $definition['status'] : StatusEnum::ENABLE,
-                    'sort' => isset($definition['sort']) ? (int) $definition['sort'] : 0,
-                    'module' => isset($definition['module']) && '' !== (string) $definition['module'] ? (string) $definition['module'] : null,
-                    'page_key' => isset($definition['page_key']) && '' !== (string) $definition['page_key'] ? (string) $definition['page_key'] : null,
-                    'route' => isset($definition['route']) && '' !== (string) $definition['route'] ? (string) $definition['route'] : null,
-                    'type' => $this->normalizeMenuType((string) ($definition['type'] ?? MenuTypeEnum::NAV)),
-                    'is_nav' => isset($definition['is_nav']) ? (int) $definition['is_nav'] : 0,
-                    'icon' => isset($definition['icon']) && '' !== (string) $definition['icon'] ? (string) $definition['icon'] : null,
-                ];
+                $bootstrap = Addon::getAddonBootstrap((string) $addonCode);
+                if (null === $bootstrap || !method_exists($bootstrap, 'getAdminResourceDefinitions')) {
+                    continue;
+                }
+
+                $definitions = $bootstrap->getAdminResourceDefinitions((string) $addonCode, $addonConfig);
+                if (\is_array($definitions)) {
+                    $this->appendDevelopResourceDefinitions($rows, $definitions);
+                }
             }
         }
+
+        $this->appendDevelopResourceDefinitions(
+            $rows,
+            $this->projectFrontendResourceService->developmentDefinitions()
+        );
 
         $parentNamesWithMenuChildren = [];
         foreach ($rows as $row) {
@@ -492,6 +473,46 @@ class AdminResourceService
         }
 
         return $rows;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $rows
+     * @param array<int, mixed> $definitions
+     */
+    private function appendDevelopResourceDefinitions(array &$rows, array $definitions): void
+    {
+        foreach ($definitions as $definition) {
+            if (!\is_array($definition)) {
+                continue;
+            }
+
+            $name = trim((string) ($definition['name'] ?? ''));
+            if ('' === $name) {
+                continue;
+            }
+
+            $row = [
+                'name' => $name,
+                'title' => (string) ($definition['title'] ?? $name),
+                'parent_name' => trim((string) ($definition['parent'] ?? self::TOP_RESOURCE_NAME)) ?: self::TOP_RESOURCE_NAME,
+                'status' => isset($definition['status']) ? (int) $definition['status'] : StatusEnum::ENABLE,
+                'sort' => isset($definition['sort']) ? (int) $definition['sort'] : 0,
+                'module' => isset($definition['module']) && '' !== (string) $definition['module'] ? (string) $definition['module'] : null,
+                'page_key' => isset($definition['page_key']) && '' !== (string) $definition['page_key'] ? (string) $definition['page_key'] : null,
+                'route' => isset($definition['route']) && '' !== (string) $definition['route'] ? (string) $definition['route'] : null,
+                'type' => $this->normalizeMenuType((string) ($definition['type'] ?? MenuTypeEnum::NAV)),
+                'is_nav' => isset($definition['is_nav']) ? (int) $definition['is_nav'] : 0,
+                'icon' => isset($definition['icon']) && '' !== (string) $definition['icon'] ? (string) $definition['icon'] : null,
+            ];
+            if (array_key_exists('hidden', $definition)) {
+                $row['hidden'] = (int) $definition['hidden'];
+            }
+            if (array_key_exists('keep_alive', $definition)) {
+                $row['keep_alive'] = (int) $definition['keep_alive'];
+            }
+
+            $rows[$name] = $row;
+        }
     }
 
     /**

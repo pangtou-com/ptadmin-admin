@@ -20,6 +20,7 @@ return [
     'project_frontend_code' => env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'),
     'project_frontend_dev_url' => env('PTADMIN_PROJECT_FRONTEND_DEV_URL', ''),
     'project_frontend_manifest' => env('PTADMIN_PROJECT_FRONTEND_MANIFEST', base_path('resources/ptadmin/frontend/frontend.json')),
+    'project_frontend_resource_manifest' => env('PTADMIN_PROJECT_FRONTEND_RESOURCE_MANIFEST', base_path('resources/ptadmin/frontend/resources.json')),
     'project_frontend_dist_path' => env('PTADMIN_PROJECT_FRONTEND_DIST_PATH', base_path('resources/ptadmin/frontend/dist')),
     'project_frontend_storage_path' => env('PTADMIN_PROJECT_FRONTEND_STORAGE_PATH', storage_path('app/ptadmin/modules/'.env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'))),
     'platform_snapshot_path' => env('PTADMIN_PLATFORM_SNAPSHOT_PATH', storage_path('app/ptadmin/platform/snapshot.json')),

@@ -73,6 +73,7 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertArrayHasKey('admin:fix', $commands);
         self::assertArrayHasKey('admin:fe:pull', $commands);
         self::assertArrayHasKey('admin:fe:update', $commands);
+        self::assertArrayHasKey('admin:resource', $commands);
         self::assertArrayHasKey('admin:upgrade', $commands);
     }
 

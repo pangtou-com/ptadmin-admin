@@ -119,15 +119,20 @@ class AdminResourceService implements AdminResourceServiceInterface
 
     public function syncAddonResources(string $addonCode, array $definitions): void
     {
+        $this->syncOwnedResources($addonCode, $definitions);
+    }
+
+    private function syncOwnedResources(string $ownerCode, array $definitions): void
+    {
         $codes = [];
         foreach ($definitions as $definition) {
-            $definition['addon_code'] = $addonCode;
+            $definition['addon_code'] = $ownerCode;
             $resource = $this->register($definition);
             $codes[] = $resource->name;
         }
 
         AdminResource::query()
-            ->where('addon_code', $addonCode)
+            ->where('addon_code', $ownerCode)
             ->when(\count($codes) > 0, function ($query) use ($codes): void {
                 $query->whereNotIn('name', $codes);
             })->update([

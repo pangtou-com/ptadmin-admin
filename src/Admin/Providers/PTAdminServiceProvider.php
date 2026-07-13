@@ -35,6 +35,7 @@ use ReflectionClass;
 use PTAdmin\Admin\Commands\AdminFixCommand;
 use PTAdmin\Admin\Commands\AdminFrontendPullCommand;
 use PTAdmin\Admin\Commands\AdminFrontendUpdateCommand;
+use PTAdmin\Admin\Commands\AdminResourceCommand;
 use PTAdmin\Admin\Commands\AdminUpgradeCommand;
 use PTAdmin\Admin\Http\Middleware\AuthenticateMiddleware;
 use PTAdmin\Admin\Commands\AdminCommand;
@@ -89,6 +90,7 @@ class PTAdminServiceProvider extends ServiceProvider
             AdminFixCommand::class,
             AdminFrontendPullCommand::class,
             AdminFrontendUpdateCommand::class,
+            AdminResourceCommand::class,
             AdminUpgradeCommand::class,
             AdminCommand::class,
             ProjectFrontendPullCommand::class,

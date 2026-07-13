@@ -81,6 +81,7 @@ class PTAdminPackageBootstrapTest extends TestCase
         self::assertArrayHasKey('admin:auth', $commands);
         self::assertArrayHasKey('admin:fe:pull', $commands);
         self::assertArrayHasKey('admin:fe:update', $commands);
+        self::assertArrayHasKey('admin:resource', $commands);
         self::assertArrayHasKey('admin:upgrade', $commands);
         self::assertInstanceOf(AdminCommand::class, $commands['admin:auth']);
         self::assertInstanceOf(AdminUpgradeCommand::class, $commands['admin:upgrade']);
