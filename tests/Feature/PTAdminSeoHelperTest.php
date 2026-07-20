@@ -4,10 +4,46 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Tests\Feature;
 
+use PTAdmin\Admin\Services\SystemConfigGroupService;
+use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminSeoHelperTest extends TestCase
 {
+    public function test_seo_title_falls_back_to_system_site_title_without_page_context(): void
+    {
+        $this->createSystemConfigGroupsTable();
+        $this->createSystemConfigsTable();
+
+        SystemConfigGroupService::installInitialize([[
+            'title' => '基础设置',
+            'name' => 'basic',
+            'type' => 'system',
+            'access' => 'public',
+            'status' => 1,
+            'fields' => [[
+                'title' => '站点标题',
+                'name' => 'site_title',
+                'type' => 'text',
+                'value' => '系统站点标题',
+                'default_val' => '系统站点标题',
+            ]],
+        ]]);
+        SystemConfigService::refreshSystemConfigCache();
+        share_seo_context([], false);
+
+        self::assertSame('系统站点标题', seo_title());
+    }
+
+    public function test_seo_title_keeps_resolved_page_title_without_appending_site_title_twice(): void
+    {
+        share_seo_context([
+            'title' => '文章标题 - 系统站点标题',
+        ], false);
+
+        self::assertSame('文章标题 - 系统站点标题', seo_title());
+    }
+
     public function test_seo_helpers_read_shared_context_and_render_social_payloads(): void
     {
         share_seo_context([

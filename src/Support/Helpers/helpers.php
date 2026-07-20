@@ -1076,7 +1076,20 @@ function seo_title(?string $value = null, array $options = []): string
         }
     }
 
-    return seo_resolve_scalar_value('title', $value, $options);
+    $title = seo_resolve_scalar_value('title', $value, $options);
+
+    return '' !== $title ? $title : seo_system_title_value();
+}
+
+function seo_system_title_value(): string
+{
+    try {
+        $title = trim((string) system_config('basic.site_title', ''));
+    } catch (\Throwable $exception) {
+        $title = '';
+    }
+
+    return '' !== $title ? $title : trim((string) config('app.name', ''));
 }
 
 /**
