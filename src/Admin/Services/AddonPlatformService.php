@@ -58,13 +58,19 @@ class AddonPlatformService
     public function localAddons(): array
     {
         $results = [];
+        $installedAddons = Addon::getInstalledAddons();
+        $configurableCodes = $this->configurableAddonCodes(array_keys($installedAddons));
 
-        foreach (Addon::getInstalledAddons() as $code => $addonInfo) {
+        foreach ($installedAddons as $code => $addonInfo) {
             if (!\is_array($addonInfo)) {
                 continue;
             }
 
-            $results[] = $this->normalizeLocalAddon((string) $code, $addonInfo);
+            $results[] = $this->normalizeLocalAddon(
+                (string) $code,
+                $addonInfo,
+                isset($configurableCodes[(string) $code])
+            );
         }
 
         usort($results, static function (array $left, array $right) {
@@ -185,7 +191,7 @@ class AddonPlatformService
             throw new BackgroundException(sprintf('插件[%s]不存在', $code));
         }
 
-        return $this->normalizeLocalAddon($code, $installed[$code]);
+        return $this->normalizeLocalAddon($code, $installed[$code], $this->hasAddonConfig($code));
     }
 
     /**
@@ -249,12 +255,26 @@ class AddonPlatformService
      */
     public function addonConfig(string $code): array
     {
-        $group = SystemConfigGroup::query()->where('addon_code', $code)->where('status', 1)->first();
-        if (!$group) {
-            return [];
-        }
+        $groups = SystemConfigGroup::query()
+            ->where('addon_code', $code)
+            ->where('status', 1)
+            ->orderByDesc('sort')
+            ->orderBy('id')
+            ->get();
 
-        return $this->systemSettingsService->addonSection((string) $group->addon_code, (string) $group->name);
+        $sections = $groups->map(function (SystemConfigGroup $group): array {
+            $section = $this->systemSettingsService->addonSection(
+                (string) $group->addon_code,
+                (string) $group->name
+            );
+
+            return $this->sanitizeAddonSection($group, $section);
+        })->values()->all();
+
+        return [
+            'code' => $code,
+            'sections' => $sections,
+        ];
     }
 
     /**
@@ -263,14 +283,88 @@ class AddonPlatformService
      * @param array<string, mixed> $data
      *
      */
-    public function saveAddonConfig(string $code, array $data)
+    public function saveAddonConfig(string $code, array $data): array
     {
-        $section = SystemConfigGroup::query()->where('addon_code', $code)->where('status', 1)->first();
-        if (!$section) {
-            throw new BackgroundException(sprintf('插件[%s]未提供通用配置', $code));
+        $sections = SystemConfigGroup::query()
+            ->where('addon_code', $code)
+            ->where('status', 1)
+            ->orderByDesc('sort')
+            ->orderBy('id')
+            ->get();
+        $sectionKey = trim((string) ($data['section'] ?? ''));
+
+        if ('' === $sectionKey && 1 === $sections->count()) {
+            $sectionKey = (string) $sections->first()->name;
         }
-        
-        $this->systemSettingsService->saveAddonSection($code, (string) $section->name, $data);
+
+        /** @var SystemConfigGroup|null $section */
+        $section = $sections->firstWhere('name', $sectionKey);
+        if (!$section) {
+            if ($sections->isEmpty()) {
+                throw new BackgroundException(sprintf('插件[%s]未提供通用配置', $code));
+            }
+
+            throw new BackgroundException(sprintf('插件[%s]配置分组[%s]不存在', $code, $sectionKey));
+        }
+
+        $values = $data['values'] ?? $data;
+        if (!\is_array($values)) {
+            throw new BackgroundException(sprintf('插件[%s]配置内容无效', $code));
+        }
+
+        foreach ($section->configs()->whereIn('type', ['password', 'secret'])->pluck('name')->all() as $fieldName) {
+            if (array_key_exists($fieldName, $values) && ('' === $values[$fieldName] || null === $values[$fieldName])) {
+                unset($values[$fieldName]);
+            }
+        }
+
+        $this->systemSettingsService->saveAddonSection($code, (string) $section->name, ['values' => $values]);
+
+        return $this->addonConfig($code);
+    }
+
+    /**
+     * @param array<string, mixed> $section
+     *
+     * @return array<string, mixed>
+     */
+    private function sanitizeAddonSection(SystemConfigGroup $group, array $section): array
+    {
+        $schema = \is_array($section['schema'] ?? null) ? $section['schema'] : [];
+        $fields = \is_array($schema['fields'] ?? null) ? $schema['fields'] : [];
+        $values = \is_array($section['values'] ?? null) ? $section['values'] : [];
+        $storedFields = collect($section['fields'] ?? [])->keyBy('name');
+
+        $schema['fields'] = array_map(static function (array $field) use (&$values, $storedFields): array {
+            if ('password' !== ($field['type'] ?? null)) {
+                return $field;
+            }
+
+            $name = (string) ($field['name'] ?? '');
+            $storedField = $storedFields->get($name);
+            $configured = '' !== (string) data_get($storedField, 'value', '');
+            $help = trim((string) ($field['help'] ?? ''));
+
+            $field['configured'] = $configured;
+            $field['defaultValue'] = '';
+            $field['help'] = $configured
+                ? trim($help.' 已配置，留空保持现有值。')
+                : $help;
+
+            if ('' !== $name) {
+                $values[$name] = '';
+            }
+
+            return $field;
+        }, $fields);
+
+        return [
+            'key' => (string) $group->name,
+            'title' => (string) $group->title,
+            'intro' => (string) ($group->intro ?? ''),
+            'schema' => $schema,
+            'values' => $values,
+        ];
     }
 
     /**
@@ -326,7 +420,7 @@ class AddonPlatformService
      *
      * @return array<string, mixed>
      */
-    private function normalizeLocalAddon(string $code, array $addonInfo): array
+    private function normalizeLocalAddon(string $code, array $addonInfo, bool $configurable): array
     {
         $enabled = Addon::hasAddon($code);
 
@@ -344,11 +438,40 @@ class AddonPlatformService
             'is_install' => 1,
             'is_enable' => $enabled ? 1 : 0,
             'develop' => !empty($addonInfo['develop']) ? 1 : 0,
-            'configurable' =>  0,
+            'configurable' => $configurable ? 1 : 0,
             'has_frontend_modules' => $this->hasAddonModuleManifest($addonInfo) ? 1 : 0,
             'dependencies' => (array) data_get($addonInfo, 'dependencies.plugins', $addonInfo['require'] ?? []),
             'required_satisfied' => $this->dependenciesSatisfied($code, $addonInfo, $enabled) ? 1 : 0,
         ];
+    }
+
+    /**
+     * @param array<int|string, string> $codes
+     *
+     * @return array<string, bool>
+     */
+    private function configurableAddonCodes(array $codes): array
+    {
+        if ([] === $codes) {
+            return [];
+        }
+
+        $configurableCodes = SystemConfigGroup::query()
+            ->whereIn('addon_code', $codes)
+            ->where('status', 1)
+            ->pluck('addon_code')
+            ->filter()
+            ->all();
+
+        return array_fill_keys($configurableCodes, true);
+    }
+
+    private function hasAddonConfig(string $code): bool
+    {
+        return SystemConfigGroup::query()
+            ->where('addon_code', $code)
+            ->where('status', 1)
+            ->exists();
     }
 
     /**

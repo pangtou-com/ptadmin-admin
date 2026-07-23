@@ -252,15 +252,17 @@ class PTAdminSettingsApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('code', 0)
-            ->assertJsonPath('data.schema.name', 'basic')
-            ->assertJsonPath('data.schema.fields.0.name', 'title')
-            ->assertJsonPath('data.schema.fields.1.type', 'switch');
+            ->assertJsonPath('data.sections.0.key', 'basic')
+            ->assertJsonPath('data.sections.0.schema.name', 'basic')
+            ->assertJsonPath('data.sections.0.schema.fields.0.name', 'title')
+            ->assertJsonPath('data.sections.0.schema.fields.1.type', 'switch');
 
-        self::assertSame('CMS Demo', $response->json('data.values.title'));
-        self::assertSame(1, $response->json('data.values.enabled'));
+        self::assertSame('CMS Demo', $response->json('data.sections.0.values.title'));
+        self::assertSame(1, $response->json('data.sections.0.values.enabled'));
 
         $this->withHeaders($this->jsonApiHeaders($token))
             ->putJson('/ptadmin/addons/cms/config', [
+                'section' => 'basic',
                 'values' => [
                     'title' => 'CMS Updated',
                     'enabled' => 0,

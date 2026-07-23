@@ -299,7 +299,8 @@ class AddonController extends AbstractBackgroundController
     public function saveConfig(string $code, Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'values' => 'sometimes|array',
+            'section' => 'sometimes|string|max:32',
+            'values' => 'required|array',
         ]);
 
         return AdminResponse::success($this->addonPlatformService->saveAddonConfig($code, $request->all()));

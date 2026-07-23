@@ -29,7 +29,6 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use ReflectionClass;
 use PTAdmin\Admin\Commands\AdminFixCommand;
@@ -167,11 +166,9 @@ class PTAdminServiceProvider extends ServiceProvider
      * @return void
      */
     protected function registerTemplateActive(){
-        $active = '';
+        $active = 'default';
         try {
-            if (Schema::hasTable('system_config_groups')) {
-                $active = system_config("system.theme.template", "default");
-            }
+            $active = system_config("system.theme.template", "default");
         } catch (\Throwable $exception) {
             $active = 'default';
         }

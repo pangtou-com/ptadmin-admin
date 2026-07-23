@@ -345,7 +345,7 @@ class SystemConfigPreset
                     [
                         'title' => '邮箱密码',
                         'name' => 'password',
-                        'type' => 'password',
+                        'type' => 'secret',
                         'value' => '',
                         'default_val' => '',
                         'sort' => 50,

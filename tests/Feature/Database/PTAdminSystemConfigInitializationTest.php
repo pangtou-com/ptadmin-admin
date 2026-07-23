@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Tests\Feature\Database;
 
+use Illuminate\Support\Facades\Cache;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Services\SystemConfigGroupService;
@@ -13,6 +14,59 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminSystemConfigInitializationTest extends TestCase
 {
+    public function test_system_config_cache_is_loaded_once_per_request(): void
+    {
+        $payload = [
+            '__sections__' => [
+                'basic' => ['site_title' => 'PTAdmin'],
+            ],
+            '__fields__' => [
+                'basic.site_title' => 'PTAdmin',
+            ],
+            '__public_fields__' => [
+                'basic.site_title' => 'PTAdmin',
+            ],
+        ];
+
+        Cache::shouldReceive('get')
+            ->once()
+            ->with('systemConfig')
+            ->andReturn($payload);
+
+        self::assertSame('PTAdmin', SystemConfigService::value('basic.site_title'));
+        self::assertSame('PTAdmin', SystemConfigService::value('basic.site_title'));
+        self::assertSame('PTAdmin', SystemConfigService::public()['basic.site_title'] ?? null);
+    }
+
+    public function test_updating_system_config_cache_replaces_current_request_snapshot(): void
+    {
+        $this->createSystemConfigGroupsTable();
+        $this->createSystemConfigsTable();
+
+        SystemConfigGroupService::installInitialize([[
+            'title' => '基础设置',
+            'name' => 'basic',
+            'type' => 'system',
+            'access' => 'public',
+            'status' => 1,
+            'fields' => [[
+                'title' => '站点标题',
+                'name' => 'site_title',
+                'type' => 'text',
+                'value' => 'PTAdmin',
+                'default_val' => 'PTAdmin',
+            ]],
+        ]]);
+
+        SystemConfigService::updateSystemConfigCache();
+        self::assertSame('PTAdmin', SystemConfigService::value('basic.site_title'));
+
+        SystemConfig::query()->where('name', 'site_title')->update(['value' => 'PTAdmin Next']);
+        SystemConfigService::updateSystemConfigCache();
+
+        self::assertSame('PTAdmin Next', SystemConfigService::value('basic.site_title'));
+    }
+
     public function test_install_initialize_is_idempotent_and_updates_existing_records(): void
     {
         $this->createSystemConfigGroupsTable();

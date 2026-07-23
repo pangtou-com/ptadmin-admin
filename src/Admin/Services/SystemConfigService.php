@@ -23,8 +23,11 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services;
 
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use PTAdmin\Admin\Models\SystemConfig;
 use PTAdmin\Admin\Models\SystemConfigGroup;
@@ -39,6 +42,7 @@ class SystemConfigService
     private const CACHE_SECTIONS_KEY = '__sections__';
     private const CACHE_FIELDS_KEY = '__fields__';
     private const CACHE_PUBLIC_FIELDS_KEY = '__public_fields__';
+    private const REQUEST_CACHE_ATTRIBUTE = '__ptadmin_system_config_cache';
 
     /**
      * 返回某个配置分组的表单协议与当前值。
@@ -256,14 +260,19 @@ class SystemConfigService
      */
     public static function getSystemConfigCache()
     {
-        if (Cache::has(self::CACHE_KEY)) {
-            $data = Cache::get(self::CACHE_KEY);
-            if (null !== $data) {
-                return $data;
-            }
+        $request = self::currentRequest();
+        if ($request instanceof Request && $request->attributes->has(self::REQUEST_CACHE_ATTRIBUTE)) {
+            return $request->attributes->get(self::REQUEST_CACHE_ATTRIBUTE);
         }
 
-        return self::updateSystemConfigCache();
+        $data = Cache::get(self::CACHE_KEY);
+        if (null === $data) {
+            return self::updateSystemConfigCache();
+        }
+
+        self::cacheForCurrentRequest($data);
+
+        return $data;
     }
 
     /**
@@ -281,6 +290,8 @@ class SystemConfigService
             ->orderBy('id')
             ->get();
         if (0 === \count($configGroups)) {
+            self::cacheForCurrentRequest(null);
+
             return null;
         }
 
@@ -310,15 +321,44 @@ class SystemConfigService
         }
 
         Cache::forever(self::CACHE_KEY, $data);
+        self::cacheForCurrentRequest($data);
 
         return $data;
     }
 
     public static function refreshSystemConfigCache(): ?array
     {
+        self::forgetCurrentRequestCache();
         Cache::forget(self::CACHE_KEY);
 
         return self::updateSystemConfigCache();
+    }
+
+    private static function currentRequest(): ?Request
+    {
+        if (!app()->bound('request')) {
+            return null;
+        }
+
+        $request = app('request');
+
+        return $request instanceof Request ? $request : null;
+    }
+
+    private static function cacheForCurrentRequest(?array $data): void
+    {
+        $request = self::currentRequest();
+        if ($request instanceof Request) {
+            $request->attributes->set(self::REQUEST_CACHE_ATTRIBUTE, $data);
+        }
+    }
+
+    private static function forgetCurrentRequestCache(): void
+    {
+        $request = self::currentRequest();
+        if ($request instanceof Request) {
+            $request->attributes->remove(self::REQUEST_CACHE_ATTRIBUTE);
+        }
     }
 
     private static function buildSectionKey(string $groupName, ?string $addonCode = null): string
@@ -388,6 +428,12 @@ class SystemConfigService
     private function buildFieldSchema(SystemConfig $config): array
     {
         $schema = $this->fieldHandle($config)->schema();
+
+        if ('secret' === (string) $config->type) {
+            $schema['type'] = 'password';
+            $schema['defaultValue'] = '';
+            $schema['secret'] = true;
+        }
         
         if (isset($schema['rules'])) {
             unset($schema['rules']);
@@ -426,6 +472,19 @@ class SystemConfigService
      */
     private static function resolveRuntimeValue($setting)
     {
+        if ('secret' === (string) data_get($setting, 'type')) {
+            $value = data_get($setting, 'value');
+            if (null === $value || '' === $value) {
+                return $value;
+            }
+
+            try {
+                return Crypt::decryptString((string) $value);
+            } catch (DecryptException $exception) {
+                return $value;
+            }
+        }
+
         $service = new self();
         $field = $service->fieldHandle($setting);
     
@@ -449,18 +508,23 @@ class SystemConfigService
     {
         $rawExtra = $setting instanceof SystemConfig ? $setting->extra : ($setting['extra'] ?? []);
         $extra = \is_array($rawExtra) ? $rawExtra : [];
+        $type = (string) data_get($setting, 'type');
 
         $schema = [
             'name' => data_get($setting, "name"),
-            'type' => data_get($setting, "type"),
+            'type' => 'secret' === $type ? 'text' : $type,
             'label' => data_get($setting, 'title'),
             'defaultValue' => data_get($setting, 'default_val'),
             'help' => data_get($setting, 'intro'),
             'options' => $this->normalizeOptions($extra),
         ];
 
+        if ('secret' === $type) {
+            $schema['secret'] = true;
+        }
+
         $length = $this->normalizeFieldLength($extra);
-        if (null !== $length && \in_array((string) data_get($setting, 'type'), ['text', 'textarea'], true)) {
+        if (null !== $length && \in_array($type, ['text', 'textarea'], true)) {
             $schema['maxlength'] = $length;
         }
 

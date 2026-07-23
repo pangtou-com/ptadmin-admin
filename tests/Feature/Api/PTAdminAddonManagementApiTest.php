@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Tests\Feature\Api;
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Crypt;
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\Service\AddonManager;
+use PTAdmin\Admin\Models\SystemConfig;
+use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Admin\Services\AddonPlatformService;
+use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminAddonManagementApiTest extends TestCase
@@ -194,6 +198,109 @@ class PTAdminAddonManagementApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.code', 'shop')
             ->assertJsonPath('data.configurable', 0);
+
+        $basicGroup = SystemConfigGroup::query()->create([
+            'title' => '商城插件',
+            'name' => 'basic',
+            'type' => 'addon',
+            'access' => 'private',
+            'is_system' => 1,
+            'sort' => 20,
+            'addon_code' => 'shop',
+            'intro' => '商城插件配置',
+            'status' => 1,
+        ]);
+        SystemConfig::query()->create([
+            'title' => '应用名称',
+            'name' => 'app_name',
+            'system_config_group_id' => $basicGroup->id,
+            'sort' => 20,
+            'is_system' => 1,
+            'type' => 'text',
+            'intro' => '商城应用名称',
+            'extra' => [],
+            'value' => '旧名称',
+            'default_val' => '',
+            'status' => 1,
+        ]);
+        SystemConfig::query()->create([
+            'title' => '应用密钥',
+            'name' => 'app_secret',
+            'system_config_group_id' => $basicGroup->id,
+            'sort' => 10,
+            'is_system' => 1,
+            'type' => 'secret',
+            'intro' => '商城应用密钥',
+            'extra' => [],
+            'value' => 'stored-secret',
+            'default_val' => '',
+            'status' => 1,
+        ]);
+        SystemConfigGroup::query()->create([
+            'title' => '回调设置',
+            'name' => 'callbacks',
+            'type' => 'addon',
+            'access' => 'private',
+            'is_system' => 1,
+            'sort' => 10,
+            'addon_code' => 'shop',
+            'intro' => '商城回调配置',
+            'status' => 1,
+        ]);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/cloud/local/apps')
+            ->assertOk()
+            ->assertJsonPath('data.results.0.configurable', 1);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/addons/shop/status')
+            ->assertOk()
+            ->assertJsonPath('data.configurable', 1);
+
+        $configResponse = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/addons/shop/config');
+
+        $configResponse->assertOk()
+            ->assertJsonPath('data.code', 'shop')
+            ->assertJsonPath('data.sections.0.key', 'basic')
+            ->assertJsonPath('data.sections.0.values.app_name', '旧名称')
+            ->assertJsonPath('data.sections.0.values.app_secret', '')
+            ->assertJsonPath('data.sections.0.schema.fields.1.configured', true)
+            ->assertJsonPath('data.sections.1.key', 'callbacks');
+        self::assertStringNotContainsString('stored-secret', (string) $configResponse->getContent());
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->putJson('/ptadmin/addons/shop/config', [
+                'section' => 'basic',
+                'values' => [
+                    'app_name' => '新名称',
+                    'app_secret' => '',
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.sections.0.values.app_name', '新名称')
+            ->assertJsonPath('data.sections.0.values.app_secret', '');
+
+        $this->assertDatabaseHas('system_configs', [
+            'name' => 'app_secret',
+            'value' => 'stored-secret',
+        ]);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->putJson('/ptadmin/addons/shop/config', [
+                'section' => 'basic',
+                'values' => [
+                    'app_secret' => 'new-secret',
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.sections.0.values.app_secret', '');
+
+        $storedSecret = (string) SystemConfig::query()->where('name', 'app_secret')->value('value');
+        self::assertNotSame('new-secret', $storedSecret);
+        self::assertSame('new-secret', Crypt::decryptString($storedSecret));
+        self::assertSame('new-secret', SystemConfigService::addonValue('shop', 'basic.app_secret'));
     }
 
     public function test_local_addon_list_excludes_none_mode_settings_registration_from_configurable(): void
