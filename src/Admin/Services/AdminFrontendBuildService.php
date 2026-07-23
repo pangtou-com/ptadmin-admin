@@ -198,7 +198,7 @@ final class AdminFrontendBuildService
             if (false === $ch) {
                 throw new \RuntimeException(sprintf('Failed to initialize curl: %s', $url));
             }
-            curl_setopt_array($ch, [
+            $curlOptions = [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_CONNECTTIMEOUT => 30,
@@ -206,7 +206,12 @@ final class AdminFrontendBuildService
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-            ]);
+            ];
+            $resolve = $this->resolveCurlHosts();
+            if ([] !== $resolve) {
+                $curlOptions[CURLOPT_RESOLVE] = $resolve;
+            }
+            curl_setopt_array($ch, $curlOptions);
             $body = curl_exec($ch);
             $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $error = curl_error($ch);
@@ -234,6 +239,23 @@ final class AdminFrontendBuildService
         }
 
         throw new \RuntimeException(sprintf('Failed to download admin frontend artifact: %s%s', $url, '' !== $errorMessage ? ' ('.$errorMessage.')' : ''));
+    }
+
+    /**
+     * Composer 发布脚本不会启动 Laravel，无法读取项目 config。
+     * 通过环境变量提供与 CURLOPT_RESOLVE 相同的 host:port:address 列表，
+     * 用于发布节点 DNS 不稳定时固定可信的资产源地址。
+     *
+     * @return array<int, string>
+     */
+    private function resolveCurlHosts(): array
+    {
+        $value = trim((string) getenv('PTADMIN_CURL_RESOLVE'));
+        if ('' === $value) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $value))));
     }
 
     private function downloadWithCurlBinary(string $url): ?string
