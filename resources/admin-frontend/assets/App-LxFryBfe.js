@@ -1,0 +1,1 @@
+import{i as e}from"./_virtual___federation_fn_import-BCQXJC9C.js";const{defineComponent:o}=await e("vue"),{unref:t,openBlock:n,createBlock:r}=await e("vue"),{RouterView:a}=await e("vue-router"),i=o({__name:"App",setup(c){return(p,_)=>(n(),r(t(a)))}});export{i as default};
