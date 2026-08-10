@@ -86,6 +86,13 @@ if (!function_exists('admin_api_url')) {
     }
 }
 
+if (!function_exists('ptadmin_application_instance')) {
+    function ptadmin_application_instance(): array
+    {
+        return app(\PTAdmin\Admin\Services\ApplicationInstanceService::class)->ensure();
+    }
+}
+
 if (!function_exists('admin_audit_route')) {
     /**
      * 为后台路由声明审计资源归属。

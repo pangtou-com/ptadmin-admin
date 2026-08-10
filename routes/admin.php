@@ -163,6 +163,10 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     // 云服务
     admin_audit_route(Route::get('cloud/market/services', [Admin\AddonController::class, 'cloud']), 'cloud.market');
     admin_audit_route(Route::get('addons/{code}/status', [Admin\AddonController::class, 'status']), 'cloud.apps');
+    admin_audit_route(Route::get('addons/{code}/licenses', [Admin\AddonController::class, 'licenses']), 'cloud.market');
+    admin_audit_route(Route::post('addons/{code}/licenses/activate', [Admin\AddonController::class, 'activateLicense']), 'cloud.market');
+    admin_audit_route(Route::post('addons/{code}/licenses/transfer', [Admin\AddonController::class, 'transferLicense']), 'cloud.market');
+    admin_audit_route(Route::post('addons/{code}/licenses/verify', [Admin\AddonController::class, 'verifyLicense']), 'cloud.apps');
     admin_audit_route(Route::get('addons/{code}/config', [Admin\AddonController::class, 'config']), 'cloud.apps');
     admin_audit_route(Route::put('addons/{code}/config', [Admin\AddonController::class, 'saveConfig']), 'cloud.apps');
     admin_audit_route(Route::post('addons/{code}/enable', [Admin\AddonController::class, 'enable']), 'cloud.apps');

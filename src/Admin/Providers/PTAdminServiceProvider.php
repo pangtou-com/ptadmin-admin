@@ -53,6 +53,7 @@ use PTAdmin\Admin\Services\Auth\AdminResourceService;
 use PTAdmin\Admin\Services\Auth\AdminRoleService;
 use PTAdmin\Admin\Services\Auth\AdminTenantService;
 use PTAdmin\Admin\Services\Auth\WorkflowService;
+use PTAdmin\Admin\Services\ApplicationInstanceService;
 use PTAdmin\Foundation\Auth\AddonGuard;
 use PTAdmin\Foundation\Auth\AdminAuth;
 use PTAdmin\Contracts\Auth\AuthorizationServiceInterface;
@@ -81,6 +82,7 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->app->singleton(AdminTenantServiceInterface::class, AdminTenantService::class);
         $this->app->singleton(AdminOrganizationServiceInterface::class, AdminOrganizationService::class);
         $this->app->singleton(WorkflowServiceInterface::class, WorkflowService::class);
+        $this->app->singleton(ApplicationInstanceService::class, ApplicationInstanceService::class);
     }
 
     public function boot(): void

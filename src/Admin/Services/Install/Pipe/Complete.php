@@ -26,6 +26,7 @@ namespace PTAdmin\Admin\Services\Install\Pipe;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use PTAdmin\Admin\Services\AdminFrontendBuildService;
+use PTAdmin\Admin\Services\ApplicationInstanceService;
 use PTAdmin\Admin\Services\SystemConfigGroupService;
 use PTAdmin\Admin\Services\SystemConfigService;
 use PTAdmin\Admin\Support\Concerns\FormatInstallOutput;
@@ -52,6 +53,7 @@ class Complete
             $this->publishAdminFrontend($data);
             $this->resetRuntimeCaches();
             $this->persistEnvFile($data);
+            $this->initializeApplicationInstance();
             $this->ensureStorageLink();
             $this->writeInstalledMarker();
             $installedMarkerWritten = true;
@@ -64,6 +66,12 @@ class Complete
             }
             $this->error(__('ptadmin::install.logs.install_finalize_failed', ['message' => $throwable->getMessage()]));
         }
+    }
+
+    private function initializeApplicationInstance(): void
+    {
+        $this->process('初始化应用实例身份');
+        app(ApplicationInstanceService::class)->ensure();
     }
 
     private function initializeSystemConfig(): void

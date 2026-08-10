@@ -97,6 +97,16 @@ php artisan admin:pf:pull
 php artisan admin:pf:publish
 ```
 
+## 应用实例身份
+
+PTAdmin 安装完成时会生成稳定的应用实例 ID 和 RSA 密钥对，供插件市场授权绑定与周期签名验证使用。默认保存在：
+
+```text
+storage/app/ptadmin/application-instance.json
+```
+
+可通过 `PTADMIN_APPLICATION_INSTANCE_PATH` 调整路径。身份文件属于宿主私有运行数据，不应放入公开目录、插件包或代码仓库。已有项目升级后会在首次使用应用实例授权时初始化；文件一旦损坏，系统会明确报错，不会静默生成新实例并造成已有授权漂移。
+
 ## 测试
 
 包内测试基于 `orchestra/testbench`，独立仓库中可直接执行：

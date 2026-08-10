@@ -95,6 +95,29 @@ class AddonPlatformService
         return $this->status($code);
     }
 
+    /** @return array<string, mixed> */
+    public function installFromCloudWithLicense(
+        string $code,
+        int $versionId,
+        bool $force,
+        int $licenseId,
+        bool $transfer = false,
+        string $transferReason = ''
+    ): array {
+        // 先安装插件，确认安装流程成功后再绑定或迁移授权，避免失败安装消耗迁移额度。
+        $result = $this->installFromCloud($code, $versionId, $force);
+        $licenses = $this->addonLicenseService();
+        if ($transfer) {
+            $licenses->transfer($code, $licenseId, $transferReason);
+        } else {
+            $licenses->activate($code, $licenseId);
+        }
+
+        return array_merge($result, [
+            'license' => $licenses->status($code),
+        ]);
+    }
+
     /**
      * 从本地 zip 包安装插件。
      *
@@ -194,6 +217,30 @@ class AddonPlatformService
         return $this->normalizeLocalAddon($code, $installed[$code], $this->hasAddonConfig($code));
     }
 
+    /** @return array<string, mixed> */
+    public function licenses(string $code): array
+    {
+        return $this->addonLicenseService()->licenses($code);
+    }
+
+    /** @return array<string, mixed> */
+    public function activateLicense(string $code, int $licenseId): array
+    {
+        return $this->addonLicenseService()->activate($code, $licenseId);
+    }
+
+    /** @return array<string, mixed> */
+    public function transferLicense(string $code, int $licenseId, string $reason): array
+    {
+        return $this->addonLicenseService()->transfer($code, $licenseId, $reason);
+    }
+
+    /** @return array<string, mixed> */
+    public function verifyLicense(string $code, ?int $versionId = null): array
+    {
+        return $this->addonLicenseService()->verify($code, $versionId);
+    }
+
     /**
      * 卸载插件。
      *
@@ -243,6 +290,9 @@ class AddonPlatformService
      */
     public function upgrade(string $code, int $versionId = 0, bool $force = false): array
     {
+        if ($this->supportsApplicationLicenses()) {
+            $this->addonLicenseService()->assertCanRun($code);
+        }
         AddonAction::upgrade($code, $versionId, $force);
 
         return $this->status($code);
@@ -442,7 +492,28 @@ class AddonPlatformService
             'has_frontend_modules' => $this->hasAddonModuleManifest($addonInfo) ? 1 : 0,
             'dependencies' => (array) data_get($addonInfo, 'dependencies.plugins', $addonInfo['require'] ?? []),
             'required_satisfied' => $this->dependenciesSatisfied($code, $addonInfo, $enabled) ? 1 : 0,
+            'license_required' => true === ($addonInfo['license_required'] ?? false) ? 1 : 0,
+            'license_protocol' => (string) ($addonInfo['license_protocol'] ?? ''),
+            'license' => $this->supportsApplicationLicenses()
+                ? $this->addonLicenseService()->status($code)
+                : null,
         ];
+    }
+
+    private function supportsApplicationLicenses(): bool
+    {
+        return class_exists('PTAdmin\\Addon\\Service\\AddonLicenseService');
+    }
+
+    /** @return mixed */
+    private function addonLicenseService()
+    {
+        $serviceClass = 'PTAdmin\\Addon\\Service\\AddonLicenseService';
+        if (!class_exists($serviceClass)) {
+            throw new BackgroundException('当前 ptadmin/addon 版本不支持应用实例授权，请先升级插件管理包。');
+        }
+
+        return app($serviceClass);
     }
 
     /**

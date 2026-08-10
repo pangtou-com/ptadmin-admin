@@ -143,15 +143,27 @@ class AddonController extends AbstractBackgroundController
             'code' => 'required|string|max:100',
             'addon_version_id' => 'sometimes|integer|min:0',
             'force' => 'sometimes|boolean',
+            'license_id' => 'sometimes|integer|min:1',
+            'transfer' => 'sometimes|boolean',
+            'transfer_reason' => 'required_if:transfer,true|nullable|string|max:500',
         ]);
 
         return response()->stream(function () use ($data): void {
             try {
-                $result = $this->addonPlatformService->installFromCloud(
-                    (string) $data['code'],
-                    (int) ($data['addon_version_id'] ?? 0),
-                    (bool) ($data['force'] ?? false)
-                );
+                $result = isset($data['license_id'])
+                    ? $this->addonPlatformService->installFromCloudWithLicense(
+                        (string) $data['code'],
+                        (int) ($data['addon_version_id'] ?? 0),
+                        (bool) ($data['force'] ?? false),
+                        (int) $data['license_id'],
+                        (bool) ($data['transfer'] ?? false),
+                        (string) ($data['transfer_reason'] ?? '')
+                    )
+                    : $this->addonPlatformService->installFromCloud(
+                        (string) $data['code'],
+                        (int) ($data['addon_version_id'] ?? 0),
+                        (bool) ($data['force'] ?? false)
+                    );
 
                 $this->sendStreamMessage([
                     'type' => 'success',
@@ -283,6 +295,46 @@ class AddonController extends AbstractBackgroundController
     public function status(string $code): \Illuminate\Http\JsonResponse
     {
         return AdminResponse::success($this->addonPlatformService->status($code));
+    }
+
+    public function licenses(string $code): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success($this->addonPlatformService->licenses($code));
+    }
+
+    public function activateLicense(string $code, Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'license_id' => 'required|integer|min:1',
+        ]);
+
+        return AdminResponse::success($this->addonPlatformService->activateLicense($code, (int) $data['license_id']));
+    }
+
+    public function transferLicense(string $code, Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'license_id' => 'required|integer|min:1',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        return AdminResponse::success($this->addonPlatformService->transferLicense(
+            $code,
+            (int) $data['license_id'],
+            (string) $data['reason']
+        ));
+    }
+
+    public function verifyLicense(string $code, Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'addon_version_id' => 'sometimes|integer|min:1',
+        ]);
+
+        return AdminResponse::success($this->addonPlatformService->verifyLicense(
+            $code,
+            isset($data['addon_version_id']) ? (int) $data['addon_version_id'] : null
+        ));
     }
 
     /**

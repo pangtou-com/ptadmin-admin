@@ -397,6 +397,111 @@ class PTAdminAddonManagementApiTest extends TestCase
         self::assertStringNotContainsString('"code":0,"message":"操作成功","data"', $content);
     }
 
+    public function test_application_license_endpoints_and_authorized_install_are_exposed(): void
+    {
+        $this->migratePackageTables();
+        $admin = $this->createAdminAccount([
+            'username' => 'addon-license-admin',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $service = new class() extends AddonPlatformService
+        {
+            public function __construct()
+            {
+            }
+
+            public function licenses(string $code): array
+            {
+                return [
+                    'application_instance_id' => 'pt_current',
+                    'results' => [['license_id' => 18, 'addon_code' => $code]],
+                ];
+            }
+
+            public function activateLicense(string $code, int $licenseId): array
+            {
+                return ['addon_code' => $code, 'license_id' => $licenseId, 'operation' => 'activate'];
+            }
+
+            public function transferLicense(string $code, int $licenseId, string $reason): array
+            {
+                return ['addon_code' => $code, 'license_id' => $licenseId, 'operation' => 'transfer', 'reason' => $reason];
+            }
+
+            public function verifyLicense(string $code, ?int $versionId = null): array
+            {
+                return ['addon_code' => $code, 'addon_version_id' => $versionId, 'allow_run' => true];
+            }
+
+            public function installFromCloudWithLicense(
+                string $code,
+                int $versionId,
+                bool $force,
+                int $licenseId,
+                bool $transfer = false,
+                string $transferReason = ''
+            ): array {
+                return compact('code', 'versionId', 'force', 'licenseId', 'transfer', 'transferReason');
+            }
+        };
+        $this->app->instance(AddonPlatformService::class, $service);
+        $headers = $this->jsonApiHeaders($token);
+
+        $this->withHeaders($headers)
+            ->getJson('/ptadmin/addons/demo-addon/licenses')
+            ->assertOk()
+            ->assertJsonPath('data.application_instance_id', 'pt_current')
+            ->assertJsonPath('data.results.0.license_id', 18);
+
+        $this->withHeaders($headers)
+            ->postJson('/ptadmin/addons/demo-addon/licenses/activate', ['license_id' => 18])
+            ->assertOk()
+            ->assertJsonPath('data.operation', 'activate');
+
+        $this->withHeaders($headers)
+            ->postJson('/ptadmin/addons/demo-addon/licenses/transfer', ['license_id' => 18, 'reason' => '迁移生产应用'])
+            ->assertOk()
+            ->assertJsonPath('data.operation', 'transfer')
+            ->assertJsonPath('data.reason', '迁移生产应用');
+
+        $this->withHeaders($headers)
+            ->postJson('/ptadmin/addons/demo-addon/licenses/verify', ['addon_version_id' => 12])
+            ->assertOk()
+            ->assertJsonPath('data.allow_run', true);
+
+        $response = $this->withHeaders($headers)->post('/ptadmin/addons/install/cloud', [
+            'code' => 'demo-addon',
+            'addon_version_id' => 12,
+            'license_id' => 18,
+            'transfer' => true,
+            'transfer_reason' => '迁移生产应用',
+        ]);
+        $response->assertOk();
+        self::assertStringContainsString('"licenseId":18', $response->streamedContent());
+        self::assertStringContainsString('"transfer":true', $response->streamedContent());
+    }
+
+    public function test_failed_cloud_install_does_not_enter_license_transfer_step(): void
+    {
+        $service = new class() extends AddonPlatformService
+        {
+            public function __construct()
+            {
+            }
+
+            public function installFromCloud(string $code, int $versionId = 0, bool $force = false): array
+            {
+                throw new \RuntimeException('插件安装失败');
+            }
+        };
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('插件安装失败');
+        $service->installFromCloudWithLicense('demo-addon', 12, false, 18, true, '迁移生产应用');
+    }
+
     public function test_init_endpoint_streams_progress_messages(): void
     {
         $this->migratePackageTables();
