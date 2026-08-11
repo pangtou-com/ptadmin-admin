@@ -9,6 +9,7 @@ use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\AddonApi;
 use PTAdmin\Addon\Exception\AddonException;
 use PTAdmin\Addon\Service\Action\AddonAction;
+use PTAdmin\Addon\Service\CloudMarketPurchaseService;
 use PTAdmin\Admin\Models\SystemConfigGroup;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 use Throwable;
@@ -48,6 +49,39 @@ class AddonPlatformService
         $payload = AddonApi::getMyAddon($filters);
 
         return $this->normalizeCloudPayload(\is_array($payload) ? $payload : []);
+    }
+
+    /** @return array<string, mixed> */
+    public function verifyPurchase(string $code): array
+    {
+        return AddonApi::verifyAddonPurchase(['code' => $code]);
+    }
+
+    /** @return array<string, mixed> */
+    public function createPurchaseOrder(
+        string $code,
+        int $addonVersionId,
+        string $idempotencyKey
+    ): array {
+        return $this->cloudMarketPurchases()->createOrder($code, $addonVersionId, $idempotencyKey);
+    }
+
+    /** @return array<string, mixed> */
+    public function createPurchasePayment(string $orderNumber, string $channel): array
+    {
+        return $this->cloudMarketPurchases()->createPayment($orderNumber, $channel);
+    }
+
+    /** @return array<string, mixed> */
+    public function queryPurchaseOrder(string $orderNumber): array
+    {
+        return $this->cloudMarketPurchases()->queryOrder($orderNumber);
+    }
+
+    /** @return array<string, mixed> */
+    public function closePurchaseOrder(string $orderNumber): array
+    {
+        return $this->cloudMarketPurchases()->closeOrder($orderNumber);
     }
 
     /**
@@ -93,6 +127,11 @@ class AddonPlatformService
         AddonAction::install($code, $versionId, $force);
 
         return $this->status($code);
+    }
+
+    private function cloudMarketPurchases(): CloudMarketPurchaseService
+    {
+        return app(CloudMarketPurchaseService::class);
     }
 
     /** @return array<string, mixed> */

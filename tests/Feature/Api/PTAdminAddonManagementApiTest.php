@@ -483,6 +483,129 @@ class PTAdminAddonManagementApiTest extends TestCase
         self::assertStringContainsString('"transfer":true', $response->streamedContent());
     }
 
+    public function test_purchase_verification_endpoint_returns_platform_checkout_contract(): void
+    {
+        $this->migratePackageTables();
+        $admin = $this->createAdminAccount([
+            'username' => 'addon-purchase-admin',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $service = new class() extends AddonPlatformService
+        {
+            public function __construct()
+            {
+            }
+
+            public function verifyPurchase(string $code): array
+            {
+                $checkoutUrl = 'https://www.pangtou.com/addons/'.$code.'/purchase';
+
+                return [
+                    'purchased' => false,
+                    'order_required' => true,
+                    'buy_url' => $checkoutUrl,
+                    'purchase_url' => $checkoutUrl,
+                    'checkout_url' => $checkoutUrl,
+                ];
+            }
+        };
+        $this->app->instance(AddonPlatformService::class, $service);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/addons/payment/purchase/verify')
+            ->assertOk()
+            ->assertJsonPath('data.purchased', false)
+            ->assertJsonPath('data.order_required', true)
+            ->assertJsonPath('data.purchase_url', 'https://www.pangtou.com/addons/payment/purchase')
+            ->assertJsonPath('data.checkout_url', 'https://www.pangtou.com/addons/payment/purchase');
+    }
+
+    public function test_native_purchase_endpoints_proxy_the_platform_contract(): void
+    {
+        $this->migratePackageTables();
+        $admin = $this->createAdminAccount([
+            'username' => 'addon-native-purchase-admin',
+            'password' => 'secret123',
+        ]);
+        $token = $this->issueAdminToken($admin);
+
+        $service = new class() extends AddonPlatformService
+        {
+            public function __construct()
+            {
+            }
+
+            public function createPurchaseOrder(string $code, int $addonVersionId, string $idempotencyKey): array
+            {
+                return [
+                    'contract_version' => 1,
+                    'checkout_status' => 'payment_required',
+                    'order_no' => $code.'-'.$addonVersionId.'-'.$idempotencyKey,
+                    'amount_minor' => 6600,
+                ];
+            }
+
+            public function createPurchasePayment(string $orderNumber, string $channel): array
+            {
+                return [
+                    'contract_version' => 1,
+                    'order_no' => $orderNumber,
+                    'payment_no' => 'PAY-'.$channel,
+                    'qr_code_content' => 'weixin://native-payment',
+                ];
+            }
+
+            public function queryPurchaseOrder(string $orderNumber): array
+            {
+                return [
+                    'contract_version' => 1,
+                    'order_no' => $orderNumber,
+                    'status' => 'paid',
+                    'entitlement_status' => 'available',
+                ];
+            }
+
+            public function closePurchaseOrder(string $orderNumber): array
+            {
+                return [
+                    'contract_version' => 1,
+                    'order_no' => $orderNumber,
+                    'status' => 'closed',
+                ];
+            }
+        };
+        $this->app->instance(AddonPlatformService::class, $service);
+        $headers = $this->jsonApiHeaders($token);
+
+        $this->withHeaders($headers)->postJson('/ptadmin/addons/payment/purchase/orders', [
+            'addon_version_id' => 12,
+            'idempotency_key' => 'native-request-001',
+        ])->assertOk()
+            ->assertJsonPath('data.checkout_status', 'payment_required')
+            ->assertJsonPath('data.order_no', 'payment-12-native-request-001')
+            ->assertJsonPath('data.amount_minor', 6600);
+
+        $this->withHeaders($headers)->postJson('/ptadmin/addons/purchase/payments', [
+            'order_no' => 'CO1001',
+            'channel' => 'wechat_native',
+        ])->assertOk()
+            ->assertJsonPath('data.payment_no', 'PAY-wechat_native')
+            ->assertJsonPath('data.qr_code_content', 'weixin://native-payment');
+
+        $this->withHeaders($headers)->postJson('/ptadmin/addons/purchase/orders/query', [
+            'order_no' => 'CO1001',
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'paid')
+            ->assertJsonPath('data.entitlement_status', 'available');
+
+        $this->withHeaders($headers)->postJson('/ptadmin/addons/purchase/orders/close', [
+            'order_no' => 'CO1001',
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'closed');
+    }
+
     public function test_failed_cloud_install_does_not_enter_license_transfer_step(): void
     {
         $service = new class() extends AddonPlatformService

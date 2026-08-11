@@ -164,6 +164,11 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     admin_audit_route(Route::get('cloud/market/services', [Admin\AddonController::class, 'cloud']), 'cloud.market');
     admin_audit_route(Route::get('addons/{code}/status', [Admin\AddonController::class, 'status']), 'cloud.apps');
     admin_audit_route(Route::get('addons/{code}/licenses', [Admin\AddonController::class, 'licenses']), 'cloud.market');
+    admin_audit_route(Route::get('addons/{code}/purchase/verify', [Admin\AddonController::class, 'verifyPurchase']), 'cloud.market');
+    admin_audit_route(Route::post('addons/{code}/purchase/orders', [Admin\AddonController::class, 'createPurchaseOrder']), 'cloud.market');
+    admin_audit_route(Route::post('addons/purchase/payments', [Admin\AddonController::class, 'createPurchasePayment']), 'cloud.market');
+    admin_audit_route(Route::post('addons/purchase/orders/query', [Admin\AddonController::class, 'queryPurchaseOrder']), 'cloud.market');
+    admin_audit_route(Route::post('addons/purchase/orders/close', [Admin\AddonController::class, 'closePurchaseOrder']), 'cloud.market');
     admin_audit_route(Route::post('addons/{code}/licenses/activate', [Admin\AddonController::class, 'activateLicense']), 'cloud.market');
     admin_audit_route(Route::post('addons/{code}/licenses/transfer', [Admin\AddonController::class, 'transferLicense']), 'cloud.market');
     admin_audit_route(Route::post('addons/{code}/licenses/verify', [Admin\AddonController::class, 'verifyLicense']), 'cloud.apps');

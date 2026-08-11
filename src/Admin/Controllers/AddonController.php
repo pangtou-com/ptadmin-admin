@@ -302,6 +302,60 @@ class AddonController extends AbstractBackgroundController
         return AdminResponse::success($this->addonPlatformService->licenses($code));
     }
 
+    public function verifyPurchase(string $code): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success($this->addonPlatformService->verifyPurchase($code));
+    }
+
+    public function createPurchaseOrder(string $code, Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'addon_version_id' => 'required|integer|min:1',
+            'idempotency_key' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9][A-Za-z0-9:_-]+$/'],
+        ]);
+
+        return AdminResponse::success($this->addonPlatformService->createPurchaseOrder(
+            $code,
+            (int) $data['addon_version_id'],
+            (string) $data['idempotency_key']
+        ));
+    }
+
+    public function createPurchasePayment(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'order_no' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'channel' => 'required|string|in:wechat_native,alipay_f2f',
+        ]);
+
+        return AdminResponse::success($this->addonPlatformService->createPurchasePayment(
+            (string) $data['order_no'],
+            (string) $data['channel']
+        ));
+    }
+
+    public function queryPurchaseOrder(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'order_no' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+        ]);
+
+        return AdminResponse::success($this->addonPlatformService->queryPurchaseOrder(
+            (string) $data['order_no']
+        ));
+    }
+
+    public function closePurchaseOrder(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'order_no' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
+        ]);
+
+        return AdminResponse::success($this->addonPlatformService->closePurchaseOrder(
+            (string) $data['order_no']
+        ));
+    }
+
     public function activateLicense(string $code, Request $request): \Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
