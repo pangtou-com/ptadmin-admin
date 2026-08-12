@@ -4,6 +4,11 @@
     <div class="pre-content">
         <pre><code>{{ __('ptadmin::install.finish_message') }}</code></pre>
     </div>
+    <div class="install-alert install-alert-warning">
+        <strong>{{ __('ptadmin::install.application_identity.title') }}</strong>
+        <p>{{ __('ptadmin::install.application_identity.description') }}</p>
+        <code>{{ config('ptadmin.application_instance_path') }}</code>
+    </div>
 @endsection
 
 @section('button')

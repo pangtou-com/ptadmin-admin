@@ -10,16 +10,21 @@ namespace PTAdmin\Admin\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use PTAdmin\Admin\Services\Dashboard\DashboardComposerService;
+use PTAdmin\Admin\Services\ApplicationStatusSyncService;
 use PTAdmin\Foundation\Auth\AdminAuth;
 use PTAdmin\Foundation\Response\AdminResponse;
 
 class DashboardController
 {
     private DashboardComposerService $dashboardComposerService;
+    private ApplicationStatusSyncService $applicationStatusSyncService;
 
-    public function __construct(DashboardComposerService $dashboardComposerService)
-    {
+    public function __construct(
+        DashboardComposerService $dashboardComposerService,
+        ApplicationStatusSyncService $applicationStatusSyncService
+    ) {
         $this->dashboardComposerService = $dashboardComposerService;
+        $this->applicationStatusSyncService = $applicationStatusSyncService;
     }
 
     public function console(Request $request): JsonResponse
@@ -27,5 +32,12 @@ class DashboardController
         $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;
 
         return AdminResponse::success($this->dashboardComposerService->composeForUser(AdminAuth::user(), $tenantId));
+    }
+
+    public function syncApplicationStatus(): JsonResponse
+    {
+        $this->applicationStatusSyncService->sync(true);
+
+        return AdminResponse::success($this->dashboardComposerService->summary(false));
     }
 }

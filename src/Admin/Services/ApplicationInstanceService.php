@@ -120,7 +120,10 @@ final class ApplicationInstanceService
 
     private function path(): string
     {
-        return (string) config('ptadmin.application_instance_path', storage_path('app/ptadmin/application-instance.json'));
+        return (string) config(
+            'ptadmin.application_instance_path',
+            storage_path('app/ptadmin/ptadmin-application-identity.json')
+        );
     }
 
     /**

@@ -10,6 +10,8 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminInstallCompleteTest extends TestCase
 {
+    private ?string $applicationIdentityPath = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -21,6 +23,9 @@ class PTAdminInstallCompleteTest extends TestCase
     protected function tearDown(): void
     {
         @unlink($this->installedMarkerPath());
+        if (null !== $this->applicationIdentityPath) {
+            @unlink($this->applicationIdentityPath);
+        }
         $this->deletePath(public_path('storage'));
 
         parent::tearDown();
@@ -64,6 +69,9 @@ class PTAdminInstallCompleteTest extends TestCase
     {
         $commands = [];
         $envPath = storage_path('install-test.env');
+        $this->applicationIdentityPath = storage_path('app/ptadmin/ptadmin-application-identity.json');
+        config()->set('ptadmin.application_instance_path', $this->applicationIdentityPath);
+        @unlink($this->applicationIdentityPath);
         $this->deletePath(storage_path('app/ptadmin/frontend/admin'));
 
         Artisan::shouldReceive('all')
@@ -103,6 +111,7 @@ class PTAdminInstallCompleteTest extends TestCase
         self::assertTrue($nextCalled);
         self::assertFileExists($this->installedMarkerPath());
         self::assertFileExists($envPath);
+        self::assertFileExists($this->applicationIdentityPath);
         self::assertDirectoryDoesNotExist(storage_path('app/ptadmin/frontend/admin'));
         self::assertTrue(is_dir(public_path('admin-web')));
         self::assertFalse(is_link(public_path('admin-web')));

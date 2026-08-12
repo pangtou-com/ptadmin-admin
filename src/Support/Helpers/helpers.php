@@ -89,7 +89,7 @@ if (!function_exists('admin_api_url')) {
 if (!function_exists('ptadmin_application_instance')) {
     function ptadmin_application_instance(): array
     {
-        return app(\PTAdmin\Admin\Services\ApplicationInstanceService::class)->ensure();
+        return app(\PTAdmin\Admin\Services\ApplicationInstanceService::class)->current();
     }
 }
 

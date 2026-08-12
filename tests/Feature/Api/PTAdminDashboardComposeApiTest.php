@@ -20,6 +20,13 @@ class PTAdminDashboardComposeApiTest extends TestCase
         parent::setUp();
 
         Cache::flush();
+        $this->writeApplicationStatus([
+            'status' => 'success',
+            'last_attempted_at' => date(DATE_ATOM),
+            'last_succeeded_at' => date(DATE_ATOM),
+            'last_error' => null,
+            'response' => [],
+        ]);
     }
 
     protected function tearDown(): void
@@ -30,6 +37,8 @@ class PTAdminDashboardComposeApiTest extends TestCase
         File::delete(base_path('bootstrap/cache/addons.php'));
         File::delete((string) config('ptadmin.platform_snapshot_path'));
         File::delete(dirname((string) config('ptadmin.platform_snapshot_path')).'/snapshot.lock');
+        File::delete((string) config('ptadmin.application_status_path'));
+        File::delete(dirname((string) config('ptadmin.application_status_path')).'/application-status.lock');
 
         parent::tearDown();
     }
@@ -412,6 +421,14 @@ class PTAdminDashboardComposeApiTest extends TestCase
         file_put_contents($path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).PHP_EOL);
     }
 
+    /** @param array<string, mixed> $payload */
+    private function writeApplicationStatus(array $payload): void
+    {
+        $path = (string) config('ptadmin.application_status_path');
+        File::ensureDirectoryExists(dirname($path));
+        file_put_contents($path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).PHP_EOL);
+    }
+
     private function currentPackageVersion(): string
     {
         return get_frame_version();
@@ -464,6 +481,17 @@ final class ComposeDashboardAddonManager
     public function getAddons(): array
     {
         return $this->addons;
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    public function getInstalledAddons(): array
+    {
+        return $this->addons;
+    }
+
+    public function getAddonVersion(string $code): ?string
+    {
+        return isset($this->addons[$code]) ? (string) ($this->addons[$code]['version'] ?? '') : null;
     }
 
     public function getAddonBootstrap(string $addonCode): ?BaseBootstrap

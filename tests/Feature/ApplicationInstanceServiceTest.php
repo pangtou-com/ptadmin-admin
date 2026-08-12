@@ -53,4 +53,12 @@ class ApplicationInstanceServiceTest extends TestCase
 
         app(ApplicationInstanceService::class)->ensure();
     }
+
+    public function test_runtime_helper_does_not_recreate_a_missing_application_identity(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('identity is not initialized');
+
+        ptadmin_application_instance();
+    }
 }

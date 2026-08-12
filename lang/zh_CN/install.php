@@ -19,6 +19,10 @@ return [
     'reload' => '重新检测',
     'submit' => '确认安装',
     'finish_message' => '安装完成请登录后台使用',
+    'application_identity' => [
+        'title' => '请备份 PTAdmin 应用身份证',
+        'description' => '该文件用于识别当前应用，并关联此应用购买和激活的插件。重新部署、迁移服务器或恢复备份时必须保留；文件丢失后，原插件授权需要迁移或重新激活。请勿提交到代码仓库或放入公开目录。',
+    ],
     'login_admin' => '登录后台',
     'back_home' => '返回首页',
     'requirements_failed' => '环境检查未通过，请先修复失败项后再继续下一步。',

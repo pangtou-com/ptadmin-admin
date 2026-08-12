@@ -27,7 +27,17 @@ return [
     'platform_snapshot_ttl' => (int) env('PTADMIN_PLATFORM_SNAPSHOT_TTL', 86400),
     'application_instance_path' => env(
         'PTADMIN_APPLICATION_INSTANCE_PATH',
-        storage_path('app/ptadmin/application-instance.json')
+        storage_path('app/ptadmin/ptadmin-application-identity.json')
+    ),
+    'application_sync_url' => env(
+        'PTADMIN_APPLICATION_SYNC_URL',
+        'https://www.pangtou.com/api-addon/application-sync'
+    ),
+    'application_sync_host_ip' => env('PTADMIN_APPLICATION_SYNC_HOST_IP', '61.147.93.222'),
+    'application_sync_ttl' => (int) env('PTADMIN_APPLICATION_SYNC_TTL', 21600),
+    'application_status_path' => env(
+        'PTADMIN_APPLICATION_STATUS_PATH',
+        storage_path('app/ptadmin/application-status.json')
     ),
     'route_prefix' => 'ptadmin',
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),

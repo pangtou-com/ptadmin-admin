@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services\Dashboard;
 
 use PTAdmin\Addon\Addon;
+use PTAdmin\Admin\Services\ApplicationStatusSyncService;
 use PTAdmin\Admin\Services\PlatformSnapshotService;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 
@@ -14,17 +15,20 @@ class DashboardComposerService
     private DashboardLayoutService $layoutService;
     private AdminRoleServiceInterface $adminRoleService;
     private PlatformSnapshotService $platformSnapshotService;
+    private ApplicationStatusSyncService $applicationStatusSyncService;
 
     public function __construct(
         DashboardWidgetRegistryService $registry,
         DashboardLayoutService $layoutService,
         AdminRoleServiceInterface $adminRoleService,
-        PlatformSnapshotService $platformSnapshotService
+        PlatformSnapshotService $platformSnapshotService,
+        ApplicationStatusSyncService $applicationStatusSyncService
     ) {
         $this->registry = $registry;
         $this->layoutService = $layoutService;
         $this->adminRoleService = $adminRoleService;
         $this->platformSnapshotService = $platformSnapshotService;
+        $this->applicationStatusSyncService = $applicationStatusSyncService;
     }
 
     /**
@@ -39,7 +43,7 @@ class DashboardComposerService
             'title' => '仪表盘',
             'description' => '平台核心经营数据与工作台概览',
             'updatedAt' => date('Y-m-d H:i:s'),
-            'summary' => $this->buildSummary(),
+            'summary' => $this->summary(),
             'widgets' => $this->widgetsForUser($user, $tenantId),
         ];
     }
@@ -242,22 +246,37 @@ class DashboardComposerService
     /**
      * @return array<string, mixed>
      */
-    private function buildSummary(): array
+    public function summary(bool $scheduleSync = true): array
     {
         $backendVersion = get_frame_version();
         $frontendLock = $this->readAdminFrontendLock();
         $frontendVersion = trim((string) ($frontendLock['version'] ?? ''));
         $snapshot = $this->platformSnapshotService->read();
         $this->platformSnapshotService->scheduleRefresh();
+        $applicationStatus = $this->applicationStatusSyncService->read();
+        if ($scheduleSync) {
+            $this->applicationStatusSyncService->scheduleSync();
+        }
+        $applicationSummary = $this->applicationStatusSyncService->publicSummary($applicationStatus);
         $latestFrontendVersion = trim((string) data_get($snapshot, 'latest.frontend_version', ''));
         $latestFrameworkVersion = trim((string) data_get($snapshot, 'latest.framework_version', ''));
+        $applicationLatestFrontendVersion = trim((string) data_get($applicationStatus, 'response.latest.frontend_version', ''));
+        $applicationLatestBackendVersion = trim((string) data_get($applicationStatus, 'response.latest.backend_version', ''));
+        if ('' !== $applicationLatestFrontendVersion) {
+            $latestFrontendVersion = $applicationLatestFrontendVersion;
+        }
+        if ('' !== $applicationLatestBackendVersion) {
+            $latestFrameworkVersion = $applicationLatestBackendVersion;
+        }
         $addonSnapshots = (array) ($snapshot['addons'] ?? []);
-        $addonUpdatePending = $this->hasPendingAddonUpdates($addonSnapshots);
+        $addonUpdatePending = $this->hasPendingAddonUpdates($addonSnapshots)
+            || [] !== (array) ($applicationSummary['addon_updates'] ?? []);
         $frameworkUpdateRequired = $this->isVersionOutdated($backendVersion, $latestFrameworkVersion);
         $frontendUpdateRequired = $this->isVersionOutdated($frontendVersion, $latestFrontendVersion);
-        $securityAlertPending = $this->hasSecurityAlerts($snapshot, $addonSnapshots);
+        $securityAlertPending = $this->hasSecurityAlerts($snapshot, $addonSnapshots)
+            || $this->hasDangerAdvice((array) ($applicationSummary['application_advice'] ?? []));
 
-        return [
+        return array_merge([
             'frontend_version' => $frontendVersion,
             'frontend_latest_version' => $latestFrontendVersion,
             'frontend_update_required' => $frontendUpdateRequired,
@@ -269,7 +288,19 @@ class DashboardComposerService
             'security_alert_pending' => $securityAlertPending,
             'last_platform_sync_at' => (string) ($snapshot['synced_at'] ?? ''),
             'platform_snapshot_stale' => $this->platformSnapshotService->isStale($snapshot),
-        ];
+        ], $applicationSummary);
+    }
+
+    /** @param array<int, mixed> $advice */
+    private function hasDangerAdvice(array $advice): bool
+    {
+        foreach ($advice as $item) {
+            if (\is_array($item) && 'danger' === (string) ($item['level'] ?? '')) {
+                return true;
+            }
+        }
+
+        return false;
     }
     
     /**

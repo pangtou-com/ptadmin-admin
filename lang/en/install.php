@@ -19,6 +19,10 @@ return [
     'reload' => 'Recheck',
     'submit' => 'Install Now',
     'finish_message' => 'Installation completed. Please sign in to the admin panel.',
+    'application_identity' => [
+        'title' => 'Back up the PTAdmin application identity',
+        'description' => 'This file identifies this application and links its purchased and activated plugins. Preserve it when redeploying, migrating servers, or restoring backups. If it is lost, existing plugin licenses must be transferred or activated again. Do not commit it to source control or place it in a public directory.',
+    ],
     'login_admin' => 'Open Admin',
     'back_home' => 'Back to Home',
     'requirements_failed' => 'Environment check failed. Please fix the failed items before continuing.',

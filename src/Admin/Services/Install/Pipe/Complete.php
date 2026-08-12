@@ -70,7 +70,7 @@ class Complete
 
     private function initializeApplicationInstance(): void
     {
-        $this->process('初始化应用实例身份');
+        $this->process('生成 PTAdmin 应用身份证');
         app(ApplicationInstanceService::class)->ensure();
     }
 

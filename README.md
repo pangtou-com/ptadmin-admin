@@ -97,15 +97,17 @@ php artisan admin:pf:pull
 php artisan admin:pf:publish
 ```
 
-## 应用实例身份
+## PTAdmin 应用身份证
 
-PTAdmin 安装完成时会生成稳定的应用实例 ID 和 RSA 密钥对，供插件市场授权绑定与周期签名验证使用。默认保存在：
+PTAdmin 首次安装完成时会生成一份应用身份证，其中包含稳定的应用实例 ID 和 RSA 密钥对，供插件市场识别当前应用、绑定已购买插件授权并完成周期签名验证。默认保存在：
 
 ```text
-storage/app/ptadmin/application-instance.json
+storage/app/ptadmin/ptadmin-application-identity.json
 ```
 
-可通过 `PTADMIN_APPLICATION_INSTANCE_PATH` 调整路径。身份文件属于宿主私有运行数据，不应放入公开目录、插件包或代码仓库。已有项目升级后会在首次使用应用实例授权时初始化；文件一旦损坏，系统会明确报错，不会静默生成新实例并造成已有授权漂移。
+可通过 `PTADMIN_APPLICATION_INSTANCE_PATH` 调整路径。应用身份证属于宿主私有运行数据，不应放入公开目录、插件包或代码仓库，必须纳入加密备份，并在重新部署、服务器迁移和灾难恢复时随应用一起恢复。保留该文件时，域名、服务器或代码目录变化后仍会被平台识别为同一个应用；文件丢失后生成的新身份证会被识别为新应用，原插件授权需要迁移或重新激活。
+
+安装完成后的运行流程只读取现有身份证；如果文件缺失或损坏，系统会明确报错，不会静默生成新身份并造成已有插件授权漂移。
 
 ## 测试
 
