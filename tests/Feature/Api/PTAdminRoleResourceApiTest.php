@@ -11,6 +11,47 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminRoleResourceApiTest extends TestCase
 {
+    public function test_resource_name_accepts_hyphens_and_returns_a_friendly_chinese_format_error(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount([
+            'username' => 'founder_resource_validation',
+            'nickname' => 'Founder',
+            'is_founder' => 1,
+        ]);
+        $token = $this->issueAdminToken($founder);
+
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/ptadmin/admin-resources', [
+            'name' => 'sparq-router',
+            'title' => 'Sparq Router',
+            'type' => 'dir',
+            'status' => 1,
+            'is_nav' => 1,
+            'sort' => 0,
+            'parent_id' => 0,
+        ])->assertOk()->assertJson([
+            'code' => 0,
+        ]);
+
+        self::assertDatabaseHas('admin_resources', [
+            'name' => 'sparq-router',
+        ]);
+
+        $this->withHeaders($this->jsonApiHeaders($token))->postJson('/ptadmin/admin-resources', [
+            'name' => 'sparq/router',
+            'title' => 'Sparq Router Invalid',
+            'type' => 'dir',
+            'status' => 1,
+            'is_nav' => 1,
+            'sort' => 0,
+            'parent_id' => 0,
+        ])->assertStatus(422)
+            ->assertJsonPath('errors.name.0', '资源标识仅支持英文字母、数字、点（.）、下划线（_）和短横线（-）');
+    }
+
     public function test_role_and_resource_endpoints_can_manage_role_resource_and_user_resource_assignments(): void
     {
         $this->createAdminsTable();

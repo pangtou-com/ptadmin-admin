@@ -36,7 +36,7 @@ class AdminResourceRequest extends FormRequest
         $id = (int) request()->route('id');
 
         return [
-            'name' => ['required', 'regex:/^[a-z_\.]*$/', 'max:150', Rule::unique(AdminResource::class, 'name')->whereNull('deleted_at')->ignore($id)],
+            'name' => ['required', 'regex:/^[a-zA-Z0-9._-]+$/', 'max:150', Rule::unique(AdminResource::class, 'name')->whereNull('deleted_at')->ignore($id)],
             'title' => ['required', 'max:100', Rule::unique(AdminResource::class, 'title')->whereNull('deleted_at')->ignore($id)],
             'module' => [Rule::requiredIf(function (): bool {
                 return $this->get('type') === MenuTypeEnum::NAV;
@@ -59,6 +59,16 @@ class AdminResourceRequest extends FormRequest
             'type' => ['required', Rule::in(MenuTypeEnum::getValues()->toArray())],
             'status' => 'integer|in:0,1',
             'is_nav' => 'required|integer|in:0,1',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => '请输入资源标识',
+            'name.regex' => '资源标识仅支持英文字母、数字、点（.）、下划线（_）和短横线（-）',
+            'name.max' => '资源标识不能超过 150 个字符',
+            'name.unique' => '资源标识已存在，请更换后重试',
         ];
     }
 
