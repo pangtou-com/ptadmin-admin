@@ -28,6 +28,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use PTAdmin\Admin\Services\AdminResourceService;
 use PTAdmin\Admin\Services\LoginService;
+use PTAdmin\Admin\Services\CaptchaChallengeService;
 use PTAdmin\Foundation\Response\AdminResponse;
 use PTAdmin\Foundation\Auth\AdminAuth;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
@@ -37,12 +38,14 @@ class LoginController extends AbstractBackgroundController
     private LoginService $loginService;
     private AdminResourceService $adminResourceService;
     private AdminRoleServiceInterface $adminRoleService;
+    private CaptchaChallengeService $captchaChallengeService;
 
-    public function __construct(LoginService $loginService, AdminResourceService $adminResourceService, AdminRoleServiceInterface $adminRoleService)
+    public function __construct(LoginService $loginService, AdminResourceService $adminResourceService, AdminRoleServiceInterface $adminRoleService, CaptchaChallengeService $captchaChallengeService)
     {
         $this->loginService = $loginService;
         $this->adminResourceService = $adminResourceService;
         $this->adminRoleService = $adminRoleService;
+        $this->captchaChallengeService = $captchaChallengeService;
     }
 
     /**
@@ -70,9 +73,28 @@ class LoginController extends AbstractBackgroundController
             'username' => 'required',
             'password' => 'required',
         ]);
-        $data = $this->loginService->login($request->only(['username', 'password', 'code']));
+        $data = $this->loginService->login($request->only(['username', 'password', 'captcha', 'challenge_id', 'captcha_response', 'client_context']));
         
         return AdminResponse::success($data);
+    }
+
+    public function captchaChallenge(Request $request): \Illuminate\Http\JsonResponse
+    {
+        return AdminResponse::success($this->captchaChallengeService->create(
+            'admin.login',
+            ['ip' => $request->getClientIp(), 'user_agent' => $request->userAgent()]
+        ));
+    }
+
+    public function captchaRefresh(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate(['challenge_id' => 'required|string']);
+
+        return AdminResponse::success($this->captchaChallengeService->refresh(
+            (string) $request->input('challenge_id'),
+            'admin.login',
+            ['ip' => $request->getClientIp(), 'user_agent' => $request->userAgent()]
+        ));
     }
 
     /**

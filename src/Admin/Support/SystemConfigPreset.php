@@ -151,6 +151,15 @@ class SystemConfigPreset
                         'sort' => 90,
                         'intro' => '控制登录时是否启用验证码校验',
                     ],
+                    [
+                        'title' => '登录挑战提供者',
+                        'name' => 'login_captcha_provider',
+                        'type' => 'text',
+                        'value' => '',
+                        'default_val' => '',
+                        'sort' => 80,
+                        'intro' => '填写插件挑战能力引用，格式为 addon_code:capability_code；留空时不启用登录挑战',
+                    ],
                 ],
             ],
             [

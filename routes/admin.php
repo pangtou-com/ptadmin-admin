@@ -28,6 +28,8 @@ use PTAdmin\Admin\Controllers as Admin;
 Route::group(['prefix' => admin_route_prefix()], function (): void {
     Route::get('login', [Admin\LoginController::class, 'notice'])->name('admin_login_notice');
     Route::match(['post'], 'login', [Admin\LoginController::class, 'login'])->name('admin_login');
+    Route::get('captcha/challenge', [Admin\LoginController::class, 'captchaChallenge'])->name('admin_captcha_challenge');
+    Route::post('captcha/challenge/refresh', [Admin\LoginController::class, 'captchaRefresh'])->name('admin_captcha_refresh');
 });
 
 Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'.\PTAdmin\Foundation\Auth\AdminAuth::getGuard()]], function (): void {

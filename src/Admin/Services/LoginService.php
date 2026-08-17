@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Admin\Models\AdminLoginLog;
+use PTAdmin\Addon\Contracts\Captcha\ChallengeStatus;
 use PTAdmin\Foundation\Auth\AdminAuth;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 use PTAdmin\Support\Enums\StatusEnum;
@@ -44,7 +45,7 @@ class LoginService
     public function login(array $data): array
     {
         $loginAccount = trim((string) ($data['username'] ?? ''));
-        $this->checkCode($loginAccount);
+        $this->checkCode($loginAccount, $data);
         /** @var Admin|null $admin */
         $admin = Admin::query()->where('username', $loginAccount)->first();
         $this->attempt($admin, $loginAccount);
@@ -140,8 +141,37 @@ class LoginService
     /**
      * 校验验证码
      */
-    private function checkCode(string $loginAccount = ''): void
+    private function checkCode(string $loginAccount = '', array $data = []): void
     {
+        $service = app(CaptchaChallengeService::class);
+        if (!$service->enabled('admin.login')) {
+            return;
+        }
+
+        $captcha = $data['captcha'] ?? null;
+        if (!is_array($captcha)) {
+            $captcha = [
+                'challenge_id' => $data['challenge_id'] ?? null,
+                'response' => $data['captcha_response'] ?? [],
+            ];
+        }
+        $challengeId = trim((string) ($captcha['challenge_id'] ?? ''));
+        $response = $captcha['response'] ?? [];
+        if ('' === $challengeId || !is_array($response)) {
+            $this->log(null, AdminLoginLog::STATUS_CAPTCHA_INVALID, 'captcha_payload_invalid', $loginAccount);
+            throw new BackgroundException(__('ptadmin::background.login.fail'));
+        }
+
+        $result = $service->verify(
+            $challengeId,
+            'admin.login',
+            $response,
+            is_array($data['client_context'] ?? null) ? $data['client_context'] : []
+        );
+        if (ChallengeStatus::PASSED !== ($result['status'] ?? null)) {
+            $this->log(null, AdminLoginLog::STATUS_CAPTCHA_INVALID, 'captcha_'.($result['reason_code'] ?? ($result['status'] ?? 'rejected')), $loginAccount);
+            throw new BackgroundException(__('ptadmin::background.login.fail'));
+        }
     }
 
     private function attemptKey(): string
