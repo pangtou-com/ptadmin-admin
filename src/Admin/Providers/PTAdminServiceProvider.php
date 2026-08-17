@@ -119,6 +119,7 @@ class PTAdminServiceProvider extends ServiceProvider
                 __DIR__.'/../../../database/Migrations/2026_08_15_130000_register_notification_config_resource.php' => database_path('migrations/2026_08_15_130000_register_notification_config_resource.php'),
                 __DIR__.'/../../../database/Migrations/2026_08_15_140000_add_group_to_notification_scenes.php' => database_path('migrations/2026_08_15_140000_add_group_to_notification_scenes.php'),
                 __DIR__.'/../../../database/Migrations/2026_08_17_100000_create_notification_scene_routes.php' => database_path('migrations/2026_08_17_100000_create_notification_scene_routes.php'),
+                __DIR__.'/../../../database/Migrations/2026_08_17_130000_add_registration_captcha_config.php' => database_path('migrations/2026_08_17_130000_add_registration_captcha_config.php'),
                 $this->easyMigrationPath('2024_06_13_154934_mod_init.php') => database_path('migrations/2024_06_13_154934_mod_init.php'),
                 $this->easyMigrationPath('2026_04_06_000000_create_model_versions_table.php') => database_path('migrations/2026_04_06_000000_create_model_versions_table.php'),
                 $this->easyMigrationPath('2026_04_06_000001_create_audit_logs_table.php') => database_path('migrations/2026_04_06_000001_create_audit_logs_table.php'),
@@ -152,6 +153,7 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->registerAuthorizationGate();
         $this->mapInstallRoutes();
         $this->mapWebRoutes();
+        $this->mapPublicRoutes();
         $this->mapSystemRoutes();
         $this->registerTemplateDirectives();
         $this->registerTemplateActive();
@@ -231,6 +233,11 @@ class PTAdminServiceProvider extends ServiceProvider
     private function mapWebRoutes(): void
     {
         Route::middleware(['web'])->group(__DIR__.'/../../../routes/web.php');
+    }
+
+    private function mapPublicRoutes(): void
+    {
+        Route::middleware(['api', 'ptadmin.response'])->group(__DIR__.'/../../../routes/public.php');
     }
 
     private function mapInstallRoutes(): void

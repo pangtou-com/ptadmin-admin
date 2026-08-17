@@ -880,7 +880,7 @@ if (!function_exists('get_mix_user_id')) {
             $temp .= $str[$i];
         }
 
-        return strtoupper("PT{$temp}Z".base_convert($userId, 10, 34));
+        return strtoupper("PT{$temp}Z".base_convert((string) $userId, 10, 34));
     }
 }
 

@@ -23,7 +23,9 @@ use PTAdmin\Foundation\Exceptions\BackgroundException;
  */
 class CaptchaChallengeService
 {
-    private const SCENE_LOGIN = 'admin.login';
+    public const SCENE_LOGIN = 'admin.login';
+    public const SCENE_REGISTER = 'frontend.register';
+    private const ALLOWED_SCENES = [self::SCENE_LOGIN, self::SCENE_REGISTER];
     private const CACHE_PREFIX = 'ptadmin:captcha:challenge:';
     private const RATE_PREFIX = 'ptadmin:captcha:rate:';
     private const VERIFY_LOCK_PREFIX = 'ptadmin:captcha:verify-lock:';
@@ -42,7 +44,7 @@ class CaptchaChallengeService
 
         $this->assertRateLimit('create', $scene, $context, $this->rateLimit('create'));
 
-        $candidates = $this->candidates();
+        $candidates = $this->candidates($scene);
         $lastError = null;
         foreach ($candidates as $definition) {
             try {
@@ -194,27 +196,33 @@ class CaptchaChallengeService
 
     public function enabled(string $scene = self::SCENE_LOGIN): bool
     {
-        if (self::SCENE_LOGIN !== $scene) {
+        if (!in_array($scene, self::ALLOWED_SCENES, true)) {
             return false;
         }
 
         try {
-            $switch = config('ptadmin.captcha.login_enabled');
+            $sceneConfig = $this->sceneConfig($scene);
+            $switch = array_key_exists('enabled', $sceneConfig) ? $sceneConfig['enabled'] : null;
+            if (null === $switch && self::SCENE_LOGIN === $scene) {
+                $switch = config('ptadmin.captcha.login_enabled');
+            }
             if (null === $switch) {
-                $switch = system_config('security.login_captcha', null);
+                $switch = system_config($this->sceneSystemKey($scene, 'enabled'), null);
                 if (null === $switch) {
-                    $switch = system_config('basic.login_captcha', 1);
+                    $switch = self::SCENE_LOGIN === $scene
+                        ? system_config('basic.login_captcha', 1)
+                        : 0;
                 }
             }
         } catch (\Throwable $exception) {
             $switch = 1;
         }
 
-        return (bool) $switch && '' !== $this->configuredProvider();
+        return (bool) $switch && '' !== $this->configuredProvider($scene);
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function candidates(): array
+    private function candidates(string $scene): array
     {
         $definitions = array_values(array_filter(
             AddonInjectsManage::getInstance()->getDefinitionsByGroup('captcha'),
@@ -225,7 +233,7 @@ class CaptchaChallengeService
                     && in_array('verify', (array) ($protocol['operations'] ?? []), true);
             }
         ));
-        $configured = $this->configuredProvider();
+        $configured = $this->configuredProvider($scene);
         if ('' !== $configured) {
             $configuredDefinitions = array_values(array_filter($definitions, static function (array $definition) use ($configured): bool {
                 return self::providerKey($definition) === $configured;
@@ -354,12 +362,24 @@ class CaptchaChallengeService
         Cache::put($this->cacheKey($challengeId), $state, 60);
     }
 
-    private function configuredProvider(): string
+    /** @return array<string, mixed> */
+    private function sceneConfig(string $scene): array
+    {
+        $scenes = config('ptadmin.captcha.scenes', []);
+
+        return is_array($scenes) && is_array($scenes[$scene] ?? null) ? $scenes[$scene] : [];
+    }
+
+    private function configuredProvider(string $scene = self::SCENE_LOGIN): string
     {
         try {
-            $provider = trim((string) config('ptadmin.captcha.provider', ''));
+            $sceneConfig = $this->sceneConfig($scene);
+            $provider = trim((string) ($sceneConfig['provider'] ?? ''));
+            if ('' === $provider && self::SCENE_LOGIN === $scene) {
+                $provider = trim((string) config('ptadmin.captcha.provider', ''));
+            }
             if ('' === $provider) {
-                $provider = trim((string) system_config('security.login_captcha_provider', ''));
+                $provider = trim((string) system_config($this->sceneSystemKey($scene, 'provider'), ''));
             }
         } catch (\Throwable $exception) {
             return '';
@@ -379,6 +399,15 @@ class CaptchaChallengeService
         ));
 
         return 1 === count($matches) ? self::providerKey($matches[0]) : $provider;
+    }
+
+    private function sceneSystemKey(string $scene, string $field): string
+    {
+        if (self::SCENE_LOGIN === $scene) {
+            return 'enabled' === $field ? 'security.login_captcha' : 'security.login_captcha_provider';
+        }
+
+        return 'enabled' === $field ? 'security.register_captcha' : 'security.register_captcha_provider';
     }
 
     /** @param array<string, mixed> $definition */

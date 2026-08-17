@@ -17,4 +17,14 @@ final class PTAdminCaptchaChallengeApiTest extends TestCase
             ->assertJsonPath('data.enabled', false)
             ->assertJsonPath('data.scene', 'admin.login');
     }
+
+    public function test_public_registration_challenge_is_disabled_without_registration_configuration(): void
+    {
+        $response = $this->getJson('/api/captcha/challenge');
+
+        $response->assertOk()
+            ->assertJsonPath('code', 0)
+            ->assertJsonPath('data.enabled', false)
+            ->assertJsonPath('data.scene', 'frontend.register');
+    }
 }

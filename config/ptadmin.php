@@ -40,6 +40,7 @@ return [
         storage_path('app/ptadmin/application-status.json')
     ),
     'route_prefix' => 'ptadmin',
+    'public_api_prefix' => env('PTADMIN_PUBLIC_API_PREFIX', 'api'),
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),
     'addons_storage_path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),
     'upload_local_disk' => env('PTADMIN_UPLOAD_LOCAL_DISK', 'public'),
@@ -110,6 +111,12 @@ return [
     'captcha' => [
         'login_enabled' => null,
         'provider' => null,
+        'scenes' => [
+            'frontend.register' => [
+                'enabled' => null,
+                'provider' => null,
+            ],
+        ],
         'create_rate_limit' => (int) env('PTADMIN_CAPTCHA_CREATE_RATE_LIMIT', 20),
         'verify_rate_limit' => (int) env('PTADMIN_CAPTCHA_VERIFY_RATE_LIMIT', 60),
     ],
