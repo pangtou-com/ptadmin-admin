@@ -107,6 +107,13 @@ return [
         'workflow' => false,
     ],
 
+    'captcha' => [
+        'login_enabled' => null,
+        'provider' => null,
+        'create_rate_limit' => (int) env('PTADMIN_CAPTCHA_CREATE_RATE_LIMIT', 20),
+        'verify_rate_limit' => (int) env('PTADMIN_CAPTCHA_VERIFY_RATE_LIMIT', 60),
+    ],
+
     'resolvers' => [
         BasicGrantResolver::class,
         TenantGrantResolver::class,

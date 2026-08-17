@@ -25,8 +25,13 @@ class CaptchaChallengeService
 {
     private const SCENE_LOGIN = 'admin.login';
     private const CACHE_PREFIX = 'ptadmin:captcha:challenge:';
+    private const RATE_PREFIX = 'ptadmin:captcha:rate:';
+    private const VERIFY_LOCK_PREFIX = 'ptadmin:captcha:verify-lock:';
     private const TTL_SECONDS = 180;
     private const MAX_ATTEMPTS = 5;
+    private const RATE_WINDOW_SECONDS = 600;
+    private const CREATE_RATE_LIMIT = 20;
+    private const VERIFY_RATE_LIMIT = 60;
 
     /** @return array<string, mixed> */
     public function create(string $scene = self::SCENE_LOGIN, array $context = []): array
@@ -34,6 +39,8 @@ class CaptchaChallengeService
         if (!$this->enabled($scene)) {
             return ['enabled' => false, 'scene' => $scene];
         }
+
+        $this->assertRateLimit('create', $scene, $context, $this->rateLimit('create'));
 
         $candidates = $this->candidates();
         $lastError = null;
@@ -81,6 +88,33 @@ class CaptchaChallengeService
             return ['status' => ChallengeStatus::PASSED, 'reason_code' => 'disabled'];
         }
 
+        try {
+            $lock = Cache::lock($this->verifyLockKey($challengeId), 5);
+            if (!$lock->get()) {
+                return [
+                    'status' => ChallengeStatus::LOCKED,
+                    'reason_code' => 'verification_in_progress',
+                    'retry_after' => 1,
+                ];
+            }
+        } catch (\Throwable $exception) {
+            $lock = null;
+        }
+
+        try {
+            $this->assertRateLimit('verify', $scene, $context, $this->rateLimit('verify'));
+
+            return $this->verifyUnlocked($challengeId, $scene, $response, $context);
+        } finally {
+            if (null !== $lock) {
+                $lock->release();
+            }
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function verifyUnlocked(string $challengeId, string $scene, array $response, array $context = []): array
+    {
         $state = $this->load($challengeId);
         if (null === $state) {
             return ['status' => ChallengeStatus::EXPIRED, 'reason_code' => 'challenge_not_found'];
@@ -100,6 +134,26 @@ class CaptchaChallengeService
             $this->markTerminal($challengeId, $state, ChallengeStatus::LOCKED);
 
             return ['status' => ChallengeStatus::LOCKED, 'reason_code' => 'too_many_attempts'];
+        }
+
+        $result = $this->stateResult($state);
+        $schema = (array) ($result->get('response_schema', []) ?? []);
+        $payloadError = $this->validateResponse($response, $schema);
+        if (null !== $payloadError) {
+            ++$state['attempts'];
+            if ($state['attempts'] >= self::MAX_ATTEMPTS) {
+                $state['status'] = ChallengeStatus::LOCKED;
+            }
+            Cache::put($this->cacheKey($challengeId), $state, max(1, (int) $state['expires_at'] - time()));
+
+            if (($state['status'] ?? 'active') === ChallengeStatus::LOCKED) {
+                return ['status' => ChallengeStatus::LOCKED, 'reason_code' => 'too_many_attempts'];
+            }
+
+            return [
+                'status' => ChallengeStatus::PAYLOAD_INVALID,
+                'reason_code' => $payloadError,
+            ];
         }
 
         try {
@@ -129,6 +183,10 @@ class CaptchaChallengeService
                 $state['status'] = ChallengeStatus::LOCKED;
             }
             Cache::put($this->cacheKey($challengeId), $state, max(1, (int) $state['expires_at'] - time()));
+
+            if (($state['status'] ?? 'active') === ChallengeStatus::LOCKED) {
+                return ['status' => ChallengeStatus::LOCKED, 'reason_code' => 'too_many_attempts'];
+            }
         }
 
         return $result->toArray();
@@ -342,6 +400,92 @@ class CaptchaChallengeService
     private function normalizeVerifyResult($result): ChallengeVerifyResult
     {
         return $result instanceof ChallengeVerifyResult ? $result : new ChallengeVerifyResult((array) $result);
+    }
+
+    /** @param array<string, mixed> $state */
+    private function stateResult(array $state): ChallengeCreateResult
+    {
+        $result = $state['result'] ?? [];
+
+        return $result instanceof ChallengeCreateResult
+            ? $result
+            : new ChallengeCreateResult(is_array($result) ? $result : []);
+    }
+
+    private function verifyLockKey(string $challengeId): string
+    {
+        return self::VERIFY_LOCK_PREFIX.hash('sha256', $challengeId);
+    }
+
+    private function rateLimit(string $operation): int
+    {
+        $default = 'create' === $operation ? self::CREATE_RATE_LIMIT : self::VERIFY_RATE_LIMIT;
+        $configured = config('ptadmin.captcha.'.($operation.'_rate_limit'));
+
+        return is_numeric($configured) && (int) $configured > 0 ? (int) $configured : $default;
+    }
+
+    /** @param array<string, mixed> $context */
+    private function assertRateLimit(string $operation, string $scene, array $context, int $limit): void
+    {
+        // HTTP 请求地址是可信来源；上下文中的 ip 只作为无请求环境的回退值。
+        $identity = '';
+        if (app()->bound('request')) {
+            $identity = trim((string) request()->getClientIp());
+        }
+        if ('' === $identity) {
+            $identity = trim((string) ($context['ip'] ?? ''));
+        }
+        if ('' === $identity) {
+            $identity = 'anonymous';
+        }
+
+        $key = self::RATE_PREFIX.hash('sha256', $operation.'|'.$scene.'|'.$identity);
+        try {
+            if (Cache::add($key, 1, self::RATE_WINDOW_SECONDS)) {
+                return;
+            }
+            $count = Cache::increment($key);
+            if (false !== $count && $count > $limit) {
+                throw new BackgroundException('Captcha rate limit exceeded.');
+            }
+        } catch (BackgroundException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            // A cache driver without atomic counters must not make login unavailable.
+        }
+    }
+
+    /** @param array<string, mixed> $response @param array<string, mixed> $schema */
+    private function validateResponse(array $response, array $schema): ?string
+    {
+        if ([] === $schema) {
+            return null;
+        }
+        if ('object' === ($schema['type'] ?? null) && [] === $response) {
+            return 'response_required';
+        }
+
+        foreach ((array) ($schema['required'] ?? []) as $field) {
+            if (!array_key_exists((string) $field, $response)) {
+                return 'response_'.(string) $field.'_required';
+            }
+        }
+        foreach ((array) ($schema['properties'] ?? []) as $field => $definition) {
+            if (!array_key_exists((string) $field, $response) || !is_array($definition)) {
+                continue;
+            }
+            $value = $response[$field];
+            $type = (string) ($definition['type'] ?? '');
+            $valid = 'string' === $type ? is_string($value)
+                : ('number' === $type || 'integer' === $type ? is_int($value) || is_float($value) || (is_string($value) && is_numeric($value))
+                : ('array' === $type ? is_array($value) : ('object' === $type ? is_array($value) : true)));
+            if (!$valid) {
+                return 'response_'.(string) $field.'_invalid';
+            }
+        }
+
+        return null;
     }
 
     /** @return array<string, mixed> */
