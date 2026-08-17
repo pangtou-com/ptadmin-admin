@@ -44,6 +44,9 @@ use PTAdmin\Admin\Http\Middleware\AuthorizationMiddleware;
 use PTAdmin\Admin\Http\Middleware\CanInstallMiddleware;
 use PTAdmin\Admin\Http\Middleware\ExceptionResponseMiddleware;
 use PTAdmin\Admin\Http\Middleware\OperationRecordMiddleware;
+use PTAdmin\Admin\Notifications\NotificationManager;
+use PTAdmin\Admin\Notifications\NotificationChannelProviderRegistry;
+use PTAdmin\Admin\Notifications\NotificationSceneRegistry;
 use PTAdmin\Admin\Services\Auth\AuthorizationContext;
 use PTAdmin\Admin\Services\Auth\AuthorizationService;
 use PTAdmin\Admin\Services\Auth\CapabilityService;
@@ -83,6 +86,9 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->app->singleton(AdminOrganizationServiceInterface::class, AdminOrganizationService::class);
         $this->app->singleton(WorkflowServiceInterface::class, WorkflowService::class);
         $this->app->singleton(ApplicationInstanceService::class, ApplicationInstanceService::class);
+        $this->app->singleton(NotificationManager::class, NotificationManager::class);
+        $this->app->singleton(NotificationChannelProviderRegistry::class, NotificationChannelProviderRegistry::class);
+        $this->app->singleton(NotificationSceneRegistry::class, NotificationSceneRegistry::class);
     }
 
     public function boot(): void
@@ -109,6 +115,10 @@ class PTAdminServiceProvider extends ServiceProvider
                 __DIR__.'/../../../database/Migrations/2026_04_09_140000_seed_admin_default_resources.php' => database_path('migrations/2026_04_09_140000_seed_admin_default_resources.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_10_120000_create_assets_table.php' => database_path('migrations/2026_04_10_120000_create_assets_table.php'),
                 __DIR__.'/../../../database/Migrations/2026_04_28_120000_create_notification_tables.php' => database_path('migrations/2026_04_28_120000_create_notification_tables.php'),
+                __DIR__.'/../../../database/Migrations/2026_08_15_120000_create_notification_scene_tables.php' => database_path('migrations/2026_08_15_120000_create_notification_scene_tables.php'),
+                __DIR__.'/../../../database/Migrations/2026_08_15_130000_register_notification_config_resource.php' => database_path('migrations/2026_08_15_130000_register_notification_config_resource.php'),
+                __DIR__.'/../../../database/Migrations/2026_08_15_140000_add_group_to_notification_scenes.php' => database_path('migrations/2026_08_15_140000_add_group_to_notification_scenes.php'),
+                __DIR__.'/../../../database/Migrations/2026_08_17_100000_create_notification_scene_routes.php' => database_path('migrations/2026_08_17_100000_create_notification_scene_routes.php'),
                 $this->easyMigrationPath('2024_06_13_154934_mod_init.php') => database_path('migrations/2024_06_13_154934_mod_init.php'),
                 $this->easyMigrationPath('2026_04_06_000000_create_model_versions_table.php') => database_path('migrations/2026_04_06_000000_create_model_versions_table.php'),
                 $this->easyMigrationPath('2026_04_06_000001_create_audit_logs_table.php') => database_path('migrations/2026_04_06_000001_create_audit_logs_table.php'),

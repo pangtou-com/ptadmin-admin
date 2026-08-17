@@ -36,6 +36,9 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'mod_fields',
             'mod_versions',
             'audit_logs',
+            'notification_scenes',
+            'notification_templates',
+            'notification_scene_routes',
         ] as $table) {
             self::assertTrue(Schema::hasTable($table), sprintf('Missing table [%s].', $table));
         }
@@ -71,6 +74,36 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'sort',
             'addon_code',
             'intro',
+        ]));
+
+        self::assertTrue(Schema::hasColumns('notification_scenes', [
+            'source_type',
+            'source_code',
+            'group_code',
+            'group_title',
+            'code',
+            'default_channels',
+            'enabled',
+        ]));
+
+        self::assertTrue(Schema::hasColumns('notification_scene_routes', [
+            'scene_id',
+            'channel',
+            'addon_code',
+            'provider_group',
+            'provider',
+            'instance_code',
+            'dispatch_mode',
+            'strategy',
+            'revision',
+        ]));
+
+        self::assertTrue(Schema::hasColumns('notification_deliveries', [
+            'addon_code',
+            'provider_group',
+            'instance_code',
+            'route_revision',
+            'strategy',
         ]));
 
         self::assertTrue(Schema::hasColumns('operation_records', [
@@ -109,6 +142,7 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'system.assets',
             'system.admin_login_logs',
             'system.operate',
+            'system.notification_config',
         ], $names);
 
         /** @var AdminResource $system */

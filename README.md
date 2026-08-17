@@ -109,6 +109,53 @@ storage/app/ptadmin/ptadmin-application-identity.json
 
 安装完成后的运行流程只读取现有身份证；如果文件缺失或损坏，系统会明确报错，不会静默生成新身份并造成已有插件授权漂移。
 
+## 场景通知
+
+插件在 `Config/notify.php` 中声明场景、变量、默认渠道和渠道模板，并在安装、升级和卸载生命周期中同步状态：
+
+```php
+use PTAdmin\Admin\Notifications\NotificationSceneRegistry;
+
+app(NotificationSceneRegistry::class)->syncAddon(
+    'order',
+    require __DIR__.'/Config/notify.php'
+);
+
+app(NotificationSceneRegistry::class)->disableAddon('order');
+```
+
+业务发送时只传场景编码和场景变量。未指定渠道时使用场景的默认渠道，并自动选择当前已安装插件提供的可用实例：
+
+```php
+$result = notify()
+    ->toUserId($userId)
+    ->send('order.shipped', [
+        'order_no' => 'A1001',
+        'tracking_no' => 'SF123456',
+    ], [
+        'biz_id' => 'A1001',
+        'biz_key' => 'order.shipped.A1001',
+        'action_type' => 'route',
+        'action_url' => '/orders/A1001',
+    ]);
+
+$notificationId = $result->notificationId();
+$deliveryCount = $result->deliveryCount();
+```
+
+接收人支持模型、ID 和批量 ID。需要覆盖场景默认渠道时使用 `NotificationChannel` 常量：
+
+```php
+use PTAdmin\Admin\Notifications\NotificationChannel;
+
+notify()
+    ->toAdminIds($adminIds)
+    ->channels([NotificationChannel::SITE, NotificationChannel::MAIL])
+    ->send('order.shipped', $variables);
+```
+
+`admin_notify()` 和 `user_notify()` 保留用于兼容直接传标题、正文的旧调用；新增业务应优先注册场景并使用 `notify()->send()`，让模板、渠道路由和投递日志进入统一管理。
+
 ## 测试
 
 包内测试基于 `orchestra/testbench`，独立仓库中可直接执行：

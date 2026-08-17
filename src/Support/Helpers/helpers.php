@@ -609,6 +609,16 @@ if (!function_exists('notify_message_service')) {
     }
 }
 
+if (!function_exists('notify')) {
+    /**
+     * 获取通知管理入口。
+     */
+    function notify(): \PTAdmin\Admin\Notifications\NotificationManager
+    {
+        return app(\PTAdmin\Admin\Notifications\NotificationManager::class);
+    }
+}
+
 if (!function_exists('admin_notify')) {
     /**
      * 发送后台管理员站内消息，并按 channels 触发外部通知。
@@ -661,10 +671,10 @@ if (!function_exists('admin_notify')) {
     {
         $ids = norm_ids($adminIds);
         if (1 === count($ids)) {
-            return notify_message_service()->sendToAdmin((int) reset($ids), $message);
+            return notify()->toAdminId((int) reset($ids))->sendLegacy($message);
         }
 
-        return notify_message_service()->sendToAdmins($ids, $message);
+        return notify()->toAdminIds($ids)->sendLegacy($message);
     }
 }
 
@@ -720,10 +730,10 @@ if (!function_exists('user_notify')) {
     {
         $ids = norm_ids($userIds);
         if (1 === count($ids)) {
-            return notify_message_service()->sendToUser((int) reset($ids), $message);
+            return notify()->toUserId((int) reset($ids))->sendLegacy($message);
         }
 
-        return notify_message_service()->sendToUsers($ids, $message);
+        return notify()->toUserIds($ids)->sendLegacy($message);
     }
 }
 

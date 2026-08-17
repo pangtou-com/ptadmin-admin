@@ -73,6 +73,14 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     Route::put('message/read', [Admin\MessageController::class, 'readAll']);
     Route::delete('message/{id}', [Admin\MessageController::class, 'delete'])->whereNumber('id');
 
+    // 通知配置
+    admin_audit_route(Route::get('notification-config/scenes', [Admin\NotificationConfigController::class, 'scenes']), 'system.notification_config');
+    admin_audit_route(Route::get('notification-config/scenes/{id}', [Admin\NotificationConfigController::class, 'scene'])->whereNumber('id'), 'system.notification_config');
+    admin_audit_route(Route::put('notification-config/templates/{id}', [Admin\NotificationConfigController::class, 'updateTemplate'])->whereNumber('id'), 'system.notification_config');
+    admin_audit_route(Route::get('notification-config/channels', [Admin\NotificationConfigController::class, 'channels']), 'system.notification_config');
+    admin_audit_route(Route::put('notification-config/scenes/{id}/routes/{channel}', [Admin\NotificationConfigController::class, 'updateRoutes'])->whereNumber('id'), 'system.notification_config');
+    admin_audit_route(Route::delete('notification-config/scenes/{id}/routes/{channel}', [Admin\NotificationConfigController::class, 'clearRoutes'])->whereNumber('id'), 'system.notification_config');
+
     // 后台管理员管理
     admin_audit_route(Route::get('admins', [Admin\AdminController::class, 'index']), 'system.admins');
     admin_audit_route(Route::get('admins/{id}', [Admin\AdminController::class, 'details']), 'system.admins');

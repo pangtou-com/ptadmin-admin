@@ -78,6 +78,9 @@ abstract class TestCase extends Orchestra
             'admin_roles',
             'admin_dashboard_user_widgets',
             'admin_dashboard_role_widgets',
+            'notification_templates',
+            'notification_scene_routes',
+            'notification_scenes',
             'notification_deliveries',
             'notification_receipts',
             'notification_messages',
@@ -265,6 +268,41 @@ abstract class TestCase extends Orchestra
 
     protected function createNotificationTables(): void
     {
+        if (!Schema::hasTable('notification_scenes')) {
+            Schema::create('notification_scenes', function (Blueprint $table): void {
+                $table->id();
+                $table->string('source_type', 20)->default('addon');
+                $table->string('source_code', 100);
+                $table->string('group_code', 50)->default('general');
+                $table->string('group_title', 100)->default('常规通知');
+                $table->string('code', 100)->unique();
+                $table->string('title', 255);
+                $table->string('description', 500)->nullable();
+                $table->string('purpose', 30)->default('transactional');
+                $table->json('variables')->nullable();
+                $table->json('default_channels')->nullable();
+                $table->unsignedTinyInteger('enabled')->default(1);
+                $table->unsignedInteger('created_at')->default(0);
+                $table->unsignedInteger('updated_at')->default(0);
+            });
+        }
+
+        if (!Schema::hasTable('notification_templates')) {
+            Schema::create('notification_templates', function (Blueprint $table): void {
+                $table->id();
+                $table->unsignedBigInteger('scene_id');
+                $table->string('channel', 50);
+                $table->string('locale', 20)->default('zh-CN');
+                $table->string('mode', 20);
+                $table->json('config')->nullable();
+                $table->unsignedTinyInteger('customized')->default(0);
+                $table->unsignedTinyInteger('enabled')->default(1);
+                $table->unsignedInteger('created_at')->default(0);
+                $table->unsignedInteger('updated_at')->default(0);
+                $table->unique(['scene_id', 'channel', 'locale']);
+            });
+        }
+
         if (!Schema::hasTable('notification_messages')) {
             Schema::create('notification_messages', function (Blueprint $table): void {
                 $table->id();

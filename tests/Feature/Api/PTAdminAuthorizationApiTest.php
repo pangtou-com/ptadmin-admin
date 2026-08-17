@@ -124,6 +124,7 @@ class PTAdminAuthorizationApiTest extends TestCase
         $systemNode = collect($resources)->firstWhere('name', 'system');
         self::assertIsArray($systemNode);
         self::assertContains('system.config', array_column((array) ($systemNode['children'] ?? []), 'name'));
+        self::assertContains('system.notification_config', array_column((array) ($systemNode['children'] ?? []), 'name'));
         self::assertDatabaseHas('admin_login_logs', [
             'admin_id' => $founder->id,
             'login_account' => 'founder',

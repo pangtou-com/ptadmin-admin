@@ -6,18 +6,24 @@ namespace PTAdmin\Admin\Services;
 
 use Illuminate\Support\Facades\DB;
 use PTAdmin\Admin\Models\Admin;
+use PTAdmin\Admin\Models\NotificationDelivery;
 use PTAdmin\Admin\Models\NotificationMessage;
 use PTAdmin\Admin\Models\NotificationReceipt;
+use PTAdmin\Admin\Notifications\NotificationDispatchResult;
+use PTAdmin\Admin\Notifications\NotificationSceneResolver;
+use PTAdmin\Admin\Notifications\NotificationSendRequest;
 use PTAdmin\Admin\Support\Query\BuilderQueryApplier;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 
 class NotificationService
 {
     private NotificationDeliveryService $deliveryService;
+    private NotificationSceneResolver $sceneResolver;
 
-    public function __construct(NotificationDeliveryService $deliveryService)
+    public function __construct(NotificationDeliveryService $deliveryService, NotificationSceneResolver $sceneResolver)
     {
         $this->deliveryService = $deliveryService;
+        $this->sceneResolver = $sceneResolver;
     }
 
     public function sendToAdmin(int $adminId, array $message): array
@@ -78,6 +84,28 @@ class NotificationService
         }
 
         return $this->messageToArray($notification);
+    }
+
+    public function dispatch(NotificationSendRequest $request): NotificationDispatchResult
+    {
+        $recipients = $request->recipients();
+        $resolved = $this->sceneResolver->resolve($request);
+        $message = $resolved->message();
+        $message['channels'] = $resolved->channels();
+        $message = $this->send($recipients->type(), $recipients->ids(), $message);
+        $notificationId = (int) $message['id'];
+        $deliveryCount = NotificationDelivery::query()
+            ->where('notification_id', $notificationId)
+            ->where('receiver_type', $recipients->type())
+            ->whereIn('receiver_id', $recipients->ids())
+            ->count();
+
+        return new NotificationDispatchResult(
+            $notificationId,
+            $recipients->count(),
+            $deliveryCount,
+            $message
+        );
     }
 
     public function pageForAdmin(Admin $admin, array $query = []): array
