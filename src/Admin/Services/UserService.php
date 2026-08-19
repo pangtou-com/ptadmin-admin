@@ -305,7 +305,7 @@ class UserService
         $user = (isset($data['type']) && 1 === (int) $data['type']) ? $this->attemptCode($data) : $this->attempt($data);
 
         // 登录锁定验证
-        if (StatusEnum::ENABLE !== $user->status) {
+        if (StatusEnum::ENABLE !== (int) $user->status) {
             throw new BackgroundException(__('ptadmin::background.login.limit'));
         }
 

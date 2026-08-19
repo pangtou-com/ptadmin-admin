@@ -57,6 +57,7 @@ use PTAdmin\Admin\Services\Auth\AdminRoleService;
 use PTAdmin\Admin\Services\Auth\AdminTenantService;
 use PTAdmin\Admin\Services\Auth\WorkflowService;
 use PTAdmin\Admin\Services\ApplicationInstanceService;
+use PTAdmin\Admin\View\Components\Captcha;
 use PTAdmin\Foundation\Auth\AddonGuard;
 use PTAdmin\Foundation\Auth\AdminAuth;
 use PTAdmin\Contracts\Auth\AuthorizationServiceInterface;
@@ -127,9 +128,13 @@ class PTAdminServiceProvider extends ServiceProvider
             $langPaths = [
                 __DIR__.'/../../../lang' => resource_path('lang/vendor/ptadmin'),
             ];
-            $assetPaths = [
+            $adminAssetPaths = [
                 __DIR__.'/../../../resources/admin-frontend' => public_path(env('PTADMIN_WEB_PREFIX', 'admin')),
             ];
+            $captchaAssetPaths = [
+                __DIR__.'/../../../resources/captcha' => public_path('vendor/ptadmin/captcha'),
+            ];
+            $assetPaths = $adminAssetPaths + $captchaAssetPaths;
 
             $this->publishes($configPaths, 'ptadmin');
             $this->publishes($configPaths, 'ptadmin-config');
@@ -142,12 +147,15 @@ class PTAdminServiceProvider extends ServiceProvider
 
             $this->publishes($assetPaths, 'ptadmin');
             $this->publishes($assetPaths, 'ptadmin-assets');
+            $this->publishes($captchaAssetPaths, 'ptadmin-captcha-assets');
         }
 
         $this->loadMigrationsFrom(__DIR__.'/../../../database/Migrations');
         $this->loadMigrationsFrom($this->easyMigrationsDirectory());
         $this->loadTranslationsFrom(__DIR__.'/../../../lang', 'ptadmin');
+        $this->loadViewsFrom(__DIR__.'/../../../resources/views', 'ptadmin');
         $this->loadViewsFrom(__DIR__.'/../../../resources/views/install', 'ptadmin-install');
+        Blade::component(Captcha::class, 'ptadmin::captcha');
         $this->registerRouteMiddleware();
         $this->extendGuard();
         $this->registerAuthorizationGate();

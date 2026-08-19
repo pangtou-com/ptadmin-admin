@@ -122,9 +122,9 @@ class AddonPlatformService
      *
      * @return array<string, mixed>
      */
-    public function installFromCloud(string $code, int $versionId = 0, bool $force = false): array
+    public function installFromCloud(string $code, int $versionId = 0, bool $force = false, ?string $licenseCode = null): array
     {
-        AddonAction::install($code, $versionId, $force);
+        AddonAction::install($code, $versionId, $force, false, $licenseCode);
 
         return $this->status($code);
     }
@@ -139,18 +139,12 @@ class AddonPlatformService
         string $code,
         int $versionId,
         bool $force,
-        int $licenseId,
-        bool $transfer = false,
-        string $transferReason = ''
+        string $licenseCode
     ): array {
-        // 先安装插件，确认安装流程成功后再绑定或迁移授权，避免失败安装消耗迁移额度。
-        $result = $this->installFromCloud($code, $versionId, $force);
+        // 先安装插件，确认安装流程成功后再绑定授权。
+        $result = $this->installFromCloud($code, $versionId, $force, $licenseCode);
         $licenses = $this->addonLicenseService();
-        if ($transfer) {
-            $licenses->transfer($code, $licenseId, $transferReason);
-        } else {
-            $licenses->activate($code, $licenseId);
-        }
+        $licenses->activate($code, $licenseCode);
 
         return array_merge($result, [
             'license' => $licenses->status($code),
@@ -263,15 +257,9 @@ class AddonPlatformService
     }
 
     /** @return array<string, mixed> */
-    public function activateLicense(string $code, int $licenseId): array
+    public function activateLicense(string $code, string $licenseCode): array
     {
-        return $this->addonLicenseService()->activate($code, $licenseId);
-    }
-
-    /** @return array<string, mixed> */
-    public function transferLicense(string $code, int $licenseId, string $reason): array
-    {
-        return $this->addonLicenseService()->transfer($code, $licenseId, $reason);
+        return $this->addonLicenseService()->activate($code, $licenseCode);
     }
 
     /** @return array<string, mixed> */

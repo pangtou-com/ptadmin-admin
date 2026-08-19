@@ -63,7 +63,18 @@ class AddonController extends AbstractBackgroundController
      */
     public function getAddonDownloadUrl(Request $request): \Illuminate\Http\JsonResponse
     {
-        $data = $request->only(['code', 'addon_id', 'addon_version_id']);
+        $data = $request->validate([
+            'code' => 'nullable|string|max:100',
+            'addon_id' => 'nullable|integer|min:0',
+            'addon_version_id' => 'nullable|integer|min:0',
+            'license_code' => ['nullable', 'string', 'max:100', 'regex:/^PTL-[A-Z0-9]{32}$/i'],
+        ]);
+        if ('' !== trim((string) ($data['license_code'] ?? ''))) {
+            return AdminResponse::success(AddonApi::getAddonDownloadUrlByLicenseCode([
+                'license_code' => trim((string) $data['license_code']),
+            ]));
+        }
+
         $codes = \PTAdmin\Addon\Addon::getInstalledAddonsCode();
         if (\in_array($data['code'], $codes, true)) {
             return AdminResponse::fail(__('ptadmin::background.addon_installed'));
@@ -93,9 +104,37 @@ class AddonController extends AbstractBackgroundController
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function uninstall($code): \Illuminate\Http\JsonResponse
+    public function uninstall($code): StreamedResponse
     {
-        return AdminResponse::success($this->addonPlatformService->uninstall((string) $code, request()->boolean('force')));
+        $addonCode = (string) $code;
+        $force = request()->boolean('force');
+
+        return response()->stream(function () use ($addonCode, $force): void {
+            try {
+                $result = $this->addonPlatformService->uninstall($addonCode, $force);
+                $this->sendStreamMessage([
+                    'type' => 'success',
+                    'message' => __('ptadmin::common.success'),
+                    'data' => $result,
+                ]);
+            } catch (\Throwable $throwable) {
+                Log::error('PTAdmin addon uninstall stream failed', [
+                    'code' => $addonCode,
+                    'message' => $throwable->getMessage(),
+                ]);
+
+                $this->sendStreamMessage([
+                    'type' => 'error',
+                    'message' => $throwable->getMessage(),
+                    'data' => [],
+                ]);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'X-Powered-By' => 'ptadmin',
+            'Cache-Control' => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+        ]);
     }
 
     public function addonCloud(Request $request): \Illuminate\Http\JsonResponse
@@ -143,21 +182,17 @@ class AddonController extends AbstractBackgroundController
             'code' => 'required|string|max:100',
             'addon_version_id' => 'sometimes|integer|min:0',
             'force' => 'sometimes|boolean',
-            'license_id' => 'sometimes|integer|min:1',
-            'transfer' => 'sometimes|boolean',
-            'transfer_reason' => 'required_if:transfer,true|nullable|string|max:500',
+            'license_code' => ['sometimes', 'string', 'max:100', 'regex:/^PTL-[A-Z0-9]{32}$/i'],
         ]);
 
         return response()->stream(function () use ($data): void {
             try {
-                $result = isset($data['license_id'])
+                $result = isset($data['license_code'])
                     ? $this->addonPlatformService->installFromCloudWithLicense(
                         (string) $data['code'],
                         (int) ($data['addon_version_id'] ?? 0),
                         (bool) ($data['force'] ?? false),
-                        (int) $data['license_id'],
-                        (bool) ($data['transfer'] ?? false),
-                        (string) ($data['transfer_reason'] ?? '')
+                        (string) $data['license_code']
                     )
                     : $this->addonPlatformService->installFromCloud(
                         (string) $data['code'],
@@ -359,24 +394,10 @@ class AddonController extends AbstractBackgroundController
     public function activateLicense(string $code, Request $request): \Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
-            'license_id' => 'required|integer|min:1',
+            'license_code' => ['required', 'string', 'max:100', 'regex:/^PTL-[A-Z0-9]{32}$/i'],
         ]);
 
-        return AdminResponse::success($this->addonPlatformService->activateLicense($code, (int) $data['license_id']));
-    }
-
-    public function transferLicense(string $code, Request $request): \Illuminate\Http\JsonResponse
-    {
-        $data = $request->validate([
-            'license_id' => 'required|integer|min:1',
-            'reason' => 'required|string|max:500',
-        ]);
-
-        return AdminResponse::success($this->addonPlatformService->transferLicense(
-            $code,
-            (int) $data['license_id'],
-            (string) $data['reason']
-        ));
+        return AdminResponse::success($this->addonPlatformService->activateLicense($code, (string) $data['license_code']));
     }
 
     public function verifyLicense(string $code, Request $request): \Illuminate\Http\JsonResponse

@@ -41,6 +41,9 @@ return [
     ),
     'route_prefix' => 'ptadmin',
     'public_api_prefix' => env('PTADMIN_PUBLIC_API_PREFIX', 'api'),
+    'public_auth' => [
+        'guard' => env('PTADMIN_PUBLIC_AUTH_GUARD', 'frontend'),
+    ],
     'addons_path' => env('PTADMIN_ADDONS_PATH', base_path('addons')),
     'addons_storage_path' => env('PTADMIN_ADDONS_STORAGE_PATH', storage_path('app/ptadmin/modules')),
     'upload_local_disk' => env('PTADMIN_UPLOAD_LOCAL_DISK', 'public'),

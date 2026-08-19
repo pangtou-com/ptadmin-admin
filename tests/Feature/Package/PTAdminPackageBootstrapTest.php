@@ -48,8 +48,9 @@ class PTAdminPackageBootstrapTest extends TestCase
         $migrationPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-migrations');
         $langPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-lang');
         $assetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-assets');
+        $captchaAssetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-captcha-assets');
 
-        self::assertCount(17, $allPublishes);
+        self::assertCount(18, $allPublishes);
         self::assertCount(1, $configPublishes);
         self::assertSame('ptadmin.php', basename((string) array_key_first($configPublishes)));
         self::assertSame('ptadmin.php', basename((string) current($configPublishes)));
@@ -76,9 +77,10 @@ class PTAdminPackageBootstrapTest extends TestCase
         self::assertSame('lang', basename((string) array_key_first($langPublishes)));
         self::assertSame('ptadmin', basename((string) current($langPublishes)));
 
-        self::assertCount(1, $assetPublishes);
-        self::assertSame('admin-frontend', basename((string) array_key_first($assetPublishes)));
-        self::assertSame('admin', basename((string) current($assetPublishes)));
+        self::assertCount(2, $assetPublishes);
+        self::assertSame(['admin-frontend', 'captcha'], array_values(array_map('basename', array_keys($assetPublishes))));
+        self::assertSame(['admin', 'captcha'], array_values(array_map('basename', $assetPublishes)));
+        self::assertSame($captchaAssetPublishes, array_slice($assetPublishes, 1, 1, true));
         self::assertSame($configPublishes + $migrationPublishes + $langPublishes + $assetPublishes, $allPublishes);
 
         $commands = Artisan::all();
@@ -90,5 +92,13 @@ class PTAdminPackageBootstrapTest extends TestCase
         self::assertArrayHasKey('admin:upgrade', $commands);
         self::assertInstanceOf(AdminCommand::class, $commands['admin:auth']);
         self::assertInstanceOf(AdminUpgradeCommand::class, $commands['admin:upgrade']);
+    }
+
+    public function test_package_registers_the_builtin_captcha_blade_component(): void
+    {
+        $html = \Illuminate\Support\Facades\Blade::render('<x-ptadmin::captcha scene="frontend.register" />');
+
+        self::assertStringContainsString('<pt-captcha', $html);
+        self::assertStringContainsString('vendor/ptadmin/captcha/captcha.browser.js', $html);
     }
 }

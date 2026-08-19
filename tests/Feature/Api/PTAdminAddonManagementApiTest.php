@@ -358,7 +358,7 @@ class PTAdminAddonManagementApiTest extends TestCase
             {
             }
 
-            public function installFromCloud(string $code, int $versionId = 0, bool $force = false): array
+            public function installFromCloud(string $code, int $versionId = 0, bool $force = false, ?string $licenseCode = null): array
             {
                 echo json_encode([
                     'type' => 'info',
@@ -420,14 +420,9 @@ class PTAdminAddonManagementApiTest extends TestCase
                 ];
             }
 
-            public function activateLicense(string $code, int $licenseId): array
+            public function activateLicense(string $code, string $licenseCode): array
             {
-                return ['addon_code' => $code, 'license_id' => $licenseId, 'operation' => 'activate'];
-            }
-
-            public function transferLicense(string $code, int $licenseId, string $reason): array
-            {
-                return ['addon_code' => $code, 'license_id' => $licenseId, 'operation' => 'transfer', 'reason' => $reason];
+                return ['addon_code' => $code, 'license_code' => $licenseCode, 'operation' => 'activate'];
             }
 
             public function verifyLicense(string $code, ?int $versionId = null): array
@@ -439,11 +434,9 @@ class PTAdminAddonManagementApiTest extends TestCase
                 string $code,
                 int $versionId,
                 bool $force,
-                int $licenseId,
-                bool $transfer = false,
-                string $transferReason = ''
+                string $licenseCode
             ): array {
-                return compact('code', 'versionId', 'force', 'licenseId', 'transfer', 'transferReason');
+                return compact('code', 'versionId', 'force', 'licenseCode');
             }
         };
         $this->app->instance(AddonPlatformService::class, $service);
@@ -456,15 +449,9 @@ class PTAdminAddonManagementApiTest extends TestCase
             ->assertJsonPath('data.results.0.license_id', 18);
 
         $this->withHeaders($headers)
-            ->postJson('/ptadmin/addons/demo-addon/licenses/activate', ['license_id' => 18])
+            ->postJson('/ptadmin/addons/demo-addon/licenses/activate', ['license_code' => 'PTL-1234567890ABCDEFGHIJKLMNOPQRSTUV'])
             ->assertOk()
             ->assertJsonPath('data.operation', 'activate');
-
-        $this->withHeaders($headers)
-            ->postJson('/ptadmin/addons/demo-addon/licenses/transfer', ['license_id' => 18, 'reason' => '迁移生产应用'])
-            ->assertOk()
-            ->assertJsonPath('data.operation', 'transfer')
-            ->assertJsonPath('data.reason', '迁移生产应用');
 
         $this->withHeaders($headers)
             ->postJson('/ptadmin/addons/demo-addon/licenses/verify', ['addon_version_id' => 12])
@@ -474,13 +461,10 @@ class PTAdminAddonManagementApiTest extends TestCase
         $response = $this->withHeaders($headers)->post('/ptadmin/addons/install/cloud', [
             'code' => 'demo-addon',
             'addon_version_id' => 12,
-            'license_id' => 18,
-            'transfer' => true,
-            'transfer_reason' => '迁移生产应用',
+            'license_code' => 'PTL-1234567890ABCDEFGHIJKLMNOPQRSTUV',
         ]);
         $response->assertOk();
-        self::assertStringContainsString('"licenseId":18', $response->streamedContent());
-        self::assertStringContainsString('"transfer":true', $response->streamedContent());
+        self::assertStringContainsString('"licenseCode":"PTL-1234567890ABCDEFGHIJKLMNOPQRSTUV"', $response->streamedContent());
     }
 
     public function test_purchase_verification_endpoint_returns_platform_checkout_contract(): void
@@ -614,15 +598,17 @@ class PTAdminAddonManagementApiTest extends TestCase
             {
             }
 
-            public function installFromCloud(string $code, int $versionId = 0, bool $force = false): array
+            public function installFromCloud(string $code, int $versionId = 0, bool $force = false, ?string $licenseCode = null): array
             {
+                \PHPUnit\Framework\Assert::assertSame('PTL-1234567890ABCDEFGHIJKLMNOPQRSTUV', $licenseCode);
+
                 throw new \RuntimeException('插件安装失败');
             }
         };
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('插件安装失败');
-        $service->installFromCloudWithLicense('demo-addon', 12, false, 18, true, '迁移生产应用');
+        $service->installFromCloudWithLicense('demo-addon', 12, false, 'PTL-1234567890ABCDEFGHIJKLMNOPQRSTUV');
     }
 
     public function test_init_endpoint_streams_progress_messages(): void
@@ -831,11 +817,13 @@ class PTAdminAddonManagementApiTest extends TestCase
 
         Addon::swap(new AddonManager());
 
-        $this->withHeaders($this->jsonApiHeaders($token))
-            ->deleteJson('/ptadmin/addon-uninstall/cms')
-            ->assertOk()
-            ->assertJsonPath('data.code', 'cms')
-            ->assertJsonPath('data.uninstalled', true);
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->delete('/ptadmin/addon-uninstall/cms');
+        $response->assertOk();
+        $streamedContent = $response->streamedContent();
+        self::assertStringContainsString('text/event-stream', (string) $response->headers->get('Content-Type'));
+        self::assertStringContainsString('"code":"cms"', $streamedContent);
+        self::assertStringContainsString('"uninstalled":true', $streamedContent);
 
         $this->assertDatabaseMissing('system_config_groups', [
             'addon_code' => 'cms',

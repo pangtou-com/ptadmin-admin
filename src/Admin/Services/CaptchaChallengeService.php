@@ -25,7 +25,6 @@ class CaptchaChallengeService
 {
     public const SCENE_LOGIN = 'admin.login';
     public const SCENE_REGISTER = 'frontend.register';
-    private const ALLOWED_SCENES = [self::SCENE_LOGIN, self::SCENE_REGISTER];
     private const CACHE_PREFIX = 'ptadmin:captcha:challenge:';
     private const RATE_PREFIX = 'ptadmin:captcha:rate:';
     private const VERIFY_LOCK_PREFIX = 'ptadmin:captcha:verify-lock:';
@@ -51,7 +50,7 @@ class CaptchaChallengeService
                 $result = $this->createWith($definition, $scene, $context);
                 $state = $this->store($definition, $scene, $result);
 
-                return ['enabled' => true] + $this->publicResult($state['result']);
+                return ['enabled' => true, 'scene' => $scene] + $this->publicResult($state['result']);
             } catch (\Throwable $exception) {
                 $lastError = $exception;
             }
@@ -77,7 +76,7 @@ class CaptchaChallengeService
             $newState = $this->store($state['definition'], $scene, $result);
             Cache::forget($this->cacheKey($challengeId));
 
-            return ['enabled' => true] + $this->publicResult($newState['result']);
+            return ['enabled' => true, 'scene' => $scene] + $this->publicResult($newState['result']);
         } catch (\Throwable $exception) {
             throw new BackgroundException('Captcha provider refresh failed: '.$exception->getMessage(), 0, $exception);
         }
@@ -196,7 +195,7 @@ class CaptchaChallengeService
 
     public function enabled(string $scene = self::SCENE_LOGIN): bool
     {
-        if (!in_array($scene, self::ALLOWED_SCENES, true)) {
+        if (!$this->isAllowedScene($scene)) {
             return false;
         }
 
@@ -219,6 +218,17 @@ class CaptchaChallengeService
         }
 
         return (bool) $switch && '' !== $this->configuredProvider($scene);
+    }
+
+    private function isAllowedScene(string $scene): bool
+    {
+        if (in_array($scene, [self::SCENE_LOGIN, self::SCENE_REGISTER], true)) {
+            return true;
+        }
+
+        $scenes = config('ptadmin.captcha.scenes', []);
+
+        return is_array($scenes) && array_key_exists($scene, $scenes);
     }
 
     /** @return array<int, array<string, mixed>> */

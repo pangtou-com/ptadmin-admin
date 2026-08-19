@@ -76,7 +76,7 @@ class User extends Authenticate
      */
     public function fromDateTime($value): int
     {
-        return $value;
+        return (int) $value;
     }
 
     /**
@@ -90,7 +90,7 @@ class User extends Authenticate
     public function getAvatarAttribute(): string
     {
         if ($this->exists) {
-            return $this->attributes['avatar'] ?? user_avatar($this->attributes['id']);
+            return $this->attributes['avatar'] ?? user_avatar((int) $this->attributes['id']);
         }
 
         return '';

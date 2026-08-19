@@ -41,8 +41,9 @@ class PTAdminServiceProviderTest extends TestCase
         $migrationPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-migrations');
         $langPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-lang');
         $assetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-assets');
+        $captchaAssetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-captcha-assets');
 
-        self::assertCount(17, $allPublishes);
+        self::assertCount(18, $allPublishes);
         self::assertCount(1, $configPublishes);
         self::assertSame('ptadmin.php', basename((string) array_key_first($configPublishes)));
         self::assertSame('ptadmin.php', basename((string) current($configPublishes)));
@@ -69,9 +70,10 @@ class PTAdminServiceProviderTest extends TestCase
         self::assertSame('lang', basename((string) array_key_first($langPublishes)));
         self::assertSame('ptadmin', basename((string) current($langPublishes)));
 
-        self::assertCount(1, $assetPublishes);
-        self::assertSame('admin-frontend', basename((string) array_key_first($assetPublishes)));
-        self::assertSame('admin', basename((string) current($assetPublishes)));
+        self::assertCount(2, $assetPublishes);
+        self::assertSame(['admin-frontend', 'captcha'], array_values(array_map('basename', array_keys($assetPublishes))));
+        self::assertSame(['admin', 'captcha'], array_values(array_map('basename', $assetPublishes)));
+        self::assertSame($captchaAssetPublishes, array_slice($assetPublishes, 1, 1, true));
         self::assertSame($configPublishes + $migrationPublishes + $langPublishes + $assetPublishes, $allPublishes);
     }
 
@@ -109,5 +111,20 @@ class PTAdminServiceProviderTest extends TestCase
 
         self::assertSame('PTAdmin', trim($view));
         self::assertSame('默认标题', trim($fallback));
+    }
+
+    public function test_provider_registers_the_builtin_captcha_blade_component(): void
+    {
+        $html = Blade::render(implode('', [
+            '<x-ptadmin::captcha id="register-captcha" scene="frontend.register" />',
+            '<x-ptadmin::captcha id="login-captcha" scene="frontend.login" />',
+        ]));
+
+        self::assertStringContainsString('id="register-captcha"', $html);
+        self::assertStringContainsString('scene="frontend.register"', $html);
+        self::assertStringContainsString('challenge-url="/api/captcha/challenge"', $html);
+        self::assertStringContainsString('vendor/ptadmin/captcha/captcha.browser.js', $html);
+        self::assertSame(1, substr_count($html, 'vendor/ptadmin/captcha/captcha.browser.js'));
+        self::assertSame(2, substr_count($html, '<pt-captcha'));
     }
 }
