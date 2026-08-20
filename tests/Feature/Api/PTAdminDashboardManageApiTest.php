@@ -291,6 +291,13 @@ final class ManageDashboardAddonManager
     {
         return new ManageDashboardAddonConfig($this->addons[$addonCode] ?? array());
     }
+
+    public function getAddonVersion(string $addonCode): ?string
+    {
+        $version = $this->addons[$addonCode]['version'] ?? null;
+
+        return null === $version ? null : (string) $version;
+    }
 }
 
 final class ManageDashboardAddonConfig

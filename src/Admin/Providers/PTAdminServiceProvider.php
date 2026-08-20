@@ -57,6 +57,7 @@ use PTAdmin\Admin\Services\Auth\AdminRoleService;
 use PTAdmin\Admin\Services\Auth\AdminTenantService;
 use PTAdmin\Admin\Services\Auth\WorkflowService;
 use PTAdmin\Admin\Services\ApplicationInstanceService;
+use PTAdmin\Admin\Services\ApplicationStatusSyncService;
 use PTAdmin\Admin\View\Components\Captcha;
 use PTAdmin\Foundation\Auth\AddonGuard;
 use PTAdmin\Foundation\Auth\AdminAuth;
@@ -165,6 +166,9 @@ class PTAdminServiceProvider extends ServiceProvider
         $this->mapSystemRoutes();
         $this->registerTemplateDirectives();
         $this->registerTemplateActive();
+        if (!$this->app->runningInConsole() && file_exists(storage_path('installed'))) {
+            $this->app->make(ApplicationStatusSyncService::class)->scheduleSync();
+        }
     }
 
     protected function extendGuard(): void

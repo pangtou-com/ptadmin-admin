@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services;
 
 use PTAdmin\Addon\Addon;
+use PTAdmin\Addon\Service\AddonInstallationRegistry;
 use RuntimeException;
 use Throwable;
 
@@ -15,6 +16,7 @@ class ApplicationStatusSyncService
 
     private const LOCK_TIMEOUT = 600;
     private const LICENSE_PROTOCOL = 'ptadmin-addon-license@1';
+    private const FAILURE_RETRY_SECONDS = [300, 900, 3600, 10800, 21600];
 
     private ApplicationInstanceService $applicationInstanceService;
 
@@ -40,6 +42,10 @@ class ApplicationStatusSyncService
     public function isStale(?array $status = null): bool
     {
         $status = is_array($status) ? $status : $this->read();
+        $nextAttemptAt = strtotime((string) ($status['next_attempt_at'] ?? ''));
+        if (false !== $nextAttemptAt && $nextAttemptAt > 0) {
+            return $nextAttemptAt <= time();
+        }
         $lastSucceededAt = strtotime((string) ($status['last_succeeded_at'] ?? ''));
         if (false === $lastSucceededAt || $lastSucceededAt <= 0) {
             return true;
@@ -50,11 +56,14 @@ class ApplicationStatusSyncService
 
     public function scheduleSync(): void
     {
-        if (!$this->isStale() || !$this->acquireLock()) {
+        if (!$this->shouldAttempt()) {
             return;
         }
 
         app()->terminating(function (): void {
+            if (!$this->shouldAttempt() || !$this->acquireLock()) {
+                return;
+            }
             try {
                 try {
                     $this->performSync();
@@ -70,7 +79,7 @@ class ApplicationStatusSyncService
     public function sync(bool $force = false): array
     {
         $status = $this->read();
-        if (!$force && !$this->isStale($status)) {
+        if (!$force && !$this->shouldAttempt($status)) {
             return $status;
         }
         if (!$this->acquireLock()) {
@@ -92,15 +101,117 @@ class ApplicationStatusSyncService
         $addons = array_values(array_filter((array) ($response['addons'] ?? []), static function ($addon): bool {
             return is_array($addon) && true === ($addon['update_available'] ?? false);
         }));
+        $licenseWarnings = [];
+        foreach ($this->installedAddons() as $addon) {
+            $installation = is_array($addon['installation'] ?? null) ? $addon['installation'] : [];
+            if ('platform' !== (string) ($installation['management_scope'] ?? '')) {
+                continue;
+            }
+            $license = is_array($addon['license'] ?? null) ? $addon['license'] : [];
+            $state = (string) ($license['runtime_state'] ?? '');
+            if (!in_array($state, ['grace', 'legacy_review', 'blocked', 'unknown'], true)) {
+                continue;
+            }
+            $licenseWarnings[] = [
+                'code' => (string) ($addon['code'] ?? ''),
+                'version' => (string) ($addon['version'] ?? ''),
+                'state' => $state,
+                'reason_code' => (string) ($license['reason_code'] ?? ''),
+                'grace_ends_at' => (int) ($license['grace_ends_at'] ?? 0),
+            ];
+        }
+        $advice = $this->dashboardPlatformAdvice((array) ($response['advice'] ?? []));
+        $licenseAdvice = $this->dashboardLicenseAdvice($licenseWarnings);
+        if (null !== $licenseAdvice) {
+            $advice[] = $licenseAdvice;
+        }
 
         return [
             'application_sync_status' => (string) ($status['status'] ?? 'never'),
             'application_sync_last_attempted_at' => (string) ($status['last_attempted_at'] ?? ''),
             'application_sync_last_succeeded_at' => (string) ($status['last_succeeded_at'] ?? ''),
+            'application_sync_next_attempt_at' => (string) ($status['next_attempt_at'] ?? ''),
             'application_sync_stale' => $this->isStale($status),
             'application_sync_error' => is_array($status['last_error'] ?? null) ? $status['last_error'] : null,
-            'application_advice' => array_values((array) ($response['advice'] ?? [])),
+            'application_advice' => $advice,
             'addon_updates' => $addons,
+            'addon_license_warnings' => $licenseWarnings,
+        ];
+    }
+
+    /**
+     * @param array<int, mixed> $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function dashboardPlatformAdvice(array $items): array
+    {
+        $items = array_values(array_filter($items, static function ($item): bool {
+            return is_array($item) && in_array($item['level'] ?? null, ['danger', 'warning', 'info'], true);
+        }));
+        if (count($items) <= 1) {
+            return $items;
+        }
+
+        $priority = ['danger' => 3, 'warning' => 2, 'info' => 1];
+        usort($items, static function (array $left, array $right) use ($priority): int {
+            return ($priority[(string) ($right['level'] ?? '')] ?? 0)
+                <=> ($priority[(string) ($left['level'] ?? '')] ?? 0);
+        });
+        $primary = $items[0];
+        $primaryTitle = trim((string) ($primary['title'] ?? ''));
+        $primaryMessage = trim((string) ($primary['message'] ?? ''));
+        $message = '' !== $primaryTitle && '' !== $primaryMessage
+            ? $primaryTitle.'：'.$primaryMessage
+            : $primaryTitle.$primaryMessage;
+
+        return [[
+            'id' => 'platform-advice-summary',
+            'level' => (string) ($primary['level'] ?? 'warning'),
+            'title' => sprintf('平台检查发现 %d 项提醒', count($items)),
+            'message' => $message.' 其余提醒可在应用管理中处理。',
+            'action' => [
+                'label' => '查看应用',
+                'url' => '/cloud/local-apps',
+                'target' => '_self',
+            ],
+        ]];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $warnings
+     * @return array<string, mixed>|null
+     */
+    private function dashboardLicenseAdvice(array $warnings): ?array
+    {
+        if ([] === $warnings) {
+            return null;
+        }
+
+        $counts = array_count_values(array_map(static function (array $warning): string {
+            return (string) ($warning['state'] ?? 'unknown');
+        }, $warnings));
+        $parts = [];
+        foreach ([
+            'blocked' => '已阻断',
+            'grace' => '待激活',
+            'legacy_review' => '待归档',
+            'unknown' => '待同步',
+        ] as $state => $label) {
+            if (($counts[$state] ?? 0) > 0) {
+                $parts[] = $label.' '.(int) $counts[$state].' 个';
+            }
+        }
+
+        return [
+            'id' => 'addon-license-summary',
+            'level' => ($counts['blocked'] ?? 0) > 0 ? 'danger' : 'warning',
+            'title' => sprintf('%d 个插件需要关注授权状态', count($warnings)),
+            'message' => implode('，', $parts).'。',
+            'action' => [
+                'label' => '管理插件授权',
+                'url' => '/cloud/local-apps',
+                'target' => '_self',
+            ],
         ];
     }
 
@@ -139,13 +250,18 @@ class ApplicationStatusSyncService
                 'status' => 'success',
                 'last_attempted_at' => $attemptedAt,
                 'last_succeeded_at' => $attemptedAt,
+                'next_attempt_at' => date(DATE_ATOM, time() + $this->ttl() + $this->successJitterSeconds()),
+                'failure_count' => 0,
                 'last_error' => null,
                 'response' => $normalized,
             ];
         } catch (Throwable $exception) {
             $status = $this->read();
+            $failureCount = min(count(self::FAILURE_RETRY_SECONDS), (int) ($status['failure_count'] ?? 0) + 1);
             $status['status'] = 'failed';
             $status['last_attempted_at'] = $attemptedAt;
+            $status['next_attempt_at'] = date(DATE_ATOM, time() + self::FAILURE_RETRY_SECONDS[$failureCount - 1]);
+            $status['failure_count'] = $failureCount;
             $status['last_error'] = [
                 'code' => $this->errorCode($exception),
                 'message' => $exception->getMessage(),
@@ -339,11 +455,13 @@ class ApplicationStatusSyncService
             $licenseRequired = true === ($manifest['license_required'] ?? false)
                 || self::LICENSE_PROTOCOL === trim((string) ($manifest['license_protocol'] ?? ''));
             $license = $this->licenseSummary($code, $licenseRequired);
+            $installation = $this->installationSummary($code);
             $results[$code] = [
                 'code' => $code,
                 'version' => trim((string) ($manifest['version'] ?? Addon::getAddonVersion($code) ?? '')),
                 'enabled' => !((bool) ($manifest['disable'] ?? false)),
                 'license' => $license,
+                'installation' => $installation,
             ];
         }
         ksort($results);
@@ -364,28 +482,83 @@ class ApplicationStatusSyncService
 
         try {
             $license = app($serviceClass)->status($code);
+            $runtime = app($serviceClass)->runtimeStatus($code);
         } catch (Throwable $exception) {
             return [
                 'required' => $required,
                 'state' => 'unreadable',
+                'runtime_state' => 'unknown',
             ];
         }
         if (null === $license) {
             return [
                 'required' => $required,
                 'state' => $required ? 'missing' : 'not_required',
+                'runtime_state' => (string) ($runtime['state'] ?? 'unknown'),
+                'reason_code' => (string) ($runtime['reason_code'] ?? ''),
+                'grace_started_at' => (int) ($runtime['grace_started_at'] ?? 0),
+                'grace_ends_at' => (int) ($runtime['grace_ends_at'] ?? 0),
             ];
         }
 
         return [
             'required' => $required,
             'state' => true === ($license['is_current_instance'] ?? false) ? 'local_present' : 'instance_mismatch',
+            'runtime_state' => (string) ($runtime['state'] ?? 'unknown'),
             'license_id' => (int) ($license['license_id'] ?? 0),
             'activation_status' => (string) ($license['activation_status'] ?? ''),
             'last_verified_at' => (int) ($license['last_verified_at'] ?? 0),
             'valid_until' => (int) ($license['valid_until'] ?? 0),
             'reason_code' => (string) ($license['reason_code'] ?? ''),
         ];
+    }
+
+    /** @return array<string, mixed> */
+    private function installationSummary(string $code): array
+    {
+        $registryClass = AddonInstallationRegistry::class;
+        if (!class_exists($registryClass)) {
+            return ['management_scope' => 'legacy_unknown'];
+        }
+
+        try {
+            $registry = app($registryClass);
+            $installation = $registry->get($code);
+            $managementScope = method_exists($registry, 'managementScope')
+                ? (string) $registry->managementScope($code)
+                : $this->legacyManagementScope($installation);
+        } catch (Throwable $exception) {
+            return ['management_scope' => 'legacy_unknown'];
+        }
+        if (!is_array($installation)) {
+            return ['management_scope' => $managementScope];
+        }
+
+        return [
+            'management_scope' => $managementScope,
+            'version' => (string) ($installation['version'] ?? ''),
+            'source' => (string) ($installation['source'] ?? ''),
+            'installed_at' => (string) ($installation['installed_at'] ?? ''),
+            'addon_version_id' => (int) ($installation['addon_version_id'] ?? 0),
+            'package_hash' => (string) ($installation['package_hash'] ?? ''),
+            'release_license_policy' => (string) ($installation['release_license_policy'] ?? ''),
+            'entitlement_id' => (string) ($installation['entitlement_id'] ?? ''),
+            'entitlement_scope' => (string) ($installation['entitlement_scope'] ?? ''),
+        ];
+    }
+
+    /** @param array<string, mixed>|null $installation */
+    private function legacyManagementScope(?array $installation): string
+    {
+        $source = is_array($installation) ? (string) ($installation['source'] ?? '') : '';
+        if ('marketplace' === $source) {
+            return 'platform';
+        }
+        if ('local_package' === $source) {
+            return 'local';
+        }
+
+        return 'legacy_unknown';
     }
 
     /** @param array<string, mixed> $payload
@@ -403,12 +576,18 @@ class ApplicationStatusSyncService
             if (!is_array($addon) || '' === trim((string) ($addon['code'] ?? ''))) {
                 continue;
             }
+            $licenseDecision = is_array($addon['license_decision'] ?? null)
+                ? $this->applyLicenseDecision($addon['license_decision'], trim((string) $addon['code']))
+                : null;
             $addons[] = [
                 'code' => trim((string) $addon['code']),
                 'installed_version' => trim((string) ($addon['installed_version'] ?? '')),
                 'latest_version' => trim((string) ($addon['latest_version'] ?? '')),
                 'update_available' => true === ($addon['update_available'] ?? false),
                 'authorized' => array_key_exists('authorized', $addon) ? (bool) $addon['authorized'] : null,
+                'license_state' => is_array($licenseDecision) ? (string) ($licenseDecision['state'] ?? '') : '',
+                'license_reason_code' => is_array($licenseDecision) ? (string) ($licenseDecision['reason_code'] ?? '') : '',
+                'license_grace_ends_at' => is_array($licenseDecision) ? (int) ($licenseDecision['grace_ends_at'] ?? 0) : 0,
                 'security_alerts' => array_values((array) ($addon['security_alerts'] ?? [])),
             ];
         }
@@ -437,6 +616,43 @@ class ApplicationStatusSyncService
             'addons' => $addons,
             'advice' => $advice,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $decision
+     * @return array<string, mixed>|null
+     */
+    private function applyLicenseDecision(array $decision, string $expectedCode): ?array
+    {
+        if ((string) ($decision['addon_code'] ?? '') !== $expectedCode) {
+            throw new RuntimeException(sprintf('插件[%s]的平台运行授权决策编码不匹配。', $expectedCode));
+        }
+        if ($this->isLocallyManagedAddon($expectedCode)) {
+            return null;
+        }
+        $serviceClass = 'PTAdmin\\Addon\\Service\\AddonLicenseService';
+        if (!class_exists($serviceClass)) {
+            throw new RuntimeException('当前插件体系不支持平台运行授权决策。');
+        }
+
+        return app($serviceClass)->applyRuntimeDecision($decision);
+    }
+
+    private function isLocallyManagedAddon(string $code): bool
+    {
+        $registryClass = AddonInstallationRegistry::class;
+        if (!class_exists($registryClass)) {
+            return false;
+        }
+
+        try {
+            $registry = app($registryClass);
+
+            return method_exists($registry, 'managementScope')
+                && 'local' === (string) $registry->managementScope($code);
+        } catch (Throwable $exception) {
+            return false;
+        }
     }
 
     /** @param mixed $action
@@ -491,6 +707,8 @@ class ApplicationStatusSyncService
             'status' => 'never',
             'last_attempted_at' => '',
             'last_succeeded_at' => '',
+            'next_attempt_at' => '',
+            'failure_count' => 0,
             'last_error' => null,
             'response' => [],
         ];
@@ -570,7 +788,31 @@ class ApplicationStatusSyncService
 
     private function ttl(): int
     {
-        return max(60, (int) config('ptadmin.application_sync_ttl', 21600));
+        return max(3600, (int) config('ptadmin.application_sync_ttl', 21600));
+    }
+
+    /** @param array<string, mixed>|null $status */
+    private function shouldAttempt(?array $status = null): bool
+    {
+        $status = is_array($status) ? $status : $this->read();
+        $nextAttemptAt = strtotime((string) ($status['next_attempt_at'] ?? ''));
+        if (false !== $nextAttemptAt && $nextAttemptAt > 0) {
+            return $nextAttemptAt <= time();
+        }
+
+        $lastAttemptedAt = strtotime((string) ($status['last_attempted_at'] ?? ''));
+        if ('failed' === (string) ($status['status'] ?? '') && false !== $lastAttemptedAt && $lastAttemptedAt > 0) {
+            return $lastAttemptedAt + self::FAILURE_RETRY_SECONDS[0] <= time();
+        }
+
+        return $this->isStale($status);
+    }
+
+    protected function successJitterSeconds(): int
+    {
+        $maximum = max(0, (int) config('ptadmin.application_sync_jitter', 1800));
+
+        return $maximum > 0 ? random_int(0, $maximum) : 0;
     }
 
     private function syncUrl(): string

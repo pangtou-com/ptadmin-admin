@@ -27,6 +27,7 @@ class ApplicationStatusSyncServiceTest extends TestCase
         config()->set('ptadmin.application_status_path', $this->statusDirectory.'/application-status.json');
         config()->set('ptadmin.application_sync_url', 'https://platform.test/api-addon/application-sync');
         config()->set('ptadmin.application_sync_ttl', 21600);
+        config()->set('ptadmin.application_sync_jitter', 0);
         app(ApplicationInstanceService::class)->ensure();
 
         Addon::swap(new ApplicationStatusAddonManager([
@@ -79,6 +80,8 @@ class ApplicationStatusSyncServiceTest extends TestCase
         $status = $service->sync(true);
 
         self::assertSame('success', $status['status']);
+        self::assertSame(0, $status['failure_count']);
+        self::assertSame(21600, strtotime($status['next_attempt_at']) - strtotime($status['last_succeeded_at']));
         self::assertSame('cms-update', $status['response']['advice'][0]['id']);
         self::assertCount(1, $service->publicSummary($status)['addon_updates']);
 
@@ -134,6 +137,94 @@ class ApplicationStatusSyncServiceTest extends TestCase
         self::assertSame('PLATFORM_UNAVAILABLE', $failed['last_error']['code']);
         self::assertSame('saved-advice', $failed['response']['advice'][0]['id']);
         self::assertNotSame('', $failed['last_succeeded_at']);
+        self::assertSame(1, $failed['failure_count']);
+        self::assertSame(300, strtotime($failed['next_attempt_at']) - strtotime($failed['last_attempted_at']));
+    }
+
+    public function test_failed_sync_is_throttled_and_uses_progressive_backoff(): void
+    {
+        $service = $this->serviceWithResponses([
+            ['__status' => 503],
+            ['__status' => 503],
+        ]);
+
+        $first = $service->sync(true);
+        $throttled = $service->sync(false);
+
+        self::assertSame(1, $first['failure_count']);
+        self::assertSame(1, $throttled['failure_count']);
+        self::assertCount(1, $service->requests);
+
+        $first['next_attempt_at'] = date(DATE_ATOM, time() - 1);
+        File::put(
+            config('ptadmin.application_status_path'),
+            json_encode($first, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
+        $second = $service->sync(false);
+
+        self::assertSame(2, $second['failure_count']);
+        self::assertSame(900, strtotime($second['next_attempt_at']) - strtotime($second['last_attempted_at']));
+        self::assertCount(2, $service->requests);
+    }
+
+    public function test_automatic_sync_interval_cannot_be_configured_below_one_hour(): void
+    {
+        config()->set('ptadmin.application_sync_ttl', 60);
+        $service = $this->serviceWithResponses([[
+            'contract_version' => 1,
+            'synced_at' => date(DATE_ATOM),
+            'latest' => [],
+            'addons' => [],
+            'advice' => [],
+        ]]);
+
+        $status = $service->sync(true);
+
+        self::assertSame(3600, strtotime($status['next_attempt_at']) - strtotime($status['last_succeeded_at']));
+    }
+
+    public function test_dashboard_aggregates_platform_advice_by_highest_level(): void
+    {
+        Addon::swap(new ApplicationStatusAddonManager([]));
+        $service = $this->serviceWithResponses([[
+            'contract_version' => 1,
+            'synced_at' => date(DATE_ATOM),
+            'latest' => [],
+            'addons' => [],
+            'advice' => [
+                ['id' => 'info', 'level' => 'info', 'title' => '普通提醒', 'message' => '普通内容'],
+                ['id' => 'danger', 'level' => 'danger', 'title' => '安全提醒', 'message' => '需要立即处理'],
+                ['id' => 'warning', 'level' => 'warning', 'title' => '更新提醒', 'message' => '存在可用更新'],
+            ],
+        ]]);
+
+        $summary = $service->publicSummary($service->sync(true));
+
+        self::assertCount(1, $summary['application_advice']);
+        self::assertSame('platform-advice-summary', $summary['application_advice'][0]['id']);
+        self::assertSame('danger', $summary['application_advice'][0]['level']);
+        self::assertSame('平台检查发现 3 项提醒', $summary['application_advice'][0]['title']);
+        self::assertStringContainsString('安全提醒', $summary['application_advice'][0]['message']);
+    }
+
+    public function test_dashboard_aggregates_addon_license_warnings(): void
+    {
+        $service = $this->serviceWithResponses([]);
+        $method = new \ReflectionMethod(ApplicationStatusSyncService::class, 'dashboardLicenseAdvice');
+        $method->setAccessible(true);
+        $advice = $method->invoke($service, [
+            ['code' => 'blocked-addon', 'state' => 'blocked'],
+            ['code' => 'grace-addon', 'state' => 'grace'],
+            ['code' => 'legacy-addon', 'state' => 'legacy_review'],
+        ]);
+
+        self::assertIsArray($advice);
+        self::assertSame('addon-license-summary', $advice['id']);
+        self::assertSame('danger', $advice['level']);
+        self::assertSame('3 个插件需要关注授权状态', $advice['title']);
+        self::assertStringContainsString('已阻断 1 个', $advice['message']);
+        self::assertStringContainsString('待激活 1 个', $advice['message']);
+        self::assertStringContainsString('待归档 1 个', $advice['message']);
     }
 
     public function test_sync_uses_configured_host_ip_when_platform_dns_is_unavailable(): void

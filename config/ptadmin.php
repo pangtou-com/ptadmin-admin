@@ -35,6 +35,7 @@ return [
     ),
     'application_sync_host_ip' => env('PTADMIN_APPLICATION_SYNC_HOST_IP', '61.147.93.222'),
     'application_sync_ttl' => (int) env('PTADMIN_APPLICATION_SYNC_TTL', 21600),
+    'application_sync_jitter' => (int) env('PTADMIN_APPLICATION_SYNC_JITTER', 1800),
     'application_status_path' => env(
         'PTADMIN_APPLICATION_STATUS_PATH',
         storage_path('app/ptadmin/application-status.json')

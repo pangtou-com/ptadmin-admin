@@ -88,6 +88,8 @@ class PTAdminAddonManagementApiTest extends TestCase
                         'enabled' => 1,
                         'configurable' => 0,
                         'has_frontend_modules' => 1,
+                        'management_scope' => 'legacy_unknown',
+                        'runtime_license' => null,
                     ],
                     [
                         'code' => 'seo',

@@ -500,6 +500,7 @@ class AddonPlatformService
     private function normalizeLocalAddon(string $code, array $addonInfo, bool $configurable): array
     {
         $enabled = Addon::hasAddon($code);
+        $managementScope = $this->addonManagementScope($code);
 
         return [
             'code' => $code,
@@ -521,10 +522,51 @@ class AddonPlatformService
             'required_satisfied' => $this->dependenciesSatisfied($code, $addonInfo, $enabled) ? 1 : 0,
             'license_required' => true === ($addonInfo['license_required'] ?? false) ? 1 : 0,
             'license_protocol' => (string) ($addonInfo['license_protocol'] ?? ''),
+            'management_scope' => $managementScope,
+            'runtime_license' => $this->addonRuntimeLicense($code),
             'license' => $this->supportsApplicationLicenses()
                 ? $this->addonLicenseService()->status($code)
                 : null,
         ];
+    }
+
+    private function addonManagementScope(string $code): string
+    {
+        $registryClass = 'PTAdmin\\Addon\\Service\\AddonInstallationRegistry';
+        if (!class_exists($registryClass)) {
+            return 'legacy_unknown';
+        }
+
+        try {
+            $registry = app($registryClass);
+
+            return method_exists($registry, 'managementScope')
+                ? (string) $registry->managementScope($code)
+                : 'legacy_unknown';
+        } catch (Throwable $exception) {
+            return 'legacy_unknown';
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    private function addonRuntimeLicense(string $code): ?array
+    {
+        if (!$this->supportsApplicationLicenses()) {
+            return null;
+        }
+
+        $service = $this->addonLicenseService();
+        if (!method_exists($service, 'runtimeStatus')) {
+            return null;
+        }
+
+        try {
+            $status = $service->runtimeStatus($code);
+
+            return is_array($status) ? $status : null;
+        } catch (Throwable $exception) {
+            return null;
+        }
     }
 
     private function supportsApplicationLicenses(): bool
