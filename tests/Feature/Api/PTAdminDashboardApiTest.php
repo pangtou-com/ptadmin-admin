@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Tests\Feature\Api;
 
+use Illuminate\Support\Facades\File;
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\Service\BaseBootstrap;
+use PTAdmin\Admin\Services\ApplicationStatusSyncService;
 use PTAdmin\Admin\Services\Dashboard\DashboardLayoutService;
+use PTAdmin\Admin\Services\PlatformSnapshotService;
 use PTAdmin\Admin\Tests\TestCase;
 use PTAdmin\Contracts\AdminDashboardWidgetActionHandlerInterface;
 use PTAdmin\Contracts\AdminDashboardWidgetHandlerInterface;
@@ -16,6 +19,8 @@ class PTAdminDashboardApiTest extends TestCase
     protected function tearDown(): void
     {
         Addon::swap(new FakeDashboardAddonManager(array(), array()));
+        File::delete((string) config('ptadmin.platform_snapshot_path'));
+        File::delete((string) config('ptadmin.application_status_path'));
 
         parent::tearDown();
     }
@@ -49,6 +54,93 @@ class PTAdminDashboardApiTest extends TestCase
                 'code' => 419,
                 'message' => '未登录',
             ));
+    }
+
+    public function test_application_sync_refreshes_application_and_frontend_status(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount(array(
+            'username' => 'founder_dashboard_sync',
+            'nickname' => 'Founder Dashboard Sync',
+            'is_founder' => 1,
+        ));
+        $token = $this->issueAdminToken($founder);
+        $lockPath = dirname(__DIR__, 3).'/resources/admin-frontend/.release-lock.json';
+        $lock = json_decode((string) file_get_contents($lockPath), true, 512, JSON_THROW_ON_ERROR);
+        $frontendVersion = (string) ($lock['version'] ?? '');
+        $versionParts = array_map('intval', explode('.', $frontendVersion));
+        $versionParts[2] = ($versionParts[2] ?? 0) + 1;
+        $latestFrontendVersion = implode('.', array_slice(array_pad($versionParts, 3, 0), 0, 3));
+
+        $statusPath = (string) config('ptadmin.application_status_path');
+        File::ensureDirectoryExists(dirname($statusPath));
+        file_put_contents($statusPath, json_encode([
+            'status' => 'success',
+            'last_attempted_at' => date(DATE_ATOM),
+            'last_succeeded_at' => date(DATE_ATOM),
+            'next_attempt_at' => date(DATE_ATOM, time() + 3600),
+            'failure_count' => 0,
+            'last_error' => null,
+            'response' => [],
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        $applicationStatus = new class() extends ApplicationStatusSyncService {
+            public bool $forced = false;
+
+            public function __construct()
+            {
+            }
+
+            public function sync(bool $force = false): array
+            {
+                $this->forced = $force;
+
+                return $this->read();
+            }
+        };
+        $platformSnapshot = new class($latestFrontendVersion) extends PlatformSnapshotService {
+            public bool $refreshed = false;
+            private string $latestFrontendVersion;
+
+            public function __construct(string $latestFrontendVersion)
+            {
+                $this->latestFrontendVersion = $latestFrontendVersion;
+            }
+
+            public function refreshFrontendVersion(): array
+            {
+                $this->refreshed = true;
+                $snapshot = [
+                    'synced_at' => date(DATE_ATOM),
+                    'latest' => ['frontend_version' => $this->latestFrontendVersion],
+                    'framework' => ['security_alerts' => []],
+                    'addons' => [],
+                    'meta' => ['frontend_manifest_synced_at' => date(DATE_ATOM)],
+                ];
+                $path = (string) config('ptadmin.platform_snapshot_path');
+                File::ensureDirectoryExists(dirname($path));
+                file_put_contents($path, json_encode($snapshot, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+                return $snapshot;
+            }
+        };
+        $this->app->instance(ApplicationStatusSyncService::class, $applicationStatus);
+        $this->app->instance(PlatformSnapshotService::class, $platformSnapshot);
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/dashboard/application-sync')
+            ->assertOk()
+            ->assertJsonPath('code', 0)
+            ->assertJsonPath('data.frontend_version', $frontendVersion)
+            ->assertJsonPath('data.frontend_latest_version', $latestFrontendVersion)
+            ->assertJsonPath('data.frontend_update_required', true);
+
+        self::assertTrue($applicationStatus->forced);
+        self::assertTrue($platformSnapshot->refreshed);
     }
 
     public function test_dashboard_widget_endpoints_return_registered_addon_widgets(): void

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use PTAdmin\Admin\Services\AdminFrontendBuildService;
 use PTAdmin\Admin\Services\Dashboard\DashboardComposerService;
 use PTAdmin\Admin\Services\ApplicationStatusSyncService;
+use PTAdmin\Admin\Services\PlatformSnapshotService;
 use PTAdmin\Foundation\Auth\AdminAuth;
 use PTAdmin\Foundation\Response\AdminResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -22,13 +23,16 @@ class DashboardController
 {
     private DashboardComposerService $dashboardComposerService;
     private ApplicationStatusSyncService $applicationStatusSyncService;
+    private PlatformSnapshotService $platformSnapshotService;
 
     public function __construct(
         DashboardComposerService $dashboardComposerService,
-        ApplicationStatusSyncService $applicationStatusSyncService
+        ApplicationStatusSyncService $applicationStatusSyncService,
+        PlatformSnapshotService $platformSnapshotService
     ) {
         $this->dashboardComposerService = $dashboardComposerService;
         $this->applicationStatusSyncService = $applicationStatusSyncService;
+        $this->platformSnapshotService = $platformSnapshotService;
     }
 
     public function console(Request $request): JsonResponse
@@ -41,6 +45,7 @@ class DashboardController
     public function syncApplicationStatus(): JsonResponse
     {
         $this->applicationStatusSyncService->sync(true);
+        $this->platformSnapshotService->refreshFrontendVersion();
 
         return AdminResponse::success($this->dashboardComposerService->summary(false));
     }

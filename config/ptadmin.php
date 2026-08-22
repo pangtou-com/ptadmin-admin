@@ -25,6 +25,7 @@ return [
     'project_frontend_storage_path' => env('PTADMIN_PROJECT_FRONTEND_STORAGE_PATH', storage_path('app/ptadmin/modules/'.env('PTADMIN_PROJECT_FRONTEND_CODE', '__app__'))),
     'platform_snapshot_path' => env('PTADMIN_PLATFORM_SNAPSHOT_PATH', storage_path('app/ptadmin/platform/snapshot.json')),
     'platform_snapshot_ttl' => (int) env('PTADMIN_PLATFORM_SNAPSHOT_TTL', 86400),
+    'frontend_manifest_cache_ttl' => (int) env('PTADMIN_FRONTEND_MANIFEST_CACHE_TTL', 300),
     'application_instance_path' => env(
         'PTADMIN_APPLICATION_INSTANCE_PATH',
         storage_path('app/ptadmin/ptadmin-application-identity.json')

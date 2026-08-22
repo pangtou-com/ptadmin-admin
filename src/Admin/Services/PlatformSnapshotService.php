@@ -42,14 +42,20 @@ class PlatformSnapshotService
 
     public function scheduleRefresh(): void
     {
-        if (!$this->isStale() || !$this->acquireLock()) {
+        $refreshSnapshot = $this->isStale();
+        $refreshFrontendVersion = $this->isFrontendVersionStale();
+        if ((!$refreshSnapshot && !$refreshFrontendVersion) || !$this->acquireLock()) {
             return;
         }
 
-        app()->terminating(function (): void {
+        app()->terminating(function () use ($refreshSnapshot): void {
             try {
                 try {
-                    $this->refresh();
+                    if ($refreshSnapshot) {
+                        $this->refresh();
+                    } else {
+                        $this->refreshFrontendVersion();
+                    }
                 } catch (Throwable $exception) {
                 }
             } finally {
@@ -85,7 +91,7 @@ class PlatformSnapshotService
         ];
 
         $frontendManifest = $this->readJsonFromUrl($this->frontendManifestUrl());
-        $snapshot['latest']['frontend_version'] = trim((string) ($frontendManifest['latest'] ?? ''));
+        $frontendVersion = trim((string) ($frontendManifest['latest'] ?? ''));
 
         try {
             $platformSnapshot = AddonApi::getPlatformSnapshot();
@@ -100,6 +106,39 @@ class PlatformSnapshotService
         if ([] !== $addonPayload) {
             $snapshot['addons'] = $this->normalizeAddonSnapshot((array) ($addonPayload['results'] ?? []));
         }
+
+        // 构建清单是后台前端版本的发布事实源，不能被较旧的平台快照覆盖。
+        $snapshot['latest']['frontend_version'] = $frontendVersion;
+        $snapshot['meta']['frontend_manifest_synced_at'] = date(DATE_ATOM);
+
+        $this->write($snapshot);
+
+        return $snapshot;
+    }
+
+    /**
+     * 仅刷新后台前端版本，避免高频版本检查触发完整平台和插件同步。
+     *
+     * @return array<string, mixed>
+     */
+    public function refreshFrontendVersion(): array
+    {
+        $snapshot = $this->read();
+        $frontendManifest = $this->readJsonFromUrl($this->frontendManifestUrl());
+        $frontendVersion = trim((string) ($frontendManifest['latest'] ?? ''));
+        if ('' === $frontendVersion) {
+            throw new \RuntimeException('Admin frontend manifest latest version is empty.');
+        }
+
+        $snapshot['source'] = array_merge((array) ($snapshot['source'] ?? []), [
+            'frontend_manifest_url' => $this->frontendManifestUrl(),
+        ]);
+        $snapshot['latest'] = array_merge((array) ($snapshot['latest'] ?? []), [
+            'frontend_version' => $frontendVersion,
+        ]);
+        $snapshot['meta'] = array_merge((array) ($snapshot['meta'] ?? []), [
+            'frontend_manifest_synced_at' => date(DATE_ATOM),
+        ]);
 
         $this->write($snapshot);
 
@@ -339,6 +378,23 @@ class PlatformSnapshotService
     private function ttl(): int
     {
         return max(60, (int) config('ptadmin.platform_snapshot_ttl', 86400));
+    }
+
+    private function isFrontendVersionStale(?array $snapshot = null): bool
+    {
+        $snapshot = \is_array($snapshot) ? $snapshot : $this->read();
+        $syncedAt = strtotime((string) data_get(
+            $snapshot,
+            'meta.frontend_manifest_synced_at',
+            $snapshot['synced_at'] ?? ''
+        ));
+        if (false === $syncedAt || $syncedAt <= 0) {
+            return true;
+        }
+
+        $ttl = max(60, (int) config('ptadmin.frontend_manifest_cache_ttl', 300));
+
+        return $syncedAt + $ttl <= time();
     }
 
     private function frontendManifestUrl(): string

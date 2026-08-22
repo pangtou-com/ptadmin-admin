@@ -216,12 +216,27 @@ class PTAdminDashboardComposeApiTest extends TestCase
                 'security_alerts' => [],
             ],
         ]);
+        $this->writeApplicationStatus([
+            'status' => 'success',
+            'last_attempted_at' => date(DATE_ATOM),
+            'last_succeeded_at' => date(DATE_ATOM),
+            'next_attempt_at' => date(DATE_ATOM, time() + 3600),
+            'failure_count' => 0,
+            'last_error' => null,
+            'response' => [
+                'latest' => [
+                    'frontend_version' => $frontendVersion,
+                    'backend_version' => '',
+                ],
+            ],
+        ]);
 
         $response = $this->withHeaders($this->jsonApiHeaders($token))
             ->getJson('/ptadmin/dashboard');
 
         $response->assertOk()
             ->assertJsonPath('data.summary.frontend_version', $frontendVersion)
+            ->assertJsonPath('data.summary.frontend_latest_version', $newerFrontendVersion)
             ->assertJsonPath('data.summary.update_required', true);
     }
 

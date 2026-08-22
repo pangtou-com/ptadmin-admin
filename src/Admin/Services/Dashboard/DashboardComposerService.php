@@ -263,10 +263,10 @@ class DashboardComposerService
         $applicationLatestFrontendVersion = trim((string) data_get($applicationStatus, 'response.latest.frontend_version', ''));
         $applicationLatestBackendVersion = trim((string) data_get($applicationStatus, 'response.latest.backend_version', ''));
         if ('' !== $applicationLatestFrontendVersion) {
-            $latestFrontendVersion = $applicationLatestFrontendVersion;
+            $latestFrontendVersion = $this->latestVersion($latestFrontendVersion, $applicationLatestFrontendVersion);
         }
         if ('' !== $applicationLatestBackendVersion) {
-            $latestFrameworkVersion = $applicationLatestBackendVersion;
+            $latestFrameworkVersion = $this->latestVersion($latestFrameworkVersion, $applicationLatestBackendVersion);
         }
         $addonSnapshots = (array) ($snapshot['addons'] ?? []);
         $addonUpdatePending = $this->hasPendingAddonUpdates($addonSnapshots)
@@ -363,6 +363,20 @@ class DashboardComposerService
         }
 
         return ltrim($normalized, 'vV');
+    }
+
+    private function latestVersion(string $left, string $right): string
+    {
+        $normalizedLeft = $this->normalizeVersion($left);
+        $normalizedRight = $this->normalizeVersion($right);
+        if ('' === $normalizedLeft) {
+            return $right;
+        }
+        if ('' === $normalizedRight) {
+            return $left;
+        }
+
+        return version_compare($normalizedRight, $normalizedLeft, '>') ? $right : $left;
     }
 
     /**
