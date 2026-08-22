@@ -10,6 +10,31 @@ final class AdminFrontendBuildService
 {
     public const DEFAULT_MANIFEST_URL = 'https://cloud.api.pangtou.com/storage/starter/console-build.json';
 
+    /**
+     * 同步后台前端构建包并发布到当前应用。
+     *
+     * 命令行和后台接口共用这一编排，避免两条更新路径产生不同结果。
+     *
+     * @return array<string, mixed>
+     */
+    public function update(
+        string $packageRoot,
+        string $appRoot,
+        string $ref = 'latest',
+        string $backendVersion = ''
+    ): array {
+        $pulled = $this->syncFromManifest($packageRoot, $ref, $backendVersion);
+        $published = $this->publishBundled($packageRoot, $appRoot);
+
+        return [
+            'version' => (string) ($pulled['version'] ?? ''),
+            'source_path' => (string) ($published['source_path'] ?? ''),
+            'public_path' => (string) ($published['public_path'] ?? ''),
+            'modules' => $published['modules'] ?? null,
+            'lock' => $pulled,
+        ];
+    }
+
     public function syncFromManifest(
         string $packageRoot,
         string $ref = 'latest',

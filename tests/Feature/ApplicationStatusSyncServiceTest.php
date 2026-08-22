@@ -225,6 +225,7 @@ class ApplicationStatusSyncServiceTest extends TestCase
         self::assertStringContainsString('已阻断 1 个', $advice['message']);
         self::assertStringContainsString('待激活 1 个', $advice['message']);
         self::assertStringContainsString('待归档 1 个', $advice['message']);
+        self::assertSame('/cloud/apps', $advice['action']['url']);
     }
 
     public function test_sync_uses_configured_host_ip_when_platform_dns_is_unavailable(): void

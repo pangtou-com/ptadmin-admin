@@ -41,6 +41,14 @@ class PTAdminDashboardApiTest extends TestCase
                 'code' => 419,
                 'message' => '未登录',
             ));
+
+        $this->withHeaders($this->jsonApiHeaders())
+            ->postJson('/ptadmin/dashboard/frontend/update')
+            ->assertOk()
+            ->assertJson(array(
+                'code' => 419,
+                'message' => '未登录',
+            ));
     }
 
     public function test_dashboard_widget_endpoints_return_registered_addon_widgets(): void

@@ -171,7 +171,7 @@ class ApplicationStatusSyncService
             'message' => $message.' 其余提醒可在应用管理中处理。',
             'action' => [
                 'label' => '查看应用',
-                'url' => '/cloud/local-apps',
+                'url' => '/cloud/apps',
                 'target' => '_self',
             ],
         ]];
@@ -209,7 +209,7 @@ class ApplicationStatusSyncService
             'message' => implode('，', $parts).'。',
             'action' => [
                 'label' => '管理插件授权',
-                'url' => '/cloud/local-apps',
+                'url' => '/cloud/apps',
                 'target' => '_self',
             ],
         ];

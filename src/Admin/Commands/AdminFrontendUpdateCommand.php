@@ -18,12 +18,12 @@ class AdminFrontendUpdateCommand extends Command
     public function handle(AdminFrontendBuildService $service): int
     {
         try {
-            $pulled = $service->syncFromManifest(
+            $result = $service->update(
                 dirname(__DIR__, 3),
+                base_path(),
                 (string) $this->option('ref'),
                 (string) $this->option('backend-version')
             );
-            $published = $service->publishBundled(dirname(__DIR__, 3), base_path());
         } catch (\Throwable $throwable) {
             $this->error($throwable->getMessage());
 
@@ -31,9 +31,9 @@ class AdminFrontendUpdateCommand extends Command
         }
 
         $this->info('Admin frontend build updated.');
-        $this->line('Version: '.$pulled['version']);
-        $this->line('Source: '.$published['source_path']);
-        $this->line('Public: '.$published['public_path']);
+        $this->line('Version: '.$result['version']);
+        $this->line('Source: '.$result['source_path']);
+        $this->line('Public: '.$result['public_path']);
 
         return 0;
     }

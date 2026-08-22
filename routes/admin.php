@@ -124,6 +124,7 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     // 仪表盘配置
     admin_audit_route(Route::get('dashboard', [Admin\DashboardController::class, 'console']), 'console');
     admin_audit_route(Route::post('dashboard/application-sync', [Admin\DashboardController::class, 'syncApplicationStatus']), 'console');
+    admin_audit_route(Route::post('dashboard/frontend/update', [Admin\DashboardController::class, 'updateFrontend']), 'console');
     
     // 后台仪表盘组件
     admin_audit_route(Route::get('dashboard/widgets', [Admin\AdminDashboardController::class, 'widgets']), 'console');
