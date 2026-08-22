@@ -19,10 +19,14 @@ class ApplicationStatusSyncService
     private const FAILURE_RETRY_SECONDS = [300, 900, 3600, 10800, 21600];
 
     private ApplicationInstanceService $applicationInstanceService;
+    private AdminFrontendBuildService $adminFrontendBuildService;
 
-    public function __construct(ApplicationInstanceService $applicationInstanceService)
-    {
+    public function __construct(
+        ApplicationInstanceService $applicationInstanceService,
+        ?AdminFrontendBuildService $adminFrontendBuildService = null
+    ) {
         $this->applicationInstanceService = $applicationInstanceService;
+        $this->adminFrontendBuildService = $adminFrontendBuildService ?? new AdminFrontendBuildService();
     }
 
     /** @return array<string, mixed> */
@@ -690,14 +694,7 @@ class ApplicationStatusSyncService
 
     private function frontendVersion(): string
     {
-        $path = dirname(__DIR__, 3).'/resources/admin-frontend/.release-lock.json';
-        if (!is_file($path) || !is_readable($path)) {
-            return '';
-        }
-
-        $lock = json_decode((string) file_get_contents($path), true);
-
-        return is_array($lock) ? trim((string) ($lock['version'] ?? '')) : '';
+        return $this->adminFrontendBuildService->publishedVersion(base_path(), admin_web_prefix());
     }
 
     /** @return array<string, mixed> */

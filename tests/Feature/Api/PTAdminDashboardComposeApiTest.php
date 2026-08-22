@@ -20,6 +20,8 @@ class PTAdminDashboardComposeApiTest extends TestCase
         parent::setUp();
 
         Cache::flush();
+        config()->set('ptadmin.web_prefix', 'dashboard-compose-admin');
+        $this->writePublishedFrontendLock($this->bundledFrontendVersion());
         $this->writeApplicationStatus([
             'status' => 'success',
             'last_attempted_at' => date(DATE_ATOM),
@@ -39,6 +41,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
         File::delete(dirname((string) config('ptadmin.platform_snapshot_path')).'/snapshot.lock');
         File::delete((string) config('ptadmin.application_status_path'));
         File::delete(dirname((string) config('ptadmin.application_status_path')).'/application-status.lock');
+        File::deleteDirectory(public_path('dashboard-compose-admin'));
 
         parent::tearDown();
     }
@@ -451,10 +454,25 @@ class PTAdminDashboardComposeApiTest extends TestCase
 
     private function currentFrontendVersion(): string
     {
+        $lockPath = public_path(admin_web_prefix().'/.release-lock.json');
+        $lock = json_decode((string) file_get_contents($lockPath), true, 512, JSON_THROW_ON_ERROR);
+
+        return (string) ($lock['version'] ?? '');
+    }
+
+    private function bundledFrontendVersion(): string
+    {
         $lockPath = dirname(__DIR__, 3).'/resources/admin-frontend/.release-lock.json';
         $lock = json_decode((string) file_get_contents($lockPath), true, 512, JSON_THROW_ON_ERROR);
 
         return (string) ($lock['version'] ?? '');
+    }
+
+    private function writePublishedFrontendLock(string $version): void
+    {
+        $path = public_path(admin_web_prefix().'/.release-lock.json');
+        File::ensureDirectoryExists(dirname($path));
+        File::put($path, json_encode(['version' => $version], JSON_UNESCAPED_SLASHES));
     }
 
     private function nextPatchVersion(string $version): string

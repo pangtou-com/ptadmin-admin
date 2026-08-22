@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services\Dashboard;
 
 use PTAdmin\Addon\Addon;
+use PTAdmin\Admin\Services\AdminFrontendBuildService;
 use PTAdmin\Admin\Services\ApplicationStatusSyncService;
 use PTAdmin\Admin\Services\PlatformSnapshotService;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
@@ -16,19 +17,22 @@ class DashboardComposerService
     private AdminRoleServiceInterface $adminRoleService;
     private PlatformSnapshotService $platformSnapshotService;
     private ApplicationStatusSyncService $applicationStatusSyncService;
+    private AdminFrontendBuildService $adminFrontendBuildService;
 
     public function __construct(
         DashboardWidgetRegistryService $registry,
         DashboardLayoutService $layoutService,
         AdminRoleServiceInterface $adminRoleService,
         PlatformSnapshotService $platformSnapshotService,
-        ApplicationStatusSyncService $applicationStatusSyncService
+        ApplicationStatusSyncService $applicationStatusSyncService,
+        ?AdminFrontendBuildService $adminFrontendBuildService = null
     ) {
         $this->registry = $registry;
         $this->layoutService = $layoutService;
         $this->adminRoleService = $adminRoleService;
         $this->platformSnapshotService = $platformSnapshotService;
         $this->applicationStatusSyncService = $applicationStatusSyncService;
+        $this->adminFrontendBuildService = $adminFrontendBuildService ?? new AdminFrontendBuildService();
     }
 
     /**
@@ -249,8 +253,7 @@ class DashboardComposerService
     public function summary(bool $scheduleSync = true): array
     {
         $backendVersion = get_frame_version();
-        $frontendLock = $this->readAdminFrontendLock();
-        $frontendVersion = trim((string) ($frontendLock['version'] ?? ''));
+        $frontendVersion = $this->adminFrontendBuildService->publishedVersion(base_path(), admin_web_prefix());
         $snapshot = $this->platformSnapshotService->read();
         $this->platformSnapshotService->scheduleRefresh();
         $applicationStatus = $this->applicationStatusSyncService->read();
@@ -303,22 +306,6 @@ class DashboardComposerService
         return false;
     }
     
-    /**
-     * @return array<string, mixed>
-     */
-    private function readAdminFrontendLock(): array
-    {
-        $lockPath = $this->resolvePackagePath('resources/admin-frontend/.release-lock.json');
-        if (!is_file($lockPath) || !is_readable($lockPath)) {
-            return [];
-        }
-
-        $content = file_get_contents($lockPath);
-        $payload = false === $content ? null : json_decode($content, true);
-
-        return \is_array($payload) ? $payload : [];
-    }
-
     private function isVersionOutdated(string $currentVersion, string $latestVersion): bool
     {
         $current = $this->normalizeVersion($currentVersion);
@@ -404,16 +391,5 @@ class DashboardComposerService
         }
 
         return false;
-    }
-
-    private function resolvePackagePath(string $relativePath): string
-    {
-        $relativePath = ltrim($relativePath, '/');
-        $basePath = base_path($relativePath);
-        if (is_file($basePath) || is_dir($basePath)) {
-            return $basePath;
-        }
-
-        return dirname(__DIR__, 4).DIRECTORY_SEPARATOR.$relativePath;
     }
 }

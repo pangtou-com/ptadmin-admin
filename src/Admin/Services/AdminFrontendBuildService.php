@@ -161,6 +161,13 @@ final class AdminFrontendBuildService
         return rtrim($packageRoot, \DIRECTORY_SEPARATOR).\DIRECTORY_SEPARATOR.'resources'.\DIRECTORY_SEPARATOR.'admin-frontend';
     }
 
+    public function publishedVersion(string $appRoot, string $webPrefix): string
+    {
+        $lock = $this->readLockFile($this->publicFrontendPath($appRoot, $webPrefix));
+
+        return trim((string) ($lock['version'] ?? ''));
+    }
+
     private function publicFrontendPath(string $appRoot, string $webPrefix): string
     {
         $prefix = $this->normalizePrefix($webPrefix);

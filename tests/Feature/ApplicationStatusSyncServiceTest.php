@@ -28,6 +28,8 @@ class ApplicationStatusSyncServiceTest extends TestCase
         config()->set('ptadmin.application_sync_url', 'https://platform.test/api-addon/application-sync');
         config()->set('ptadmin.application_sync_ttl', 21600);
         config()->set('ptadmin.application_sync_jitter', 0);
+        config()->set('ptadmin.web_prefix', 'application-status-sync-admin');
+        $this->writePublishedFrontendLock('0.1.27');
         app(ApplicationInstanceService::class)->ensure();
 
         Addon::swap(new ApplicationStatusAddonManager([
@@ -44,6 +46,7 @@ class ApplicationStatusSyncServiceTest extends TestCase
     {
         Addon::swap(new ApplicationStatusAddonManager([]));
         File::deleteDirectory($this->statusDirectory);
+        File::deleteDirectory(public_path('application-status-sync-admin'));
 
         parent::tearDown();
     }
@@ -90,6 +93,7 @@ class ApplicationStatusSyncServiceTest extends TestCase
         self::assertSame('application-sync-v1', $body['signature_version'] ?? null);
         self::assertSame('测试应用', $payload['application_name'] ?? null);
         self::assertSame('admin.example.com', $payload['domain'] ?? null);
+        self::assertSame('0.1.27', $payload['frontend_version'] ?? null);
         self::assertSame('cms', $payload['addons'][0]['code'] ?? null);
         self::assertSame('not_required', $payload['addons'][0]['license']['state'] ?? null);
         self::assertArrayNotHasKey('activation_token', $payload['addons'][0]['license'] ?? []);
@@ -290,6 +294,13 @@ class ApplicationStatusSyncServiceTest extends TestCase
             app(ApplicationInstanceService::class),
             $responses
         );
+    }
+
+    private function writePublishedFrontendLock(string $version): void
+    {
+        $path = public_path(admin_web_prefix().'/.release-lock.json');
+        File::ensureDirectoryExists(dirname($path));
+        File::put($path, json_encode(['version' => $version], JSON_UNESCAPED_SLASHES));
     }
 }
 

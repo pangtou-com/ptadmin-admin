@@ -21,6 +21,7 @@ class PTAdminDashboardApiTest extends TestCase
         Addon::swap(new FakeDashboardAddonManager(array(), array()));
         File::delete((string) config('ptadmin.platform_snapshot_path'));
         File::delete((string) config('ptadmin.application_status_path'));
+        File::deleteDirectory(public_path('dashboard-sync-admin'));
 
         parent::tearDown();
     }
@@ -69,9 +70,11 @@ class PTAdminDashboardApiTest extends TestCase
             'is_founder' => 1,
         ));
         $token = $this->issueAdminToken($founder);
-        $lockPath = dirname(__DIR__, 3).'/resources/admin-frontend/.release-lock.json';
-        $lock = json_decode((string) file_get_contents($lockPath), true, 512, JSON_THROW_ON_ERROR);
-        $frontendVersion = (string) ($lock['version'] ?? '');
+        config()->set('ptadmin.web_prefix', 'dashboard-sync-admin');
+        $frontendVersion = '0.1.27';
+        $publishedLockPath = public_path(admin_web_prefix().'/.release-lock.json');
+        File::ensureDirectoryExists(dirname($publishedLockPath));
+        File::put($publishedLockPath, json_encode(['version' => $frontendVersion], JSON_UNESCAPED_SLASHES));
         $versionParts = array_map('intval', explode('.', $frontendVersion));
         $versionParts[2] = ($versionParts[2] ?? 0) + 1;
         $latestFrontendVersion = implode('.', array_slice(array_pad($versionParts, 3, 0), 0, 3));
