@@ -50,24 +50,27 @@ class PTAdminPackageBootstrapTest extends TestCase
         $assetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-assets');
         $captchaAssetPublishes = ServiceProvider::pathsToPublish(PTAdminServiceProvider::class, 'ptadmin-captcha-assets');
 
-        self::assertCount(18, $allPublishes);
+        self::assertCount(21, $allPublishes);
         self::assertCount(1, $configPublishes);
         self::assertSame('ptadmin.php', basename((string) array_key_first($configPublishes)));
         self::assertSame('ptadmin.php', basename((string) current($configPublishes)));
 
-        self::assertCount(14, $migrationPublishes);
+        self::assertCount(17, $migrationPublishes);
         self::assertSame([
             '2026_04_09_110000_create_admin_foundation_tables.php',
             '2026_04_09_120000_create_admin_authorization_tables.php',
             '2026_04_09_130000_create_admin_authorization_extension_tables.php',
             '2026_04_09_140000_seed_admin_default_resources.php',
             '2026_04_10_120000_create_assets_table.php',
+            '2026_04_27_120000_create_admin_dashboard_role_widgets_table.php',
+            '2026_04_27_120100_create_admin_dashboard_user_widgets_table.php',
             '2026_04_28_120000_create_notification_tables.php',
             '2026_08_15_120000_create_notification_scene_tables.php',
             '2026_08_15_130000_register_notification_config_resource.php',
             '2026_08_15_140000_add_group_to_notification_scenes.php',
             '2026_08_17_100000_create_notification_scene_routes.php',
             '2026_08_17_130000_add_registration_captcha_config.php',
+            '2026_08_24_120000_merge_admin_dashboard_widget_tables.php',
             '2024_06_13_154934_mod_init.php',
             '2026_04_06_000000_create_model_versions_table.php',
             '2026_04_06_000001_create_audit_logs_table.php',

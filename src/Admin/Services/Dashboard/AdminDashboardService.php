@@ -7,6 +7,9 @@ namespace PTAdmin\Admin\Services\Dashboard;
 use Illuminate\Support\Facades\Cache;
 use PTAdmin\Contracts\AdminDashboardWidgetActionHandlerInterface;
 use PTAdmin\Contracts\AdminDashboardWidgetHandlerInterface;
+use PTAdmin\Contracts\Dashboard\DashboardWidget;
+use PTAdmin\Contracts\Dashboard\DashboardWidgetContext;
+use PTAdmin\Contracts\Dashboard\DashboardWidgetQuery;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 
 class AdminDashboardService
@@ -61,11 +64,85 @@ class AdminDashboardService
      */
     public function queryWidget($user, string $code, array $query = array(), ?int $tenantId = null): array
     {
+        return $this->queryWidgetWithCache($user, $code, $query, $tenantId, new DashboardWidgetQueryCache(), false);
+    }
+
+    /**
+     * 查询一批仪表盘组件。
+     *
+     * 每个组件仍然独立执行，单个组件失败不会丢弃同一批次的其他结果。
+     * 同一批次使用共享的查询缓存，插件可以复用一次生成的业务快照。
+     *
+     * @param mixed                $user
+     * @param array<int, mixed>   $requests
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function queryWidgets($user, array $requests = array(), ?int $tenantId = null): array
+    {
+        $queryCache = new DashboardWidgetQueryCache();
+        $results = array();
+
+        foreach ($requests as $request) {
+            if (!\is_array($request)) {
+                continue;
+            }
+
+            $code = trim((string) ($request['code'] ?? ''));
+            if ('' === $code) {
+                continue;
+            }
+
+            try {
+                $result = $this->queryWidgetWithCache(
+                    $user,
+                    $code,
+                    (array) ($request['query'] ?? array()),
+                    $tenantId,
+                    $queryCache,
+                    true
+                );
+                $results[] = array_merge(array('code' => $code), $result, array('error' => null));
+            } catch (\Throwable $throwable) {
+                $results[] = array(
+                    'code' => $code,
+                    'widget' => null,
+                    'data' => null,
+                    'queried_at' => time(),
+                    'error' => array(
+                        'code' => 'dashboard_widget_query_failed',
+                        'message' => $throwable->getMessage(),
+                    ),
+                );
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * @param mixed                $user
+     * @param array<string, mixed> $query
+     */
+    private function queryWidgetWithCache(
+        $user,
+        string $code,
+        array $query,
+        ?int $tenantId,
+        DashboardWidgetQueryCache $queryCache,
+        bool $exposeQueryCache
+    ): array {
         $definition = $this->registry->find($code);
         $widget = $this->resolveAssignedWidget($user, $code, $tenantId);
 
         $payload = array_merge((array) ($widget['config'] ?? array()), $query);
-        $context = $this->buildContext($user, $definition, $widget, $tenantId);
+        $context = $this->buildContext(
+            $user,
+            $definition,
+            $widget,
+            $tenantId,
+            $exposeQueryCache ? $queryCache : null
+        );
 
         return array(
             'widget' => $widget,
@@ -177,6 +254,27 @@ class AdminDashboardService
      */
     private function invokeHandler(string $handlerClass, array $payload, array $definition, array $context): array
     {
+        $widget = $definition['widget_instance'] ?? null;
+        if ($widget instanceof DashboardWidget) {
+            $queryCache = $context['query_cache'] ?? new DashboardWidgetQueryCache();
+            $typedContext = new DashboardWidgetContext(
+                (int) ($context['user_id'] ?? 0),
+                isset($context['tenant_id']) ? ($context['tenant_id'] !== null ? (int) $context['tenant_id'] : null) : null,
+                (bool) ($context['is_founder'] ?? false),
+                (string) ($context['addon_code'] ?? ''),
+                (string) ($context['widget_code'] ?? ''),
+                (string) ($context['resource_code'] ?? ''),
+                $queryCache instanceof DashboardWidgetQueryCache ? $queryCache : new DashboardWidgetQueryCache()
+            );
+
+            $result = $widget->query(new DashboardWidgetQuery($payload), $typedContext);
+            if (!is_object($result) || !method_exists($result, 'toArray')) {
+                throw new BackgroundException(__('ptadmin::background.dashboard_handler_interface_missing'));
+            }
+
+            return $result->toArray();
+        }
+
         $handler = app($handlerClass);
 
         if (!$handler instanceof AdminDashboardWidgetHandlerInterface) {
@@ -195,9 +293,15 @@ class AdminDashboardService
      *
      * @return array<string, mixed>
      */
-    private function buildContext($user, array $definition, array $widget, ?int $tenantId = null): array
+    private function buildContext(
+        $user,
+        array $definition,
+        array $widget,
+        ?int $tenantId = null,
+        ?DashboardWidgetQueryCache $queryCache = null
+    ): array
     {
-        return array(
+        $context = array(
             'user_id' => (int) data_get($user, 'id', 0),
             'tenant_id' => $tenantId,
             'is_founder' => $this->isFounder($user),
@@ -209,6 +313,12 @@ class AdminDashboardService
             'widget_layout' => (array) ($widget['layout'] ?? array()),
             'widget_source' => (array) ($widget['source'] ?? array()),
         );
+
+        if ($queryCache instanceof DashboardWidgetQueryCache) {
+            $context['query_cache'] = $queryCache;
+        }
+
+        return $context;
     }
 
     /**

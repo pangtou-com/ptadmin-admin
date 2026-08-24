@@ -76,6 +76,7 @@ abstract class TestCase extends Orchestra
             'admin_user_roles',
             'admin_resources',
             'admin_roles',
+            'admin_dashboard_widgets',
             'admin_dashboard_user_widgets',
             'admin_dashboard_role_widgets',
             'notification_templates',

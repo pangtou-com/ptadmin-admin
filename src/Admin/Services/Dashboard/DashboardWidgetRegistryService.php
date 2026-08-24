@@ -6,6 +6,7 @@ namespace PTAdmin\Admin\Services\Dashboard;
 
 use PTAdmin\Addon\Addon;
 use PTAdmin\Contracts\Auth\AuthorizationServiceInterface;
+use PTAdmin\Contracts\Dashboard\DashboardWidget;
 use PTAdmin\Foundation\Exceptions\BackgroundException;
 
 class DashboardWidgetRegistryService
@@ -23,6 +24,21 @@ class DashboardWidgetRegistryService
     public function all(): array
     {
         $results = array();
+        foreach ([
+            DashboardWorkspaceSummaryWidget::class,
+            DashboardQuickActionsWidget::class,
+            DashboardVersionNoticeWidget::class,
+            DashboardNotificationWidget::class,
+            DashboardRecentOperationsWidget::class,
+            DashboardOperationTrendWidget::class,
+        ] as $widgetClass) {
+            /** @var DashboardWidget $widget */
+            $widget = app($widgetClass);
+            $definition = $this->normalizeWidget('ptadmin', $widget);
+            if ([] !== $definition) {
+                $results[(string) $definition['code']] = $definition;
+            }
+        }
 
         foreach (array_keys(Addon::getAddons()) as $addonCode) {
             $bootstrap = Addon::getAddonBootstrap($addonCode);
@@ -37,6 +53,15 @@ class DashboardWidgetRegistryService
             }
 
             foreach ($definitions as $definition) {
+                if ($definition instanceof DashboardWidget) {
+                    $normalized = $this->normalizeWidget($addonCode, $definition);
+                    if ([] === $normalized) {
+                        continue;
+                    }
+                    $results[(string) $normalized['code']] = $normalized;
+                    continue;
+                }
+
                 if (!\is_array($definition)) {
                     continue;
                 }
@@ -51,6 +76,21 @@ class DashboardWidgetRegistryService
         }
 
         return array_values($results);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizeWidget(string $addonCode, DashboardWidget $widget): array
+    {
+        $definition = $widget->definition()->toArray($addonCode, get_class($widget));
+        $normalized = $this->normalizeDefinition($addonCode, $definition);
+
+        if ([] === $normalized) {
+            return array();
+        }
+
+        return $normalized + array('widget_instance' => $widget);
     }
 
     /**

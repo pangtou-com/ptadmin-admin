@@ -42,7 +42,7 @@ class AdminDashboardManageController extends AbstractBackgroundController
         AdminRole::query()->findOrFail($id);
         $tenantId = $this->resolveTenantId($request);
         $payload = $request->validate([
-            'widgets' => 'required|array',
+            'widgets' => 'present|array',
             'widgets.*.widget_code' => 'required|string|max:150',
             'widgets.*.enabled' => 'sometimes|boolean',
             'widgets.*.sort' => 'sometimes|integer',
@@ -74,7 +74,7 @@ class AdminDashboardManageController extends AbstractBackgroundController
         Admin::query()->findOrFail($id);
         $tenantId = $this->resolveTenantId($request);
         $payload = $request->validate([
-            'widgets' => 'required|array',
+            'widgets' => 'present|array',
             'widgets.*.widget_code' => 'required|string|max:150',
             'widgets.*.enabled' => 'sometimes|boolean',
             'widgets.*.sort' => 'sometimes|integer',
@@ -106,7 +106,7 @@ class AdminDashboardManageController extends AbstractBackgroundController
         $tenantId = $this->resolveTenantId($request);
         $user = AdminAuth::user();
         $payload = $request->validate([
-            'widgets' => 'required|array',
+            'widgets' => 'present|array',
             'widgets.*.widget_code' => 'required|string|max:150',
             'widgets.*.enabled' => 'sometimes|boolean',
             'widgets.*.sort' => 'sometimes|integer',

@@ -104,29 +104,58 @@ class PTAdminDashboardComposeApiTest extends TestCase
                     'addon_update_pending' => false,
                     'security_alert_pending' => false,
                 ),
-                'widgets' => array(
-                    array(
-                        'code' => 'cms.overview',
-                        'title' => '内容概览',
-                        'layout' => array(
-                            'x' => 0,
-                            'y' => 0,
-                            'w' => 6,
-                            'h' => 4,
-                        ),
-                        'config' => array(
-                            'range' => 'today',
-                        ),
-                        'source' => array(
-                            'type' => 'default',
-                        ),
-                    ),
-                ),
             ),
         ));
 
-        self::assertCount(1, (array) $response->json('data.widgets'));
-        self::assertSame('cms.overview', $response->json('data.widgets.0.code'));
+        self::assertCount(5, (array) $response->json('data.widgets'));
+        self::assertNotContains('ptadmin.version-notices', array_column((array) $response->json('data.widgets'), 'code'));
+        self::assertNotContains('ptadmin.notifications', array_column((array) $response->json('data.widgets'), 'code'));
+        self::assertNotContains('cms.shortcuts', array_column((array) $response->json('data.widgets'), 'code'));
+    }
+
+    public function test_dashboard_console_has_core_widgets_without_installed_addons(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount(array(
+            'username' => 'admin_dashboard_without_addons',
+            'nickname' => 'Dashboard Without Addons',
+            'is_founder' => 0,
+        ));
+        $token = $this->issueAdminToken($admin);
+        Addon::swap(new ComposeDashboardAddonManager(array(), array()));
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/dashboard');
+
+        $response->assertOk()
+            ->assertJsonPath('data.widgets.0.code', 'ptadmin.workspace-summary')
+            ->assertJsonPath('data.widgets.0.source.type', 'default')
+            ->assertJsonPath('data.widgets.2.code', 'ptadmin.recent-operations')
+            ->assertJsonPath('data.widgets.3.code', 'ptadmin.operation-trend');
+
+        self::assertCount(4, (array) $response->json('data.widgets'));
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/dashboard/widgets/query', array('widgets' => array(
+                array('code' => 'ptadmin.workspace-summary'),
+                array('code' => 'ptadmin.quick-actions'),
+                array('code' => 'ptadmin.recent-operations'),
+                array('code' => 'ptadmin.operation-trend'),
+            )))
+            ->assertOk()
+            ->assertJsonPath('data.results.0.data.type', 'stats')
+            ->assertJsonPath('data.results.0.data.items.0.value', 0)
+            ->assertJsonPath('data.results.1.data.type', 'card')
+            ->assertJsonPath('data.results.1.data.items', [])
+            ->assertJsonPath('data.results.2.data.type', 'list')
+            ->assertJsonPath('data.results.2.data.items', [])
+            ->assertJsonPath('data.results.3.data.type', 'trend')
+            ->assertJsonPath('data.results.3.data.categories', [])
+            ->assertJsonPath('data.results.3.data.series', []);
     }
 
     public function test_dashboard_console_summary_marks_authorized_and_pending_addon_updates(): void
@@ -186,8 +215,23 @@ class PTAdminDashboardComposeApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('data.summary.addon_update_pending', true)
+            ->assertJsonPath('data.summary.addon_updates.0.code', 'cms')
             ->assertJsonPath('data.summary.frontend_version', $frontendVersion)
             ->assertJsonPath('data.summary.backend_version', $this->currentPackageVersion());
+
+        app(DashboardLayoutService::class)->saveUserWidgets((int) $admin->id, array(
+            array(
+                'widget_code' => 'ptadmin.version-notices',
+                'enabled' => true,
+            ),
+        ));
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/dashboard/widgets/ptadmin.version-notices/query', array())
+            ->assertOk()
+            ->assertJsonPath('data.data.type', 'list')
+            ->assertJsonPath('data.data.items.2.id', 'addon-cms')
+            ->assertJsonPath('data.data.items.2.status', 'warning');
     }
 
     public function test_dashboard_console_summary_marks_update_required_when_platform_has_newer_versions(): void
@@ -432,6 +476,47 @@ class PTAdminDashboardComposeApiTest extends TestCase
                 ),
             ),
         ));
+    }
+
+    public function test_dashboard_console_does_not_restore_default_preset_when_saved_widgets_are_not_visible(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $member = $this->createAdminAccount(array(
+            'username' => 'member_dashboard_hidden_layout',
+            'nickname' => 'Member Hidden Layout',
+            'is_founder' => 0,
+        ));
+        $token = $this->issueAdminToken($member);
+
+        Addon::swap(new ComposeDashboardAddonManager(
+            array(
+                'cms' => array(
+                    'code' => 'cms',
+                    'title' => '内容管理',
+                ),
+            ),
+            array(
+                'cms' => new ComposeDashboardBootstrap(),
+            )
+        ));
+
+        app(DashboardLayoutService::class)->saveUserWidgets((int) $member->id, array(
+            array(
+                'widget_code' => 'cms.secret',
+                'enabled' => true,
+            ),
+        ));
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/dashboard');
+
+        $response->assertOk()
+            ->assertJsonPath('code', 0)
+            ->assertJsonCount(0, 'data.widgets');
     }
 
     /**

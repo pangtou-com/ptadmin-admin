@@ -7,12 +7,21 @@ namespace PTAdmin\Admin\Tests\Feature\Api;
 use Illuminate\Support\Facades\File;
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\Service\BaseBootstrap;
+use PTAdmin\Admin\Models\NotificationMessage;
+use PTAdmin\Admin\Models\NotificationReceipt;
+use PTAdmin\Admin\Models\OperationRecord;
 use PTAdmin\Admin\Services\ApplicationStatusSyncService;
+use PTAdmin\Admin\Services\Dashboard\DashboardWidgetQueryCache;
 use PTAdmin\Admin\Services\Dashboard\DashboardLayoutService;
 use PTAdmin\Admin\Services\PlatformSnapshotService;
 use PTAdmin\Admin\Tests\TestCase;
 use PTAdmin\Contracts\AdminDashboardWidgetActionHandlerInterface;
 use PTAdmin\Contracts\AdminDashboardWidgetHandlerInterface;
+use PTAdmin\Contracts\Dashboard\DashboardWidget;
+use PTAdmin\Contracts\Dashboard\DashboardWidgetContext;
+use PTAdmin\Contracts\Dashboard\DashboardWidgetDefinition;
+use PTAdmin\Contracts\Dashboard\DashboardWidgetQuery;
+use PTAdmin\Contracts\Dashboard\StatResult;
 
 class PTAdminDashboardApiTest extends TestCase
 {
@@ -42,6 +51,14 @@ class PTAdminDashboardApiTest extends TestCase
 
         $this->withHeaders($this->jsonApiHeaders())
             ->postJson('/ptadmin/dashboard/application-sync')
+            ->assertOk()
+            ->assertJson(array(
+                'code' => 419,
+                'message' => '未登录',
+            ));
+
+        $this->withHeaders($this->jsonApiHeaders())
+            ->postJson('/ptadmin/dashboard/widgets/query', array('widgets' => array()))
             ->assertOk()
             ->assertJson(array(
                 'code' => 419,
@@ -228,6 +245,37 @@ class PTAdminDashboardApiTest extends TestCase
             ));
     }
 
+    public function test_typed_dashboard_widget_is_registered_and_serialized_for_console(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount(array(
+            'username' => 'founder_typed_dashboard',
+            'nickname' => 'Founder Typed Dashboard',
+            'is_founder' => 1,
+        ));
+        $token = $this->issueAdminToken($founder);
+
+        Addon::swap(new FakeDashboardAddonManager(
+            array('typed' => array('code' => 'typed', 'title' => 'Typed')),
+            array('typed' => new TypedDashboardBootstrap())
+        ));
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/dashboard/widgets/typed.overview/query', array(
+                'query' => array('range' => 'month'),
+            ))
+            ->assertOk()
+            ->assertJsonPath('data.widget.code', 'typed.overview')
+            ->assertJsonPath('data.widget.type', 'stats')
+            ->assertJsonPath('data.data.type', 'stats')
+            ->assertJsonPath('data.data.items.0.code', 'records')
+            ->assertJsonPath('data.data.items.0.value', 3);
+    }
+
     public function test_dashboard_query_returns_error_when_widget_does_not_exist(): void
     {
         $this->createAdminsTable();
@@ -260,6 +308,155 @@ class PTAdminDashboardApiTest extends TestCase
                 'query' => array(),
             ))
             ->assertStatus(500);
+    }
+
+    public function test_dashboard_batch_query_returns_partial_results_and_reuses_batch_cache(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount(array(
+            'username' => 'founder_dashboard_batch',
+            'nickname' => 'Founder Dashboard Batch',
+            'is_founder' => 1,
+        ));
+        $token = $this->issueAdminToken($founder);
+
+        FakeDashboardWidgetHandler::$snapshotCalls = 0;
+        Addon::swap(new FakeDashboardAddonManager(
+            array(
+                'cms' => array(
+                    'code' => 'cms',
+                    'title' => '内容管理',
+                ),
+            ),
+            array(
+                'cms' => new FakeDashboardBootstrap(),
+            )
+        ));
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/dashboard/widgets/query', array(
+                'widgets' => array(
+                    array('code' => 'cms.overview', 'query' => array('range' => 'today')),
+                    array('code' => 'cms.shortcut', 'query' => array('refresh' => 1)),
+                    array('code' => 'missing.widget', 'query' => array()),
+                ),
+            ));
+
+        $response->assertOk()
+            ->assertJsonPath('code', 0)
+            ->assertJsonCount(3, 'data.results')
+            ->assertJsonPath('data.results.0.code', 'cms.overview')
+            ->assertJsonPath('data.results.0.error', null)
+            ->assertJsonPath('data.results.1.code', 'cms.shortcut')
+            ->assertJsonPath('data.results.1.error', null)
+            ->assertJsonPath('data.results.2.code', 'missing.widget')
+            ->assertJsonPath('data.results.2.data', null)
+            ->assertJsonPath('data.results.2.error.code', 'dashboard_widget_query_failed');
+
+        self::assertSame(1, FakeDashboardWidgetHandler::$snapshotCalls);
+    }
+
+    public function test_core_dashboard_widgets_read_notifications_operations_and_empty_resource_state(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $admin = $this->createAdminAccount([
+            'username' => 'founder_dashboard_core_data',
+            'nickname' => 'Founder Core Data',
+            'is_founder' => 1,
+        ]);
+        $token = $this->issueAdminToken($admin);
+        $now = time();
+
+        $notification = NotificationMessage::query()->create([
+            'audience_type' => 'admin',
+            'source_type' => 'system',
+            'source_code' => 'system',
+            'category' => 'notice',
+            'level' => 'info',
+            'title' => '欢迎使用 PTAdmin',
+            'content' => '这是一个测试通知',
+            'action_type' => 'none',
+            'created_by' => 0,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        NotificationReceipt::query()->create([
+            'notification_id' => $notification->id,
+            'receiver_type' => NotificationReceipt::RECEIVER_ADMIN,
+            'receiver_id' => $admin->id,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        OperationRecord::query()->create([
+            'admin_id' => $admin->id,
+            'admin_username' => $admin->username,
+            'nickname' => $admin->nickname,
+            'title' => '查看仪表盘',
+            'url' => '/ptadmin/dashboard',
+            'method' => 'POST',
+            'status' => 'success',
+            'response_code' => 200,
+            'response_time' => 12.5,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        app(DashboardLayoutService::class)->saveUserWidgets((int) $admin->id, [
+            ['widget_code' => 'ptadmin.workspace-summary', 'enabled' => true],
+            ['widget_code' => 'ptadmin.notifications', 'enabled' => true],
+            ['widget_code' => 'ptadmin.recent-operations', 'enabled' => true],
+            ['widget_code' => 'ptadmin.operation-trend', 'enabled' => true],
+        ]);
+
+        $response = $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/dashboard/widgets/query', ['widgets' => [
+                ['code' => 'ptadmin.workspace-summary'],
+                ['code' => 'ptadmin.version-notices'],
+                ['code' => 'ptadmin.notifications'],
+                ['code' => 'ptadmin.recent-operations'],
+                ['code' => 'ptadmin.operation-trend'],
+            ]]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.results.0.data.items.0.code', 'roles')
+            ->assertJsonPath('data.results.0.data.items.1.code', 'resources')
+            ->assertJsonPath('data.results.0.data.items.1.value', 9)
+            ->assertJsonPath('data.results.0.data.items.2.value', 1)
+            ->assertJsonPath('data.results.2.data.items.0.title', '欢迎使用 PTAdmin')
+            ->assertJsonPath('data.results.3.data.items.0.title', '查看仪表盘')
+            ->assertJsonPath('data.results.4.data.type', 'trend');
+
+        self::assertSame(1, array_sum((array) $response->json('data.results.4.data.series')));
+    }
+
+    public function test_dashboard_batch_query_rejects_more_than_24_widgets(): void
+    {
+        $this->createAdminsTable();
+        $this->createUserTokensTable();
+        $this->createOperationRecordsTable();
+        $this->migratePackageTables();
+
+        $founder = $this->createAdminAccount(array(
+            'username' => 'founder_dashboard_batch_limit',
+            'nickname' => 'Founder Dashboard Batch Limit',
+            'is_founder' => 1,
+        ));
+        $token = $this->issueAdminToken($founder);
+
+        $widgets = array_map(static function (int $index): array {
+            return array('code' => 'cms.widget.'.$index);
+        }, range(1, 25));
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->postJson('/ptadmin/dashboard/widgets/query', array('widgets' => $widgets))
+            ->assertStatus(422);
     }
 
     public function test_dashboard_action_endpoint_executes_registered_widget_action(): void
@@ -511,6 +708,33 @@ final class FakeDashboardAddonManager
     }
 }
 
+final class TypedDashboardBootstrap extends BaseBootstrap
+{
+    /** @return array<int, object> */
+    public function getAdminDashboardWidgetDefinitions(string $addonCode, array $addonInfo = array()): array
+    {
+        return array(new TypedDashboardWidget());
+    }
+}
+
+final class TypedDashboardWidget implements DashboardWidget
+{
+    public function definition(): DashboardWidgetDefinition
+    {
+        return (new DashboardWidgetDefinition('typed.overview', 'Typed Overview'))
+            ->type('stats')
+            ->group('typed')
+            ->cacheFor(60);
+    }
+
+    public function query(DashboardWidgetQuery $query, DashboardWidgetContext $context): StatResult
+    {
+        return (new StatResult())
+            ->metric('records', 'Records', 3)
+            ->meta(array('range' => $query->range(), 'user_id' => $context->userId()));
+    }
+}
+
 final class FakeDashboardAddonConfig
 {
     /** @var array<string, mixed> */
@@ -607,6 +831,8 @@ final class FakeDashboardBootstrap extends BaseBootstrap
 
 final class FakeDashboardWidgetHandler implements AdminDashboardWidgetHandlerInterface, AdminDashboardWidgetActionHandlerInterface
 {
+    public static int $snapshotCalls = 0;
+
     /**
      * @param array<string, mixed> $query
      * @param array<string, mixed> $definition
@@ -616,10 +842,20 @@ final class FakeDashboardWidgetHandler implements AdminDashboardWidgetHandlerInt
      */
     public function query(array $query, array $definition, array $context = array()): array
     {
+        $queryCache = $context['query_cache'] ?? null;
+        $snapshot = $queryCache instanceof DashboardWidgetQueryCache
+            ? $queryCache->remember('fake.dashboard', static function (): string {
+                self::$snapshotCalls++;
+
+                return 'shared';
+            })
+            : 'uncached';
+
         return array(
             'type' => 'echo',
             'payload' => $query,
             'context' => $context,
+            'snapshot' => $snapshot,
             'definition_code' => (string) ($definition['code'] ?? ''),
         );
     }

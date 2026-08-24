@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services\Dashboard;
 
 use Illuminate\Support\Facades\DB;
-use PTAdmin\Admin\Models\AdminDashboardRoleWidget;
-use PTAdmin\Admin\Models\AdminDashboardUserWidget;
+use PTAdmin\Admin\Models\AdminDashboardWidget;
 
 class DashboardLayoutService
 {
@@ -15,7 +14,7 @@ class DashboardLayoutService
      */
     public function getRoleWidgets(int $roleId, ?int $tenantId = null): array
     {
-        return $this->queryWidgets(AdminDashboardRoleWidget::query(), 'role_id', $roleId, $tenantId);
+        return $this->queryWidgets(AdminDashboardWidget::SUBJECT_ROLE, $roleId, $tenantId);
     }
 
     /**
@@ -23,29 +22,27 @@ class DashboardLayoutService
      */
     public function getUserWidgets(int $userId, ?int $tenantId = null): array
     {
-        return $this->queryWidgets(AdminDashboardUserWidget::query(), 'user_id', $userId, $tenantId);
+        return $this->queryWidgets(AdminDashboardWidget::SUBJECT_USER, $userId, $tenantId);
     }
 
     public function saveRoleWidgets(int $roleId, array $widgets, ?int $tenantId = null): void
     {
-        $this->saveWidgets(AdminDashboardRoleWidget::class, 'role_id', $roleId, $widgets, $tenantId);
+        $this->saveWidgets(AdminDashboardWidget::SUBJECT_ROLE, $roleId, $widgets, $tenantId);
     }
 
     public function saveUserWidgets(int $userId, array $widgets, ?int $tenantId = null): void
     {
-        $this->saveWidgets(AdminDashboardUserWidget::class, 'user_id', $userId, $widgets, $tenantId);
+        $this->saveWidgets(AdminDashboardWidget::SUBJECT_USER, $userId, $widgets, $tenantId);
     }
 
     /**
-     * @param mixed  $query
-     * @param string $subjectField
-     *
      * @return array<int, array<string, mixed>>
      */
-    private function queryWidgets($query, string $subjectField, int $subjectId, ?int $tenantId = null): array
+    private function queryWidgets(string $subjectType, int $subjectId, ?int $tenantId = null): array
     {
-        return $query
-            ->where($subjectField, $subjectId)
+        return AdminDashboardWidget::query()
+            ->where('subject_type', $subjectType)
+            ->where('subject_id', $subjectId)
             ->when(null !== $tenantId, function ($builder) use ($tenantId): void {
                 $builder->where('tenant_id', $tenantId);
             }, function ($builder): void {
@@ -66,16 +63,16 @@ class DashboardLayoutService
     }
 
     /**
-     * @param class-string<AdminDashboardRoleWidget>|class-string<AdminDashboardUserWidget> $modelClass
-     * @param array<int, array<string, mixed>>                                              $widgets
+     * @param array<int, array<string, mixed>> $widgets
      */
-    private function saveWidgets(string $modelClass, string $subjectField, int $subjectId, array $widgets, ?int $tenantId = null): void
+    private function saveWidgets(string $subjectType, int $subjectId, array $widgets, ?int $tenantId = null): void
     {
         $normalized = $this->normalizeWidgets($widgets);
 
-        DB::transaction(function () use ($modelClass, $subjectField, $subjectId, $tenantId, $normalized): void {
-            $modelClass::query()
-                ->where($subjectField, $subjectId)
+        DB::transaction(function () use ($subjectType, $subjectId, $tenantId, $normalized): void {
+            AdminDashboardWidget::query()
+                ->where('subject_type', $subjectType)
+                ->where('subject_id', $subjectId)
                 ->when(null !== $tenantId, function ($query) use ($tenantId): void {
                     $query->where('tenant_id', $tenantId);
                 }, function ($query): void {
@@ -84,8 +81,9 @@ class DashboardLayoutService
                 ->delete();
 
             foreach ($normalized as $item) {
-                $modelClass::query()->create([
-                    $subjectField => $subjectId,
+                AdminDashboardWidget::query()->create([
+                    'subject_type' => $subjectType,
+                    'subject_id' => $subjectId,
                     'tenant_id' => $tenantId,
                     'widget_code' => (string) $item['widget_code'],
                     'enabled' => (bool) $item['enabled'],

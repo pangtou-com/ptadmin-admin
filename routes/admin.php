@@ -128,6 +128,7 @@ Route::group(['prefix' => admin_route_prefix(), 'middleware' => ['ptadmin.auth:'
     
     // 后台仪表盘组件
     admin_audit_route(Route::get('dashboard/widgets', [Admin\AdminDashboardController::class, 'widgets']), 'console');
+    admin_audit_route(Route::post('dashboard/widgets/query', [Admin\AdminDashboardController::class, 'queryBatch']), 'console');
     admin_audit_route(Route::post('dashboard/widgets/{code}/query', [Admin\AdminDashboardController::class, 'query']), 'console');
     admin_audit_route(Route::post('dashboard/widgets/{code}/actions/{action}', [Admin\AdminDashboardController::class, 'action']), 'console');
     admin_audit_route(Route::get('dashboard/roles/{id}/widgets', [Admin\AdminDashboardManageController::class, 'roleWidgets']), 'console');

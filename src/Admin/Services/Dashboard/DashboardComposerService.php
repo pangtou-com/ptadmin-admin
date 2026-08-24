@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services\Dashboard;
 
-use PTAdmin\Addon\Addon;
-use PTAdmin\Admin\Services\AdminFrontendBuildService;
-use PTAdmin\Admin\Services\ApplicationStatusSyncService;
-use PTAdmin\Admin\Services\PlatformSnapshotService;
 use PTAdmin\Contracts\Auth\AdminRoleServiceInterface;
 
 class DashboardComposerService
@@ -15,24 +11,18 @@ class DashboardComposerService
     private DashboardWidgetRegistryService $registry;
     private DashboardLayoutService $layoutService;
     private AdminRoleServiceInterface $adminRoleService;
-    private PlatformSnapshotService $platformSnapshotService;
-    private ApplicationStatusSyncService $applicationStatusSyncService;
-    private AdminFrontendBuildService $adminFrontendBuildService;
+    private DashboardSummaryService $summaryService;
 
     public function __construct(
         DashboardWidgetRegistryService $registry,
         DashboardLayoutService $layoutService,
         AdminRoleServiceInterface $adminRoleService,
-        PlatformSnapshotService $platformSnapshotService,
-        ApplicationStatusSyncService $applicationStatusSyncService,
-        ?AdminFrontendBuildService $adminFrontendBuildService = null
+        DashboardSummaryService $summaryService
     ) {
         $this->registry = $registry;
         $this->layoutService = $layoutService;
         $this->adminRoleService = $adminRoleService;
-        $this->platformSnapshotService = $platformSnapshotService;
-        $this->applicationStatusSyncService = $applicationStatusSyncService;
-        $this->adminFrontendBuildService = $adminFrontendBuildService ?? new AdminFrontendBuildService();
+        $this->summaryService = $summaryService;
     }
 
     /**
@@ -66,8 +56,10 @@ class DashboardComposerService
         }
 
         $results = [];
+        $roleAssignments = $this->resolveRoleAssignments((int) data_get($user, 'id', 0), $tenantId);
+        $userAssignments = $this->layoutService->getUserWidgets((int) data_get($user, 'id', 0), $tenantId);
 
-        foreach ($this->resolveRoleAssignments((int) data_get($user, 'id', 0), $tenantId) as $item) {
+        foreach ($roleAssignments as $item) {
             $code = (string) ($item['widget_code'] ?? '');
             if ('' === $code || !isset($definitionMap[$code])) {
                 continue;
@@ -79,7 +71,7 @@ class DashboardComposerService
             ]);
         }
 
-        foreach ($this->layoutService->getUserWidgets((int) data_get($user, 'id', 0), $tenantId) as $item) {
+        foreach ($userAssignments as $item) {
             $code = (string) ($item['widget_code'] ?? '');
             if ('' === $code || !isset($definitionMap[$code])) {
                 continue;
@@ -93,7 +85,7 @@ class DashboardComposerService
             $results[$code] = $this->mergeWithDefinition($definitionMap[$code], $item, ['type' => 'user']);
         }
 
-        if ([] === $results && $this->isFounder($user)) {
+        if ([] === $roleAssignments && [] === $userAssignments) {
             foreach ($definitionMap as $code => $definition) {
                 if (!(bool) ($definition['default_enabled'] ?? true)) {
                     continue;
@@ -240,156 +232,10 @@ class DashboardComposerService
     }
 
     /**
-     * @param mixed $user
-     */
-    private function isFounder($user): bool
-    {
-        return 1 === (int) data_get($user, 'is_founder', 0);
-    }
-
-    /**
      * @return array<string, mixed>
      */
     public function summary(bool $scheduleSync = true): array
     {
-        $backendVersion = get_frame_version();
-        $frontendVersion = $this->adminFrontendBuildService->publishedVersion(base_path(), admin_web_prefix());
-        $snapshot = $this->platformSnapshotService->read();
-        $this->platformSnapshotService->scheduleRefresh();
-        $applicationStatus = $this->applicationStatusSyncService->read();
-        if ($scheduleSync) {
-            $this->applicationStatusSyncService->scheduleSync();
-        }
-        $applicationSummary = $this->applicationStatusSyncService->publicSummary($applicationStatus);
-        $latestFrontendVersion = trim((string) data_get($snapshot, 'latest.frontend_version', ''));
-        $latestFrameworkVersion = trim((string) data_get($snapshot, 'latest.framework_version', ''));
-        $applicationLatestFrontendVersion = trim((string) data_get($applicationStatus, 'response.latest.frontend_version', ''));
-        $applicationLatestBackendVersion = trim((string) data_get($applicationStatus, 'response.latest.backend_version', ''));
-        if ('' !== $applicationLatestFrontendVersion) {
-            $latestFrontendVersion = $this->latestVersion($latestFrontendVersion, $applicationLatestFrontendVersion);
-        }
-        if ('' !== $applicationLatestBackendVersion) {
-            $latestFrameworkVersion = $this->latestVersion($latestFrameworkVersion, $applicationLatestBackendVersion);
-        }
-        $addonSnapshots = (array) ($snapshot['addons'] ?? []);
-        $addonUpdatePending = $this->hasPendingAddonUpdates($addonSnapshots)
-            || [] !== (array) ($applicationSummary['addon_updates'] ?? []);
-        $frameworkUpdateRequired = $this->isVersionOutdated($backendVersion, $latestFrameworkVersion);
-        $frontendUpdateRequired = $this->isVersionOutdated($frontendVersion, $latestFrontendVersion);
-        $securityAlertPending = $this->hasSecurityAlerts($snapshot, $addonSnapshots)
-            || $this->hasDangerAdvice((array) ($applicationSummary['application_advice'] ?? []));
-
-        return array_merge([
-            'frontend_version' => $frontendVersion,
-            'frontend_latest_version' => $latestFrontendVersion,
-            'frontend_update_required' => $frontendUpdateRequired,
-            'backend_version' => $backendVersion,
-            'backend_latest_version' => $latestFrameworkVersion,
-            'backend_update_required' => $frameworkUpdateRequired,
-            'update_required' => $frontendUpdateRequired || $frameworkUpdateRequired || $addonUpdatePending || $securityAlertPending,
-            'addon_update_pending' => $addonUpdatePending,
-            'security_alert_pending' => $securityAlertPending,
-            'last_platform_sync_at' => (string) ($snapshot['synced_at'] ?? ''),
-            'platform_snapshot_stale' => $this->platformSnapshotService->isStale($snapshot),
-        ], $applicationSummary);
-    }
-
-    /** @param array<int, mixed> $advice */
-    private function hasDangerAdvice(array $advice): bool
-    {
-        foreach ($advice as $item) {
-            if (\is_array($item) && 'danger' === (string) ($item['level'] ?? '')) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-    
-    private function isVersionOutdated(string $currentVersion, string $latestVersion): bool
-    {
-        $current = $this->normalizeVersion($currentVersion);
-        $latest = $this->normalizeVersion($latestVersion);
-        if ('' === $current || '' === $latest) {
-            return false;
-        }
-
-        return version_compare($latest, $current, '>');
-    }
-
-    /**
-     * @param array<int, mixed> $addonSnapshots
-     */
-    private function hasPendingAddonUpdates(array $addonSnapshots): bool
-    {
-        foreach ($addonSnapshots as $item) {
-            if (!\is_array($item)) {
-                continue;
-            }
-
-            $code = trim((string) ($item['code'] ?? ''));
-            if ('' === $code || !Addon::hasInstalledAddon($code)) {
-                continue;
-            }
-
-            $installedVersion = $this->normalizeVersion((string) Addon::getAddonVersion($code));
-            $latestVersion = $this->normalizeVersion((string) ($item['latest_version'] ?? ''));
-            if ('' !== $installedVersion && '' !== $latestVersion && version_compare($latestVersion, $installedVersion, '>')) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function normalizeVersion(string $version): string
-    {
-        $normalized = trim($version);
-        if ('' === $normalized) {
-            return '';
-        }
-
-        return ltrim($normalized, 'vV');
-    }
-
-    private function latestVersion(string $left, string $right): string
-    {
-        $normalizedLeft = $this->normalizeVersion($left);
-        $normalizedRight = $this->normalizeVersion($right);
-        if ('' === $normalizedLeft) {
-            return $right;
-        }
-        if ('' === $normalizedRight) {
-            return $left;
-        }
-
-        return version_compare($normalizedRight, $normalizedLeft, '>') ? $right : $left;
-    }
-
-    /**
-     * @param array<string, mixed> $snapshot
-     * @param array<int, mixed> $addonSnapshots
-     */
-    private function hasSecurityAlerts(array $snapshot, array $addonSnapshots): bool
-    {
-        foreach ((array) data_get($snapshot, 'framework.security_alerts', []) as $item) {
-            if (\is_array($item) || \is_string($item)) {
-                return true;
-            }
-        }
-
-        foreach ($addonSnapshots as $item) {
-            if (!\is_array($item)) {
-                continue;
-            }
-
-            foreach ((array) ($item['security_alerts'] ?? []) as $alert) {
-                if (\is_array($alert) || \is_string($alert)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return $this->summaryService->summary($scheduleSync);
     }
 }

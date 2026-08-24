@@ -40,6 +40,24 @@ class AdminDashboardController extends AbstractBackgroundController
         );
     }
 
+    public function queryBatch(Request $request): JsonResponse
+    {
+        $data = $request->validate(array(
+            'widgets' => 'required|array|max:24',
+            'widgets.*.code' => 'required|string|max:120',
+            'widgets.*.query' => 'sometimes|array',
+        ));
+        $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;
+
+        return AdminResponse::success(array(
+            'results' => $this->adminDashboardService->queryWidgets(
+                AdminAuth::user(),
+                (array) ($data['widgets'] ?? array()),
+                $tenantId
+            ),
+        ));
+    }
+
     public function action(string $code, string $action, Request $request): JsonResponse
     {
         $tenantId = $request->has('tenant_id') ? (int) $request->input('tenant_id') : null;

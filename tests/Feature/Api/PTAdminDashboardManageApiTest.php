@@ -6,6 +6,7 @@ namespace PTAdmin\Admin\Tests\Feature\Api;
 
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\Service\BaseBootstrap;
+use PTAdmin\Admin\Models\AdminDashboardWidget;
 use PTAdmin\Admin\Models\AdminRole;
 use PTAdmin\Admin\Tests\TestCase;
 
@@ -97,8 +98,16 @@ class PTAdminDashboardManageApiTest extends TestCase
             ),
         ));
 
-        self::assertSame('cms.overview', $roleResponse->json('data.available_widgets.0.code'));
+        self::assertContains('cms.overview', array_column(
+            (array) $roleResponse->json('data.available_widgets'),
+            'code'
+        ));
         self::assertSame(20, $roleResponse->json('data.selected_widgets.0.sort'));
+        $this->assertDatabaseHas('admin_dashboard_widgets', [
+            'subject_type' => AdminDashboardWidget::SUBJECT_ROLE,
+            'subject_id' => $role->id,
+            'widget_code' => 'cms.overview',
+        ]);
 
         $this->withHeaders($this->jsonApiHeaders($token))
             ->putJson('/ptadmin/dashboard/users/'.$member->id.'/widgets', array(
@@ -146,6 +155,13 @@ class PTAdminDashboardManageApiTest extends TestCase
                 ),
             ),
         ));
+
+        $this->assertDatabaseHas('admin_dashboard_widgets', [
+            'subject_type' => AdminDashboardWidget::SUBJECT_USER,
+            'subject_id' => $member->id,
+            'widget_code' => 'cms.overview',
+        ]);
+        self::assertSame(2, AdminDashboardWidget::query()->count());
     }
 
     public function test_current_user_can_manage_personal_dashboard_widgets_and_console_uses_latest_override(): void
@@ -204,11 +220,6 @@ class PTAdminDashboardManageApiTest extends TestCase
         $meResponse->assertOk()->assertJson(array(
             'code' => 0,
             'data' => array(
-                'available_widgets' => array(
-                    array(
-                        'code' => 'cms.overview',
-                    ),
-                ),
                 'selected_widgets' => array(
                     array(
                         'code' => 'cms.overview',
@@ -225,6 +236,10 @@ class PTAdminDashboardManageApiTest extends TestCase
                     ),
                 ),
             ),
+        ));
+        self::assertContains('cms.overview', array_column(
+            (array) $meResponse->json('data.available_widgets'),
+            'code'
         ));
 
         $consoleResponse = $this->withHeaders($this->jsonApiHeaders($token))
@@ -253,6 +268,21 @@ class PTAdminDashboardManageApiTest extends TestCase
                 ),
             ),
         ));
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->putJson('/ptadmin/dashboard/me/widgets', array('widgets' => array()))
+            ->assertOk()
+            ->assertJsonPath('code', 0);
+
+        self::assertSame(0, AdminDashboardWidget::query()
+            ->where('subject_type', AdminDashboardWidget::SUBJECT_USER)
+            ->where('subject_id', $member->id)
+            ->count());
+
+        $this->withHeaders($this->jsonApiHeaders($token))
+            ->getJson('/ptadmin/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.widgets.0.source.type', 'default');
     }
 }
 

@@ -12,6 +12,78 @@ use PTAdmin\Admin\Tests\TestCase;
 
 class PTAdminDatabaseMigrationTest extends TestCase
 {
+    public function test_dashboard_widget_migration_merges_and_restores_role_and_user_rows(): void
+    {
+        $roleMigration = require __DIR__.'/../../../database/Migrations/2026_04_27_120000_create_admin_dashboard_role_widgets_table.php';
+        $userMigration = require __DIR__.'/../../../database/Migrations/2026_04_27_120100_create_admin_dashboard_user_widgets_table.php';
+        $roleMigration->up();
+        $userMigration->up();
+
+        DB::table('admin_dashboard_role_widgets')->insert([
+            'role_id' => 12,
+            'tenant_id' => null,
+            'widget_code' => 'ptadmin.quick-actions',
+            'enabled' => 1,
+            'sort' => 20,
+            'layout_json' => json_encode(['x' => 6, 'y' => 0]),
+            'config_json' => null,
+            'created_at' => 100,
+            'updated_at' => 200,
+        ]);
+        DB::table('admin_dashboard_user_widgets')->insert([
+            'user_id' => 34,
+            'tenant_id' => 56,
+            'widget_code' => 'ptadmin.recent-operations',
+            'enabled' => 0,
+            'sort' => 10,
+            'layout_json' => null,
+            'config_json' => json_encode(['limit' => 5]),
+            'created_at' => 300,
+            'updated_at' => 400,
+        ]);
+
+        $migration = require __DIR__.'/../../../database/Migrations/2026_08_24_120000_merge_admin_dashboard_widget_tables.php';
+        $migration->up();
+
+        self::assertFalse(Schema::hasTable('admin_dashboard_role_widgets'));
+        self::assertFalse(Schema::hasTable('admin_dashboard_user_widgets'));
+        $this->assertDatabaseHas('admin_dashboard_widgets', [
+            'subject_type' => 'role',
+            'subject_id' => 12,
+            'tenant_id' => null,
+            'widget_code' => 'ptadmin.quick-actions',
+            'enabled' => 1,
+            'created_at' => 100,
+            'updated_at' => 200,
+        ]);
+        $this->assertDatabaseHas('admin_dashboard_widgets', [
+            'subject_type' => 'user',
+            'subject_id' => 34,
+            'tenant_id' => 56,
+            'widget_code' => 'ptadmin.recent-operations',
+            'enabled' => 0,
+            'created_at' => 300,
+            'updated_at' => 400,
+        ]);
+
+        $migration->down();
+
+        self::assertFalse(Schema::hasTable('admin_dashboard_widgets'));
+        $this->assertDatabaseHas('admin_dashboard_role_widgets', [
+            'role_id' => 12,
+            'tenant_id' => null,
+            'widget_code' => 'ptadmin.quick-actions',
+        ]);
+        $this->assertDatabaseHas('admin_dashboard_user_widgets', [
+            'user_id' => 34,
+            'tenant_id' => 56,
+            'widget_code' => 'ptadmin.recent-operations',
+        ]);
+
+        Schema::dropIfExists('admin_dashboard_user_widgets');
+        Schema::dropIfExists('admin_dashboard_role_widgets');
+    }
+
     public function test_notification_route_migration_upgrades_legacy_profile_routes(): void
     {
         Schema::create('notification_channel_profiles', function (Blueprint $table): void {
@@ -110,8 +182,7 @@ class PTAdminDatabaseMigrationTest extends TestCase
             'admin_resources',
             'admin_user_roles',
             'admin_grants',
-            'admin_dashboard_role_widgets',
-            'admin_dashboard_user_widgets',
+            'admin_dashboard_widgets',
             'admin_tenants',
             'admin_organizations',
             'admin_departments',
@@ -127,6 +198,19 @@ class PTAdminDatabaseMigrationTest extends TestCase
         ] as $table) {
             self::assertTrue(Schema::hasTable($table), sprintf('Missing table [%s].', $table));
         }
+
+        self::assertFalse(Schema::hasTable('admin_dashboard_role_widgets'));
+        self::assertFalse(Schema::hasTable('admin_dashboard_user_widgets'));
+        self::assertTrue(Schema::hasColumns('admin_dashboard_widgets', [
+            'subject_type',
+            'subject_id',
+            'tenant_id',
+            'widget_code',
+            'enabled',
+            'sort',
+            'layout_json',
+            'config_json',
+        ]));
 
         self::assertTrue(Schema::hasColumns('admin_resources', [
             'name',
