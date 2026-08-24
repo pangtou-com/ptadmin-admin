@@ -190,10 +190,12 @@ class PTAdminDashboardComposeApiTest extends TestCase
             ->assertJsonPath('data.summary.backend_version', $this->currentPackageVersion());
     }
 
-    public function test_dashboard_console_summary_marks_update_required_when_platform_has_newer_frontend(): void
+    public function test_dashboard_console_summary_marks_update_required_when_platform_has_newer_versions(): void
     {
         $frontendVersion = $this->currentFrontendVersion();
         $newerFrontendVersion = $this->nextPatchVersion($frontendVersion);
+        $backendVersion = $this->currentPackageVersion();
+        $newerBackendVersion = $this->nextPatchVersion($backendVersion);
 
         $this->createAdminsTable();
         $this->createUserTokensTable();
@@ -212,7 +214,7 @@ class PTAdminDashboardComposeApiTest extends TestCase
             'synced_at' => date(DATE_ATOM),
             'latest' => [
                 'frontend_version' => $newerFrontendVersion,
-                'framework_version' => '1.1.8',
+                'framework_version' => $newerBackendVersion,
             ],
             'addons' => [],
             'framework' => [
@@ -240,6 +242,9 @@ class PTAdminDashboardComposeApiTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.summary.frontend_version', $frontendVersion)
             ->assertJsonPath('data.summary.frontend_latest_version', $newerFrontendVersion)
+            ->assertJsonPath('data.summary.backend_version', $backendVersion)
+            ->assertJsonPath('data.summary.backend_latest_version', $newerBackendVersion)
+            ->assertJsonPath('data.summary.backend_update_required', true)
             ->assertJsonPath('data.summary.update_required', true);
     }
 

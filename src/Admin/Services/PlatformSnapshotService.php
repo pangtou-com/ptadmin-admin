@@ -12,6 +12,18 @@ use Throwable;
 class PlatformSnapshotService
 {
     private const LOCK_TIMEOUT = 600;
+    private const DEFAULT_ADMIN_PACKAGE_METADATA_URL = 'https://repo.packagist.org/p2/ptadmin/admin.json';
+
+    private string $frontendManifestUrl;
+    private string $adminPackageMetadataUrl;
+
+    public function __construct(?string $frontendManifestUrl = null, ?string $adminPackageMetadataUrl = null)
+    {
+        $this->frontendManifestUrl = $frontendManifestUrl
+            ?? (string) config('ptadmin.frontend_manifest_url', AdminFrontendBuildService::DEFAULT_MANIFEST_URL);
+        $this->adminPackageMetadataUrl = $adminPackageMetadataUrl
+            ?? (string) config('ptadmin.admin_package_metadata_url', self::DEFAULT_ADMIN_PACKAGE_METADATA_URL);
+    }
 
     /**
      * @return array<string, mixed>
@@ -73,6 +85,7 @@ class PlatformSnapshotService
             'synced_at' => date(DATE_ATOM),
             'source' => [
                 'frontend_manifest_url' => $this->frontendManifestUrl(),
+                'admin_package_metadata_url' => $this->adminPackageMetadataUrl,
                 'platform_snapshot_url' => '',
             ],
             'latest' => [
@@ -92,6 +105,7 @@ class PlatformSnapshotService
 
         $frontendManifest = $this->readJsonFromUrl($this->frontendManifestUrl());
         $frontendVersion = trim((string) ($frontendManifest['latest'] ?? ''));
+        $adminPackageVersion = $this->readLatestAdminPackageVersion();
 
         try {
             $platformSnapshot = AddonApi::getPlatformSnapshot();
@@ -109,6 +123,13 @@ class PlatformSnapshotService
 
         // 构建清单是后台前端版本的发布事实源，不能被较旧的平台快照覆盖。
         $snapshot['latest']['frontend_version'] = $frontendVersion;
+        if ('' !== $adminPackageVersion) {
+            $snapshot['latest']['framework_version'] = $this->latestVersion(
+                (string) ($snapshot['latest']['framework_version'] ?? ''),
+                $adminPackageVersion
+            );
+            $snapshot['meta']['admin_package_metadata_synced_at'] = date(DATE_ATOM);
+        }
         $snapshot['meta']['frontend_manifest_synced_at'] = date(DATE_ATOM);
 
         $this->write($snapshot);
@@ -117,7 +138,7 @@ class PlatformSnapshotService
     }
 
     /**
-     * 仅刷新后台前端版本，避免高频版本检查触发完整平台和插件同步。
+     * 刷新后台前端与 admin 包版本，避免高频版本检查触发完整平台和插件同步。
      *
      * @return array<string, mixed>
      */
@@ -132,6 +153,7 @@ class PlatformSnapshotService
 
         $snapshot['source'] = array_merge((array) ($snapshot['source'] ?? []), [
             'frontend_manifest_url' => $this->frontendManifestUrl(),
+            'admin_package_metadata_url' => $this->adminPackageMetadataUrl,
         ]);
         $snapshot['latest'] = array_merge((array) ($snapshot['latest'] ?? []), [
             'frontend_version' => $frontendVersion,
@@ -139,6 +161,15 @@ class PlatformSnapshotService
         $snapshot['meta'] = array_merge((array) ($snapshot['meta'] ?? []), [
             'frontend_manifest_synced_at' => date(DATE_ATOM),
         ]);
+
+        $adminPackageVersion = $this->readLatestAdminPackageVersion();
+        if ('' !== $adminPackageVersion) {
+            $snapshot['latest']['framework_version'] = $this->latestVersion(
+                (string) ($snapshot['latest']['framework_version'] ?? ''),
+                $adminPackageVersion
+            );
+            $snapshot['meta']['admin_package_metadata_synced_at'] = date(DATE_ATOM);
+        }
 
         $this->write($snapshot);
 
@@ -160,8 +191,12 @@ class PlatformSnapshotService
         if ('' !== trim((string) ($latest['frontend_version'] ?? ''))) {
             $snapshot['latest']['frontend_version'] = trim((string) $latest['frontend_version']);
         }
-        if ('' !== trim((string) ($latest['framework_version'] ?? ''))) {
-            $snapshot['latest']['framework_version'] = trim((string) $latest['framework_version']);
+        $frameworkVersion = trim((string) ($latest['framework_version'] ?? ''));
+        if ('' === $frameworkVersion) {
+            $frameworkVersion = trim((string) ($latest['backend_version'] ?? ''));
+        }
+        if ('' !== $frameworkVersion) {
+            $snapshot['latest']['framework_version'] = $frameworkVersion;
         }
 
         $snapshot['framework'] = array_merge($snapshot['framework'], [
@@ -266,6 +301,48 @@ class PlatformSnapshotService
         $payload = json_decode($body, true);
 
         return \is_array($payload) ? $payload : [];
+    }
+
+    private function readLatestAdminPackageVersion(): string
+    {
+        try {
+            $payload = $this->readJsonFromUrl($this->adminPackageMetadataUrl);
+        } catch (Throwable $exception) {
+            return '';
+        }
+
+        $packages = \is_array($payload['packages'] ?? null) ? $payload['packages'] : [];
+        $versions = \is_array($packages['ptadmin/admin'] ?? null) ? $packages['ptadmin/admin'] : [];
+        $latest = '';
+
+        foreach ($versions as $package) {
+            if (!\is_array($package)) {
+                continue;
+            }
+            $version = ltrim(trim((string) ($package['version'] ?? '')), 'vV');
+            if (1 !== preg_match('/^\d+(?:\.\d+){1,3}$/', $version)) {
+                continue;
+            }
+            if ('' === $latest || version_compare($version, $latest, '>')) {
+                $latest = $version;
+            }
+        }
+
+        return $latest;
+    }
+
+    private function latestVersion(string $left, string $right): string
+    {
+        $left = ltrim(trim($left), 'vV');
+        $right = ltrim(trim($right), 'vV');
+        if ('' === $left) {
+            return $right;
+        }
+        if ('' === $right) {
+            return $left;
+        }
+
+        return version_compare($right, $left, '>') ? $right : $left;
     }
 
     private function download(string $url): string
@@ -399,6 +476,6 @@ class PlatformSnapshotService
 
     private function frontendManifestUrl(): string
     {
-        return AdminFrontendBuildService::DEFAULT_MANIFEST_URL;
+        return $this->frontendManifestUrl;
     }
 }

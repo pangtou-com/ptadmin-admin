@@ -26,6 +26,14 @@ return [
     'platform_snapshot_path' => env('PTADMIN_PLATFORM_SNAPSHOT_PATH', storage_path('app/ptadmin/platform/snapshot.json')),
     'platform_snapshot_ttl' => (int) env('PTADMIN_PLATFORM_SNAPSHOT_TTL', 86400),
     'frontend_manifest_cache_ttl' => (int) env('PTADMIN_FRONTEND_MANIFEST_CACHE_TTL', 300),
+    'frontend_manifest_url' => env(
+        'PTADMIN_FRONTEND_MANIFEST_URL',
+        'https://cloud.api.pangtou.com/storage/starter/console-build.json'
+    ),
+    'admin_package_metadata_url' => env(
+        'PTADMIN_ADMIN_PACKAGE_METADATA_URL',
+        'https://repo.packagist.org/p2/ptadmin/admin.json'
+    ),
     'application_instance_path' => env(
         'PTADMIN_APPLICATION_INSTANCE_PATH',
         storage_path('app/ptadmin/ptadmin-application-identity.json')

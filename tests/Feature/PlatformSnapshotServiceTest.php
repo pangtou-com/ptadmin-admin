@@ -14,6 +14,7 @@ class PlatformSnapshotServiceTest extends TestCase
     {
         File::delete((string) config('ptadmin.platform_snapshot_path'));
         File::delete(dirname((string) config('ptadmin.platform_snapshot_path')).'/snapshot.lock');
+        File::deleteDirectory(storage_path('framework/testing/platform-version-metadata'));
 
         parent::tearDown();
     }
@@ -47,5 +48,36 @@ class PlatformSnapshotServiceTest extends TestCase
         $this->app->terminate();
 
         self::assertSame(1, $service->frontendRefreshes);
+    }
+
+    public function test_frontend_refresh_also_reads_latest_stable_admin_package_version(): void
+    {
+        $fixtureRoot = storage_path('framework/testing/platform-version-metadata');
+        $frontendManifestPath = $fixtureRoot.'/console-build.json';
+        $adminPackageMetadataPath = $fixtureRoot.'/admin-package.json';
+        File::ensureDirectoryExists($fixtureRoot);
+        File::put($frontendManifestPath, json_encode([
+            'latest' => '0.1.29',
+        ], JSON_UNESCAPED_SLASHES));
+        File::put($adminPackageMetadataPath, json_encode([
+            'packages' => [
+                'ptadmin/admin' => [
+                    ['version' => 'dev-main'],
+                    ['version' => 'v2.2.7'],
+                    ['version' => '2.2.6'],
+                ],
+            ],
+        ], JSON_UNESCAPED_SLASHES));
+
+        $service = new PlatformSnapshotService(
+            'file://'.$frontendManifestPath,
+            'file://'.$adminPackageMetadataPath
+        );
+        $snapshot = $service->refreshFrontendVersion();
+
+        self::assertSame('0.1.29', $snapshot['latest']['frontend_version']);
+        self::assertSame('2.2.7', $snapshot['latest']['framework_version']);
+        self::assertSame('file://'.$adminPackageMetadataPath, $snapshot['source']['admin_package_metadata_url']);
+        self::assertNotSame('', $snapshot['meta']['admin_package_metadata_synced_at']);
     }
 }
