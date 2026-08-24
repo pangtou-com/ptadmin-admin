@@ -530,6 +530,10 @@ class PTAdminAddonManagementApiTest extends TestCase
                     'checkout_status' => 'payment_required',
                     'order_no' => $code.'-'.$addonVersionId.'-'.$idempotencyKey,
                     'amount_minor' => 6600,
+                    'channels' => [
+                        ['code' => 'wechat_native', 'name' => '微信支付', 'action' => 'qr_code'],
+                        ['code' => 'alipay_web', 'name' => '支付宝', 'action' => 'qr_code'],
+                    ],
                 ];
             }
 
@@ -571,13 +575,21 @@ class PTAdminAddonManagementApiTest extends TestCase
         ])->assertOk()
             ->assertJsonPath('data.checkout_status', 'payment_required')
             ->assertJsonPath('data.order_no', 'payment-12-native-request-001')
-            ->assertJsonPath('data.amount_minor', 6600);
+            ->assertJsonPath('data.amount_minor', 6600)
+            ->assertJsonPath('data.channels.1.code', 'alipay_web');
 
         $this->withHeaders($headers)->postJson('/ptadmin/addons/purchase/payments', [
             'order_no' => 'CO1001',
             'channel' => 'wechat_native',
         ])->assertOk()
             ->assertJsonPath('data.payment_no', 'PAY-wechat_native')
+            ->assertJsonPath('data.qr_code_content', 'weixin://native-payment');
+
+        $this->withHeaders($headers)->postJson('/ptadmin/addons/purchase/payments', [
+            'order_no' => 'CO1001',
+            'channel' => 'alipay_web',
+        ])->assertOk()
+            ->assertJsonPath('data.payment_no', 'PAY-alipay_web')
             ->assertJsonPath('data.qr_code_content', 'weixin://native-payment');
 
         $this->withHeaders($headers)->postJson('/ptadmin/addons/purchase/orders/query', [

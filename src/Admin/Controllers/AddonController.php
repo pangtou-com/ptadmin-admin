@@ -360,7 +360,7 @@ class AddonController extends AbstractBackgroundController
     {
         $data = $request->validate([
             'order_no' => ['required', 'string', 'max:64', 'regex:/^[A-Za-z0-9_-]+$/'],
-            'channel' => 'required|string|in:wechat_native,alipay_f2f',
+            'channel' => 'required|string|in:wechat_native,alipay_web',
         ]);
 
         return AdminResponse::success($this->addonPlatformService->createPurchasePayment(
