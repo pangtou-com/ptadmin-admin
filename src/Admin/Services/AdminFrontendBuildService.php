@@ -10,6 +10,13 @@ final class AdminFrontendBuildService
 {
     public const DEFAULT_MANIFEST_URL = 'https://cloud.api.pangtou.com/storage/starter/console-build.json';
 
+    private string $manifestUrl;
+
+    public function __construct(string $manifestUrl = self::DEFAULT_MANIFEST_URL)
+    {
+        $this->manifestUrl = $manifestUrl;
+    }
+
     /**
      * 同步后台前端构建包并发布到当前应用。
      *
@@ -23,8 +30,12 @@ final class AdminFrontendBuildService
         string $ref = 'latest',
         string $backendVersion = ''
     ): array {
-        $pulled = $this->syncFromManifest($packageRoot, $ref, $backendVersion);
-        $published = $this->publishBundled($packageRoot, $appRoot);
+        $pulled = $this->syncFromManifestTo(
+            $this->runtimeFrontendPath($appRoot),
+            $ref,
+            $backendVersion
+        );
+        $published = $this->publishSource((string) $pulled['path'], $appRoot);
 
         return [
             'version' => (string) ($pulled['version'] ?? ''),
@@ -40,7 +51,19 @@ final class AdminFrontendBuildService
         string $ref = 'latest',
         string $backendVersion = ''
     ): array {
-        $manifestUrl = self::DEFAULT_MANIFEST_URL;
+        return $this->syncFromManifestTo(
+            $this->bundledFrontendPath($packageRoot),
+            $ref,
+            $backendVersion
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function syncFromManifestTo(string $targetPath, string $ref, string $backendVersion): array
+    {
+        $manifestUrl = $this->manifestUrl;
         $manifest = $this->readJsonFromUrl($manifestUrl);
         $version = $this->resolveVersion($manifest, $ref);
         $artifact = $this->resolveArtifact($version);
@@ -52,8 +75,6 @@ final class AdminFrontendBuildService
         $temporaryRoot = rtrim(sys_get_temp_dir(), \DIRECTORY_SEPARATOR).\DIRECTORY_SEPARATOR.'ptadmin-console-build-'.uniqid();
         $archivePath = $temporaryRoot.\DIRECTORY_SEPARATOR.'console-build.zip';
         $extractPath = $temporaryRoot.\DIRECTORY_SEPARATOR.'extract';
-        $targetPath = $this->bundledFrontendPath($packageRoot);
-
         $this->ensureDirectory($temporaryRoot);
         $this->ensureDirectory($extractPath);
 
@@ -131,7 +152,14 @@ final class AdminFrontendBuildService
 
     public function publishBundled(string $packageRoot, string $appRoot): array
     {
-        $sourcePath = $this->bundledFrontendPath($packageRoot);
+        return $this->publishSource($this->bundledFrontendPath($packageRoot), $appRoot);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function publishSource(string $sourcePath, string $appRoot): array
+    {
         $this->assertFrontendBuild($sourcePath);
 
         $webPrefix = \function_exists('admin_web_prefix') ? admin_web_prefix() : (string) config('ptadmin.web_prefix', 'admin');
@@ -159,6 +187,16 @@ final class AdminFrontendBuildService
     public function bundledFrontendPath(string $packageRoot): string
     {
         return rtrim($packageRoot, \DIRECTORY_SEPARATOR).\DIRECTORY_SEPARATOR.'resources'.\DIRECTORY_SEPARATOR.'admin-frontend';
+    }
+
+    public function runtimeFrontendPath(string $appRoot): string
+    {
+        return rtrim($appRoot, \DIRECTORY_SEPARATOR)
+            .\DIRECTORY_SEPARATOR.'storage'
+            .\DIRECTORY_SEPARATOR.'app'
+            .\DIRECTORY_SEPARATOR.'ptadmin'
+            .\DIRECTORY_SEPARATOR.'frontend'
+            .\DIRECTORY_SEPARATOR.'admin-build';
     }
 
     public function publishedVersion(string $appRoot, string $webPrefix): string

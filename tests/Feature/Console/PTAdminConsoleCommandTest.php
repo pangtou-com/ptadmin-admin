@@ -17,6 +17,8 @@ class PTAdminConsoleCommandTest extends TestCase
     protected function tearDown(): void
     {
         $this->deletePath(storage_path('app/ptadmin/frontend/admin/current'));
+        $this->deletePath(storage_path('app/ptadmin/frontend/admin-build'));
+        $this->deletePath(storage_path('framework/testing/admin-frontend-runtime-update'));
         $this->deletePath(public_path('admin'));
 
         parent::tearDown();
@@ -228,6 +230,57 @@ class PTAdminConsoleCommandTest extends TestCase
         self::assertFileExists($publicPath.\DIRECTORY_SEPARATOR.'index.html');
         self::assertDirectoryExists($publicPath.\DIRECTORY_SEPARATOR.'assets');
         self::assertFalse(is_link($publicPath));
+    }
+
+    public function test_admin_frontend_update_stages_build_in_storage_without_writing_package_resources(): void
+    {
+        $fixtureRoot = storage_path('framework/testing/admin-frontend-runtime-update');
+        $buildPath = $fixtureRoot.\DIRECTORY_SEPARATOR.'build';
+        $archivePath = $fixtureRoot.\DIRECTORY_SEPARATOR.'console-build.zip';
+        $manifestPath = $fixtureRoot.\DIRECTORY_SEPARATOR.'console-build.json';
+        $packageRoot = $fixtureRoot.\DIRECTORY_SEPARATOR.'package';
+        $packageFrontendPath = $packageRoot.\DIRECTORY_SEPARATOR.'resources'.\DIRECTORY_SEPARATOR.'admin-frontend';
+        $packageSentinelPath = $packageFrontendPath.\DIRECTORY_SEPARATOR.'package-sentinel.txt';
+
+        $this->deletePath($fixtureRoot);
+        mkdir($buildPath.\DIRECTORY_SEPARATOR.'assets', 0755, true);
+        mkdir($packageFrontendPath, 0755, true);
+        file_put_contents($buildPath.\DIRECTORY_SEPARATOR.'index.html', '<html><body>runtime build</body></html>');
+        file_put_contents($buildPath.\DIRECTORY_SEPARATOR.'ptconfig.js', 'window.ptconfig = {};');
+        file_put_contents($buildPath.\DIRECTORY_SEPARATOR.'assets'.\DIRECTORY_SEPARATOR.'app.js', 'console.log("runtime");');
+        file_put_contents($packageSentinelPath, 'package resources must remain unchanged');
+
+        $zip = new \ZipArchive();
+        self::assertTrue($zip->open($archivePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE));
+        $zip->addFile($buildPath.\DIRECTORY_SEPARATOR.'index.html', 'index.html');
+        $zip->addFile($buildPath.\DIRECTORY_SEPARATOR.'ptconfig.js', 'ptconfig.js');
+        $zip->addFile($buildPath.\DIRECTORY_SEPARATOR.'assets'.\DIRECTORY_SEPARATOR.'app.js', 'assets/app.js');
+        $zip->close();
+
+        file_put_contents($manifestPath, json_encode([
+            'name' => 'console-build',
+            'latest' => '0.2.0',
+            'versions' => [[
+                'version' => '0.2.0',
+                'artifacts' => [
+                    'primary' => [
+                        'url' => 'console-build.zip',
+                        'sha256' => hash_file('sha256', $archivePath),
+                    ],
+                ],
+            ]],
+        ], JSON_UNESCAPED_SLASHES));
+
+        $service = new AdminFrontendBuildService('file://'.$manifestPath);
+        $result = $service->update($packageRoot, base_path(), 'latest', '2.2.6');
+        $runtimePath = $service->runtimeFrontendPath(base_path());
+
+        self::assertSame('package resources must remain unchanged', file_get_contents($packageSentinelPath));
+        self::assertSame($runtimePath, $result['source_path']);
+        self::assertSame('0.2.0', $result['version']);
+        self::assertFileExists($runtimePath.\DIRECTORY_SEPARATOR.'assets'.\DIRECTORY_SEPARATOR.'app.js');
+        self::assertFileExists(public_path('admin/assets/app.js'));
+        self::assertSame('0.2.0', json_decode((string) file_get_contents(public_path('admin/.release-lock.json')), true)['version']);
     }
 
     public function test_project_frontend_pull_command_is_registered(): void

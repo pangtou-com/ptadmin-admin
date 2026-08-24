@@ -73,17 +73,21 @@ php artisan migrate
 php artisan admin:auth
 ```
 
-更新包内置后台前端构建资源：
+包维护或发布前更新内置后台前端构建资源：
 
 ```bash
 php artisan admin:fe:pull
 ```
 
-更新包内置后台前端构建资源并发布到运行目录：
+该命令会写入 `ptadmin/admin` 包内的 `resources/admin-frontend`，不用于 Composer `vendor` 只读的线上宿主。
+
+线上宿主更新后台前端：
 
 ```bash
 php artisan admin:fe:update
 ```
+
+该命令把构建包暂存到宿主 `storage/app/ptadmin/frontend/admin-build`，再发布到 `public/{PTADMIN_WEB_PREFIX}`，不会修改 `vendor`。宿主只需保证 `storage` 和后台前端发布目录可写。
 
 拉取项目二开前端模板源码：
 
