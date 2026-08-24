@@ -269,6 +269,29 @@ class ApplicationStatusSyncServiceTest extends TestCase
         self::assertSame('[INVALID_PAYLOAD] 请求内容无效', $status['last_error']['message']);
     }
 
+    public function test_identity_storage_failure_skips_sync_without_recording_an_error(): void
+    {
+        $blockedDirectory = $this->statusDirectory.'/identity-parent';
+        File::delete(config('ptadmin.application_instance_path'));
+        File::delete(config('ptadmin.application_instance_path').'.lock');
+        File::put($blockedDirectory, 'not-a-directory');
+        config()->set('ptadmin.application_instance_path', $blockedDirectory.'/identity.json');
+        $service = $this->serviceWithResponses([[
+            'contract_version' => 1,
+            'synced_at' => date(DATE_ATOM),
+            'latest' => [],
+            'addons' => [],
+            'advice' => [],
+        ]]);
+
+        $status = $service->sync(true);
+
+        self::assertSame('never', $status['status']);
+        self::assertNull($status['last_error']);
+        self::assertCount(0, $service->requests);
+        self::assertFileDoesNotExist(config('ptadmin.application_status_path'));
+    }
+
     public function test_sync_domain_prefers_current_request_host(): void
     {
         app()->instance('request', Request::create('https://Tenant.Example.com:8443/ptadmin/dashboard'));

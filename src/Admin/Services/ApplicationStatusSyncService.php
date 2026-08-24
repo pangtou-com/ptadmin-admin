@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PTAdmin\Admin\Services;
 
+use PTAdmin\Admin\Exceptions\ApplicationInstanceUnavailableException;
 use PTAdmin\Addon\Addon;
 use PTAdmin\Addon\Service\AddonInstallationRegistry;
 use RuntimeException;
@@ -259,6 +260,8 @@ class ApplicationStatusSyncService
                 'last_error' => null,
                 'response' => $normalized,
             ];
+        } catch (ApplicationInstanceUnavailableException $exception) {
+            return $this->read();
         } catch (Throwable $exception) {
             $status = $this->read();
             $failureCount = min(count(self::FAILURE_RETRY_SECONDS), (int) ($status['failure_count'] ?? 0) + 1);
@@ -766,10 +769,6 @@ class ApplicationStatusSyncService
 
             return 'INVALID_PAYLOAD';
         }
-        if (false !== strpos($exception->getMessage(), 'identity')) {
-            return 'IDENTITY_UNAVAILABLE';
-        }
-
         return 'PLATFORM_UNAVAILABLE';
     }
 

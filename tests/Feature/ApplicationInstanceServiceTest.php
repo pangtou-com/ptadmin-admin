@@ -6,7 +6,6 @@ namespace PTAdmin\Admin\Tests\Feature;
 
 use PTAdmin\Admin\Services\ApplicationInstanceService;
 use PTAdmin\Admin\Tests\TestCase;
-use RuntimeException;
 
 class ApplicationInstanceServiceTest extends TestCase
 {
@@ -19,11 +18,13 @@ class ApplicationInstanceServiceTest extends TestCase
         $this->identityPath = sys_get_temp_dir().'/ptadmin-application-instance-'.getmypid().'.json';
         config()->set('ptadmin.application_instance_path', $this->identityPath);
         @unlink($this->identityPath);
+        @unlink($this->identityPath.'.lock');
     }
 
     protected function tearDown(): void
     {
         @unlink($this->identityPath);
+        @unlink($this->identityPath.'.lock');
 
         parent::tearDown();
     }
@@ -44,21 +45,23 @@ class ApplicationInstanceServiceTest extends TestCase
         self::assertSame($identity['application_instance_id'], ptadmin_application_instance()['application_instance_id']);
     }
 
-    public function test_corrupt_identity_is_not_silently_replaced(): void
+    public function test_corrupt_identity_is_recreated_automatically(): void
     {
+        $originalIdentity = app(ApplicationInstanceService::class)->ensure();
         file_put_contents($this->identityPath, '{invalid-json');
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('identity is unreadable');
+        $identity = app(ApplicationInstanceService::class)->current();
 
-        app(ApplicationInstanceService::class)->ensure();
+        self::assertStringStartsWith('pt_', $identity['application_instance_id']);
+        self::assertNotSame($originalIdentity['application_instance_id'], $identity['application_instance_id']);
+        self::assertJson((string) file_get_contents($this->identityPath));
     }
 
-    public function test_runtime_helper_does_not_recreate_a_missing_application_identity(): void
+    public function test_runtime_helper_initializes_a_missing_application_identity(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('identity is not initialized');
+        $identity = ptadmin_application_instance();
 
-        ptadmin_application_instance();
+        self::assertStringStartsWith('pt_', $identity['application_instance_id']);
+        self::assertFileExists($this->identityPath);
     }
 }

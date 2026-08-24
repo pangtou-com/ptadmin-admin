@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace PTAdmin\Admin\Services;
 
 use Illuminate\Filesystem\Filesystem;
+use PTAdmin\Admin\Exceptions\ApplicationInstanceUnavailableException;
 use RuntimeException;
+use Throwable;
 
 /**
- * Provides the stable identity used by platform license activation.
+ * 提供应用状态采集使用的本地实例标识和签名密钥。
  *
- * The identity is generated once per application installation and is never
- * replaced automatically after a persistence or key parsing failure.
+ * 身份文件缺失或损坏时会自动重建，避免状态采集干预宿主业务。
  */
 final class ApplicationInstanceService
 {
@@ -27,7 +28,7 @@ final class ApplicationInstanceService
      */
     public function current(): array
     {
-        $identity = $this->storedIdentity();
+        $identity = $this->resolveIdentity();
 
         return [
             'application_instance_id' => $identity['application_instance_id'],
@@ -41,59 +42,6 @@ final class ApplicationInstanceService
      */
     public function ensure(): array
     {
-        $path = $this->path();
-        if ($this->filesystem->exists($path)) {
-            return $this->current();
-        }
-
-        $directory = dirname($path);
-        $this->filesystem->ensureDirectoryExists($directory);
-        $key = openssl_pkey_new([
-            'private_key_type' => OPENSSL_KEYTYPE_RSA,
-            'private_key_bits' => 2048,
-        ]);
-        if (false === $key) {
-            throw new RuntimeException('Unable to generate PTAdmin application instance key pair.');
-        }
-
-        $privateKey = '';
-        $publicDetails = openssl_pkey_get_details($key);
-        if (false === $publicDetails || !isset($publicDetails['key'])) {
-            throw new RuntimeException('Unable to read PTAdmin application instance public key.');
-        }
-        if (!openssl_pkey_export($key, $privateKey) || '' === $privateKey) {
-            throw new RuntimeException('Unable to export PTAdmin application instance private key.');
-        }
-
-        $identity = [
-            'application_instance_id' => 'pt_'.bin2hex(random_bytes(16)),
-            'public_key' => $publicDetails['key'],
-            'private_key' => $privateKey,
-            'created_at' => time(),
-        ];
-        $contents = json_encode($identity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
-        $stream = @fopen($path, 'x');
-        if (false === $stream) {
-            if ($this->filesystem->exists($path)) {
-                return $this->current();
-            }
-
-            throw new RuntimeException('Unable to create PTAdmin application instance identity file.');
-        }
-        @chmod($path, 0600);
-        try {
-            $written = fwrite($stream, $contents);
-            if (false === $written || strlen($contents) !== $written) {
-                throw new RuntimeException('Unable to persist PTAdmin application instance identity.');
-            }
-        } catch (\Throwable $exception) {
-            fclose($stream);
-            @unlink($path);
-
-            throw $exception;
-        }
-        fclose($stream);
-
         return $this->current();
     }
 
@@ -109,10 +57,10 @@ final class ApplicationInstanceService
 
     public function sign(string $payload): string
     {
-        $identity = $this->storedIdentity();
+        $identity = $this->resolveIdentity();
         $privateKey = openssl_pkey_get_private($identity['private_key']);
         if (false === $privateKey || !openssl_sign($payload, $signature, $privateKey, OPENSSL_ALGO_SHA256)) {
-            throw new RuntimeException('Unable to sign PTAdmin application instance payload.');
+            throw new ApplicationInstanceUnavailableException('Unable to sign PTAdmin application instance payload.');
         }
 
         return base64_encode($signature);
@@ -126,15 +74,69 @@ final class ApplicationInstanceService
         );
     }
 
-    /**
-     * @return array{application_instance_id:string, public_key:string, private_key:string, created_at:int}
-     */
-    private function storedIdentity(): array
+    /** @return array{application_instance_id:string, public_key:string, private_key:string, created_at:int} */
+    private function resolveIdentity(): array
     {
         $path = $this->path();
-        if (!$this->filesystem->exists($path)) {
-            throw new RuntimeException('PTAdmin application instance identity is not initialized.');
+        $directory = dirname($path);
+
+        try {
+            $this->filesystem->ensureDirectoryExists($directory);
+        } catch (Throwable $exception) {
+            throw new ApplicationInstanceUnavailableException(
+                'Unable to prepare PTAdmin application instance identity directory.',
+                0,
+                $exception
+            );
         }
+
+        $lock = @fopen($path.'.lock', 'c');
+        if (false === $lock || !flock($lock, LOCK_EX)) {
+            if (is_resource($lock)) {
+                fclose($lock);
+            }
+
+            throw new ApplicationInstanceUnavailableException('Unable to lock PTAdmin application instance identity.');
+        }
+        @chmod($path.'.lock', 0600);
+
+        try {
+            try {
+                return $this->storedIdentity($path);
+            } catch (Throwable $exception) {
+                if ($this->filesystem->exists($path) && !$this->filesystem->delete($path)) {
+                    throw new ApplicationInstanceUnavailableException(
+                        'Unable to replace PTAdmin application instance identity.',
+                        0,
+                        $exception
+                    );
+                }
+            }
+
+            try {
+                return $this->createIdentity($path);
+            } catch (ApplicationInstanceUnavailableException $exception) {
+                throw $exception;
+            } catch (Throwable $exception) {
+                throw new ApplicationInstanceUnavailableException(
+                    'Unable to initialize PTAdmin application instance identity.',
+                    0,
+                    $exception
+                );
+            }
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    /** @return array{application_instance_id:string, public_key:string, private_key:string, created_at:int} */
+    private function storedIdentity(string $path): array
+    {
+        if (!$this->filesystem->exists($path)) {
+            throw new RuntimeException('PTAdmin application instance identity does not exist.');
+        }
+
         @chmod($path, 0600);
 
         try {
@@ -166,5 +168,54 @@ final class ApplicationInstanceService
             'private_key' => $identity['private_key'],
             'created_at' => (int) ($identity['created_at'] ?? 0),
         ];
+    }
+
+    /** @return array{application_instance_id:string, public_key:string, private_key:string, created_at:int} */
+    private function createIdentity(string $path): array
+    {
+        $key = openssl_pkey_new([
+            'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            'private_key_bits' => 2048,
+        ]);
+        if (false === $key) {
+            throw new ApplicationInstanceUnavailableException('Unable to generate PTAdmin application instance key pair.');
+        }
+
+        $privateKey = '';
+        $publicDetails = openssl_pkey_get_details($key);
+        if (false === $publicDetails || !isset($publicDetails['key'])) {
+            throw new ApplicationInstanceUnavailableException('Unable to read PTAdmin application instance public key.');
+        }
+        if (!openssl_pkey_export($key, $privateKey) || '' === $privateKey) {
+            throw new ApplicationInstanceUnavailableException('Unable to export PTAdmin application instance private key.');
+        }
+
+        $identity = [
+            'application_instance_id' => 'pt_'.bin2hex(random_bytes(16)),
+            'public_key' => $publicDetails['key'],
+            'private_key' => $privateKey,
+            'created_at' => time(),
+        ];
+        $contents = json_encode($identity, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $stream = @fopen($path, 'x');
+        if (false === $stream) {
+            throw new ApplicationInstanceUnavailableException('Unable to create PTAdmin application instance identity file.');
+        }
+        @chmod($path, 0600);
+
+        try {
+            $written = fwrite($stream, $contents);
+            if (false === $written || strlen($contents) !== $written) {
+                throw new ApplicationInstanceUnavailableException('Unable to persist PTAdmin application instance identity.');
+            }
+        } catch (Throwable $exception) {
+            fclose($stream);
+            @unlink($path);
+
+            throw $exception;
+        }
+        fclose($stream);
+
+        return $identity;
     }
 }
