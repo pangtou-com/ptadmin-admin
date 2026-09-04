@@ -197,7 +197,7 @@ class ApplicationStatusSyncService
         }, $warnings));
         $parts = [];
         foreach ([
-            'blocked' => '已阻断',
+            'blocked' => '授权异常',
             'grace' => '待激活',
             'legacy_review' => '待归档',
             'unknown' => '待同步',
@@ -487,14 +487,29 @@ class ApplicationStatusSyncService
             ];
         }
 
+        $service = app($serviceClass);
+        $delivery = null;
+        if (method_exists($service, 'deliveryStatus')) {
+            try {
+                $delivery = $service->deliveryStatus($code);
+            } catch (Throwable $exception) {
+                $delivery = [
+                    'status' => 'unverified',
+                    'state' => 'unverified',
+                    'reason_code' => 'READ_ERROR',
+                ];
+            }
+        }
+
         try {
-            $license = app($serviceClass)->status($code);
-            $runtime = app($serviceClass)->runtimeStatus($code);
+            $license = $service->status($code);
+            $runtime = $service->runtimeStatus($code);
         } catch (Throwable $exception) {
             return [
                 'required' => $required,
                 'state' => 'unreadable',
                 'runtime_state' => 'unknown',
+                'delivery_license' => is_array($delivery) ? $delivery : null,
             ];
         }
         if (null === $license) {
@@ -505,6 +520,7 @@ class ApplicationStatusSyncService
                 'reason_code' => (string) ($runtime['reason_code'] ?? ''),
                 'grace_started_at' => (int) ($runtime['grace_started_at'] ?? 0),
                 'grace_ends_at' => (int) ($runtime['grace_ends_at'] ?? 0),
+                'delivery_license' => is_array($delivery) ? $delivery : null,
             ];
         }
 
@@ -517,6 +533,7 @@ class ApplicationStatusSyncService
             'last_verified_at' => (int) ($license['last_verified_at'] ?? 0),
             'valid_until' => (int) ($license['valid_until'] ?? 0),
             'reason_code' => (string) ($license['reason_code'] ?? ''),
+            'delivery_license' => is_array($delivery) ? $delivery : null,
         ];
     }
 

@@ -226,7 +226,7 @@ class ApplicationStatusSyncServiceTest extends TestCase
         self::assertSame('addon-license-summary', $advice['id']);
         self::assertSame('danger', $advice['level']);
         self::assertSame('3 个插件需要关注授权状态', $advice['title']);
-        self::assertStringContainsString('已阻断 1 个', $advice['message']);
+        self::assertStringContainsString('授权异常 1 个', $advice['message']);
         self::assertStringContainsString('待激活 1 个', $advice['message']);
         self::assertStringContainsString('待归档 1 个', $advice['message']);
         self::assertSame('/cloud/apps', $advice['action']['url']);

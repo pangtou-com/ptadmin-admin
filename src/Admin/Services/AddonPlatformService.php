@@ -317,9 +317,6 @@ class AddonPlatformService
      */
     public function upgrade(string $code, int $versionId = 0, bool $force = false): array
     {
-        if ($this->supportsApplicationLicenses()) {
-            $this->addonLicenseService()->assertCanRun($code);
-        }
         AddonAction::upgrade($code, $versionId, $force);
 
         return $this->status($code);
@@ -527,6 +524,7 @@ class AddonPlatformService
             'license' => $this->supportsApplicationLicenses()
                 ? $this->addonLicenseService()->status($code)
                 : null,
+            'delivery_license' => $this->addonDeliveryLicense($code),
         ];
     }
 
@@ -566,6 +564,32 @@ class AddonPlatformService
             return is_array($status) ? $status : null;
         } catch (Throwable $exception) {
             return null;
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    private function addonDeliveryLicense(string $code): ?array
+    {
+        if (!$this->supportsApplicationLicenses()) {
+            return null;
+        }
+
+        $service = $this->addonLicenseService();
+        if (!method_exists($service, 'deliveryStatus')) {
+            return null;
+        }
+
+        try {
+            $status = $service->deliveryStatus($code);
+
+            return is_array($status) ? $status : null;
+        } catch (Throwable $exception) {
+            return [
+                'addon_code' => $code,
+                'status' => 'unverified',
+                'state' => 'unverified',
+                'reason_code' => 'READ_ERROR',
+            ];
         }
     }
 
