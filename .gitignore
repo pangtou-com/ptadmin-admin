@@ -1,0 +1,16 @@
+/vendor
+/.phpunit.result.cache
+/.phpunit.cache
+/node_modules
+/.idea
+/.DS_Store
+.env
+.env.backup
+.env.production
+/storage/*.key
+/storage/logs/*.log
+/storage/logs/*.txt
+/bootstrap/cache/*.php
+/bootstrap/cache/*.json
+public/storage
+public/addons

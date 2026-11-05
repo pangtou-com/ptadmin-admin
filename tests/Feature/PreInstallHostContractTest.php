@@ -1,0 +1,81 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Bootstrap\LoadConfiguration;
+use Tests\TestCase;
+
+final class PreInstallHostContractTest extends TestCase
+{
+    public function createApplication(): Application
+    {
+        $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
+        $storage = sys_get_temp_dir().'/ptadmin-admin-preinstall-'.bin2hex(random_bytes(6));
+        foreach (['framework/cache', 'framework/sessions', 'framework/views', 'logs', 'public', 'bootstrap/cache'] as $directory) {
+            mkdir($storage.'/'.$directory, 0700, true);
+        }
+        $app->useStoragePath($storage);
+        $app->usePublicPath($storage.'/public');
+        $app->useBootstrapPath($storage.'/bootstrap');
+        $app->afterBootstrapping(LoadConfiguration::class, static function (Application $app) use ($storage): void {
+            $app['config']->set([
+                'database.default' => 'sqlite',
+                'database.connections.sqlite.database' => $storage.'/database/ptadmin.db',
+                'database.connections.sqlite.foreign_key_constraints' => true,
+                'cache.default' => 'business-cache',
+                'cache.limiter' => 'business-cache',
+                'cache.stores.business-cache' => ['driver' => 'database', 'table' => 'cache', 'connection' => null],
+                'session.driver' => 'database',
+                'view.compiled' => $storage.'/framework/views',
+                'ptadmin.install.folders' => [],
+                'ptadmin.install.files' => [],
+            ]);
+        });
+        $app->make(Kernel::class)->bootstrap();
+
+        return $app;
+    }
+
+    public function test_host_and_install_wizard_boot_without_a_database(): void
+    {
+        self::assertSame([], $this->app['db']->getConnections());
+        $this->get('/')->assertRedirect('/__ptadmin__/install');
+        $this->getJson('/api/up')->assertRedirect('/__ptadmin__/install');
+        $this->get('/__ptadmin__/install')->assertOk();
+        $this->getJson('/__ptadmin__/install/status')->assertOk()->assertJsonPath('installed', false);
+        self::assertSame([], $this->app['db']->getConnections());
+        self::assertFileDoesNotExist(storage_path('database/ptadmin.db'));
+    }
+
+    public function test_wizard_validation_does_not_require_an_app_key_or_database(): void
+    {
+        $this->post('/__ptadmin__/install/accept')->assertRedirect();
+        $this->get('/__ptadmin__/install/requirements')->assertOk();
+        $this->get('/__ptadmin__/install/account')->assertOk();
+        $this->postJson('/__ptadmin__/install', [])->assertStatus(422);
+        $response = $this->post('/__ptadmin__/install/stream', [])->assertOk();
+        $event = json_decode(trim($response->streamedContent()), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('error', $event['type']);
+        self::assertSame([], $this->app['db']->getConnections());
+    }
+
+    public function test_installed_home_uses_the_generated_admin_prefix(): void
+    {
+        $this->app->make(\PTAdmin\Core\Install\InstallStateStore::class)
+            ->markInstalled('0.0.13', 'admin_6c24fd45aea7');
+        config([
+            'app.key' => 'base64:'.base64_encode(random_bytes(32)),
+            'ptadmin.web_prefix' => 'admin_6c24fd45aea7',
+        ]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('基础应用已就绪')
+            ->assertSee('href="http://localhost/admin_6c24fd45aea7"', false)
+            ->assertSee('v0.0.13');
+    }
+}
