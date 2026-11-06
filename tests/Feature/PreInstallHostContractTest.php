@@ -76,6 +76,6 @@ final class PreInstallHostContractTest extends TestCase
             ->assertOk()
             ->assertSee('基础应用已就绪')
             ->assertSee('href="http://localhost/admin_6c24fd45aea7"', false)
-            ->assertSee('v0.1.0');
+            ->assertSee('v0.2.0');
     }
 }
