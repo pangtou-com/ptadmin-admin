@@ -4,12 +4,12 @@
 
 仓库只负责 Laravel 应用入口、运行目录、宿主路由与扩展位置；后台认证、权限、Schema、插件生命周期、安装向导和已构建 Admin Shell 统一由 `ptadmin/core` 提供。这里不重复维护 Core 实现，也不再依赖历史 `ptadmin/admin`、`ptadmin/addon`、`ptadmin/schema` 或 Easy 包。
 
-运行环境要求 PHP 8.2–8.x。
+基础壳从 `v0.1.0` 开始发布，依赖 `ptadmin/core:^0.1.0`。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
 
 ## 创建应用
 
 ```bash
-composer create-project ptadmin/admin your-project-name
+composer create-project ptadmin/admin your-project-name "^0.1.0"
 cd your-project-name
 ```
 
