@@ -66,7 +66,7 @@ final class PreInstallHostContractTest extends TestCase
     public function test_installed_home_uses_the_generated_admin_prefix(): void
     {
         $this->app->make(\PTAdmin\Core\Install\InstallStateStore::class)
-            ->markInstalled('0.0.13', 'admin_6c24fd45aea7');
+            ->markInstalled('0.1.0', 'admin_6c24fd45aea7');
         config([
             'app.key' => 'base64:'.base64_encode(random_bytes(32)),
             'ptadmin.web_prefix' => 'admin_6c24fd45aea7',
@@ -76,6 +76,6 @@ final class PreInstallHostContractTest extends TestCase
             ->assertOk()
             ->assertSee('基础应用已就绪')
             ->assertSee('href="http://localhost/admin_6c24fd45aea7"', false)
-            ->assertSee('v0.0.13');
+            ->assertSee('v0.1.0');
     }
 }
