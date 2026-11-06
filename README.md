@@ -4,12 +4,12 @@
 
 仓库只负责 Laravel 应用入口、运行目录、宿主路由与扩展位置；后台认证、权限、Schema、插件生命周期、安装向导和已构建 Admin Shell 统一由 `ptadmin/core` 提供。这里不重复维护 Core 实现，也不再依赖历史 `ptadmin/admin`、`ptadmin/addon`、`ptadmin/schema` 或 Easy 包。
 
-当前基础壳版本为 `v0.2.0`，依赖 `ptadmin/core:^0.2.0`，支持菜单 `children` 层级声明。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
+当前基础壳版本为 `v0.2.1`，依赖 `ptadmin/core:^0.2.0`，支持菜单 `children` 层级声明。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
 
 ## 创建应用
 
 ```bash
-composer create-project ptadmin/admin your-project-name "^0.2.0"
+composer create-project ptadmin/admin your-project-name "^0.2.1"
 cd your-project-name
 ```
 
@@ -22,6 +22,8 @@ cd your-project-name
 - `storage/`
 
 首次访问任意页面时，Core 会重定向到 `/__ptadmin__/install`。安装向导负责写入环境配置、生成 `APP_KEY`、创建应用身份和随机后台入口、执行迁移并发布 Admin Shell；不要在安装前手工执行 `key:generate` 或 `migrate`。
+
+安装向导默认使用简体中文，语言区域为 `zh_CN`，与 Core 中文语言包目录一致。可通过 `APP_LOCALE` 显式选择语言，例如 `en`；`APP_FALLBACK_LOCALE` 默认是 `en`。已有应用若仍配置为 `zh-cn`，应改为 `zh_CN`，并在使用配置缓存时执行 `php artisan config:clear`；无需重新安装数据库。
 
 ## 应用边界
 

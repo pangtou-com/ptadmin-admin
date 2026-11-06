@@ -45,8 +45,23 @@ final class PreInstallHostContractTest extends TestCase
         self::assertSame([], $this->app['db']->getConnections());
         $this->get('/')->assertRedirect('/__ptadmin__/install');
         $this->getJson('/api/up')->assertRedirect('/__ptadmin__/install');
-        $this->get('/__ptadmin__/install')->assertOk();
+        $this->get('/__ptadmin__/install')->assertOk()
+            ->assertSee('lang="zh-CN"', false)
+            ->assertSee('PTAdmin 安装向导')
+            ->assertDontSee('PTAdmin Installation Wizard');
         $this->getJson('/__ptadmin__/install/status')->assertOk()->assertJsonPath('installed', false);
+        self::assertSame([], $this->app['db']->getConnections());
+        self::assertFileDoesNotExist(storage_path('database/ptadmin.db'));
+    }
+
+    public function test_install_wizard_can_use_english_when_explicitly_selected(): void
+    {
+        $this->app->setLocale('en');
+
+        $this->get('/__ptadmin__/install')->assertOk()
+            ->assertSee('lang="en"', false)
+            ->assertSee('PTAdmin Installation Wizard')
+            ->assertDontSee('PTAdmin 安装向导');
         self::assertSame([], $this->app['db']->getConnections());
         self::assertFileDoesNotExist(storage_path('database/ptadmin.db'));
     }

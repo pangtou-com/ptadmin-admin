@@ -38,10 +38,10 @@ return [
     'timezone' => 'Asia/Shanghai',
 
     // 应用区域，默认语言配置
-    'locale' => 'zh-cn',
+    'locale' => env('APP_LOCALE', 'zh_CN'),
 
     // 当前提供的默认语言不可用时，应用将会使用该语言
-    'fallback_locale' => 'en',
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => 'en_US',
 
