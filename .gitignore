@@ -14,3 +14,4 @@
 /bootstrap/cache/*.json
 public/storage
 public/addons
+/public/themes/
