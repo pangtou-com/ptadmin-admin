@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use Composer\InstalledVersions;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
@@ -27,7 +28,7 @@ final class OfficialUpdateHostTest extends TestCase
         $app->usePublicPath($this->temporaryStorage.'/public');
         $app->useBootstrapPath($this->temporaryStorage.'/bootstrap');
         (new InstallStateStore($this->temporaryStorage.'/app/ptadmin/install'))
-            ->markInstalled('0.5.2', 'admin_release_test');
+            ->markInstalled(ltrim((string) InstalledVersions::getPrettyVersion('ptadmin/core'), 'v'), 'admin_release_test');
         $app->make(Kernel::class)->bootstrap();
 
         return $app;
@@ -47,8 +48,11 @@ final class OfficialUpdateHostTest extends TestCase
         self::assertContains(\PTAdmin\Core\Http\Middleware\AuthenticateSessionMiddleware::class, $this->app['router']->gatherRouteMiddleware($route));
         self::assertArrayHasKey('ptadmin:updates:install', $this->app->make(Kernel::class)->all());
         $this->app->make(AdminFrontendPublisher::class)->publishForInstall('admin_release_test');
-        $manifest = (new AdminFrontendManifest('0.5.2', 1, 1))->verify(public_path('admin_release_test'));
-        self::assertSame('0.4.2', $manifest['frontend_version']);
-        self::assertSame('5866b5c6ad49be9dc536323a6e252d8c8f72930f6754c6d94e348351664cdec1', $manifest['artifact_sha256']);
+        $validator = $this->app->make(AdminFrontendManifest::class);
+        $manifest = $validator->verify(public_path('admin_release_test'));
+        $bundled = $validator->verify(config('ptadmin.frontend.bundled_path'));
+        foreach (['frontend_version', 'artifact_sha256', 'source_sha256', 'git_commit'] as $field) {
+            self::assertSame($bundled[$field], $manifest[$field]);
+        }
     }
 }
