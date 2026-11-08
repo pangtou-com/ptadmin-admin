@@ -27,7 +27,7 @@ final class OfficialUpdateHostTest extends TestCase
         $app->usePublicPath($this->temporaryStorage.'/public');
         $app->useBootstrapPath($this->temporaryStorage.'/bootstrap');
         (new InstallStateStore($this->temporaryStorage.'/app/ptadmin/install'))
-            ->markInstalled('0.5.0', 'admin_release_test');
+            ->markInstalled('0.5.1', 'admin_release_test');
         $app->make(Kernel::class)->bootstrap();
 
         return $app;
@@ -47,8 +47,8 @@ final class OfficialUpdateHostTest extends TestCase
         self::assertContains(\PTAdmin\Core\Http\Middleware\AuthenticateSessionMiddleware::class, $this->app['router']->gatherRouteMiddleware($route));
         self::assertArrayHasKey('ptadmin:updates:install', $this->app->make(Kernel::class)->all());
         $this->app->make(AdminFrontendPublisher::class)->publishForInstall('admin_release_test');
-        $manifest = (new AdminFrontendManifest('0.5.0', 1, 1))->verify(public_path('admin_release_test'));
-        self::assertSame('0.4.0', $manifest['frontend_version']);
-        self::assertSame('5421b5e74d5563b80b80f00489799b9ba546900a82dee950e8f960e5f6585f0e', $manifest['artifact_sha256']);
+        $manifest = (new AdminFrontendManifest('0.5.1', 1, 1))->verify(public_path('admin_release_test'));
+        self::assertSame('0.4.1', $manifest['frontend_version']);
+        self::assertSame('8146a6db1977cb704c182a755d98218447378c6fc73ffb044b4dde449e02d2e0', $manifest['artifact_sha256']);
     }
 }
