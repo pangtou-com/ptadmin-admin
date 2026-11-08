@@ -4,12 +4,12 @@
 
 仓库只负责 Laravel 应用入口、运行目录、宿主路由与扩展位置；后台认证、权限、Schema、插件生命周期、安装向导和已构建 Admin Shell 统一由 `ptadmin/core` 提供。这里不重复维护 Core 实现，也不再依赖历史 `ptadmin/admin`、`ptadmin/addon`、`ptadmin/schema` 或 Easy 包。
 
-当前基础壳版本为 `v0.4.1`，依赖 `ptadmin/core:^0.4.2`，包含官方版本检查、安全公告与受限环境更新指引，配套 Shell `0.3.1`。官方版本目录通过固定 HTTPS 接口读取，无需配置发行签名公钥。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
+当前基础壳版本为 `v0.5.0`，依赖 `ptadmin/core:^0.5.0`，锁定 Core `v0.5.0`，配套官方 Shell `0.4.0`，支持版本检查、安全公告以及符合条件的 Core 和 Shell 在线更新。官方版本目录通过固定 HTTPS 接口读取，无需配置发行签名公钥。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
 
 ## 创建应用
 
 ```bash
-composer create-project ptadmin/admin your-project-name "^0.3.0"
+composer create-project ptadmin/admin your-project-name "0.5.0"
 cd your-project-name
 ```
 
@@ -36,6 +36,14 @@ cd your-project-name
 - `tests/`：宿主启动、安装前隔离和基础路由契约
 
 后台前端默认由 Core 随包提供并发布到 `public/{随机后台前缀}/`。业务应用前端应按应用模块协议发布到该目录的 `modules/app/`，插件前端发布到 `plugins/{code}/`；基础壳不内置 `app.ptadmin.com` 的前端源码工作区。
+
+## 安装后的更新
+
+创始人可在后台“系统信息 → 版本与更新”检查版本。有更高的兼容版本且环境允许时，点击“更新至 X.Y.Z”，确认后在任务中心查看进度。Core 更新前须完成数据库备份；更新期间应用会进入维护状态，成功后刷新后台。
+
+Core 在线更新需要可执行的 PHP CLI、Composer 和相应目录写权限。可通过 `PTADMIN_UPDATE_PHP_BINARY`、`PTADMIN_COMPOSER_PATH` 指定服务器已有程序路径。Git/CI 交付、自定义 Shell 或受限环境继续使用项目部署流程，不通过调整权限或版本号绕过检查。
+
+本版安装的是 Core 正式包携带的 Shell `0.4.0`；官网 Site 单独构建的界面不随基础壳自动交付。重新安装最新版后，没有更高版本时不显示更新按钮；验证升级流程须使用更高的正式目标版本。
 
 ## 开发与测试
 
