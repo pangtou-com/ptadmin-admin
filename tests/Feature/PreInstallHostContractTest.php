@@ -66,6 +66,18 @@ final class PreInstallHostContractTest extends TestCase
         self::assertFileDoesNotExist(storage_path('database/ptadmin.db'));
     }
 
+    public function test_new_installation_prepares_a_random_entry_without_a_fixed_admin_prefix(): void
+    {
+        $machine = $this->app->make(\PTAdmin\Core\Install\InstallStateMachine::class);
+        $prepared = $machine->prepare();
+        $prefix = $prepared['state']['web_prefix'];
+
+        self::assertMatchesRegularExpression('/^[a-z][a-z0-9]{11}$/', $prefix);
+        self::assertSame($prefix, $machine->prepare()['state']['web_prefix']);
+        self::assertSame([], $this->app['db']->getConnections());
+        self::assertFileDoesNotExist(storage_path('database/ptadmin.db'));
+    }
+
     public function test_wizard_validation_does_not_require_an_app_key_or_database(): void
     {
         $this->post('/__ptadmin__/install/accept')->assertRedirect();
@@ -91,6 +103,6 @@ final class PreInstallHostContractTest extends TestCase
             ->assertOk()
             ->assertSee('基础应用已就绪')
             ->assertSee('href="http://localhost/admin_6c24fd45aea7"', false)
-            ->assertSee('v0.5.1');
+            ->assertSee('v0.5.2');
     }
 }
