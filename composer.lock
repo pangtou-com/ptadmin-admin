@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "521bf5335ce28fec3eb53b0ee09f437d",
+    "content-hash": "4235321f6a59805d84e3ddf206497770",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -3385,16 +3385,16 @@
         },
         {
             "name": "ptadmin/core",
-            "version": "v0.8.1",
+            "version": "v0.8.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pangtou-com/ptadmin-core.git",
-                "reference": "9366a46567f18f90062a85ca633f1ceec98b29ef"
+                "reference": "86c3eda3af422d9f14cfef1b4191eaad46821b52"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pangtou-com/ptadmin-core/zipball/9366a46567f18f90062a85ca633f1ceec98b29ef",
-                "reference": "9366a46567f18f90062a85ca633f1ceec98b29ef",
+                "url": "https://api.github.com/repos/pangtou-com/ptadmin-core/zipball/86c3eda3af422d9f14cfef1b4191eaad46821b52",
+                "reference": "86c3eda3af422d9f14cfef1b4191eaad46821b52",
                 "shasum": ""
             },
             "require": {
@@ -3442,9 +3442,9 @@
             "description": "PTAdmin core package with Admin, Addon, Schema and Core runtime.",
             "support": {
                 "issues": "https://github.com/pangtou-com/ptadmin-core/issues",
-                "source": "https://github.com/pangtou-com/ptadmin-core/tree/v0.8.1"
+                "source": "https://github.com/pangtou-com/ptadmin-core/tree/v0.8.2"
             },
-            "time": "2026-11-10T10:09:59+00:00"
+            "time": "2026-11-10T10:21:02+00:00"
         },
         {
             "name": "ralouphie/getallheaders",
