@@ -19,7 +19,7 @@
     "require": {
         "php": ">=8.2 <9.0",
         "laravel/framework": "^12.68",
-        "ptadmin/core": "^0.8.0",
+        "ptadmin/core": "^0.8.1",
         "bacon/bacon-qr-code": "^2.0",
         "doctrine/dbal": "^3.8"
     },
