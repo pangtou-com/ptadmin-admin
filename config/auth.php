@@ -21,24 +21,11 @@ declare(strict_types=1);
  *  Email:     vip@pangtou.com
  */
 
+// 前台使用 web guard，模型与身份服务由 Core 提供。
 return [
-    'defaults' => [
-        'guard' => 'web',
-        'passwords' => 'users',
-    ],
-    'guards' => [
-        'web' => [
-            'driver' => 'session',
-            'provider' => 'users',
-        ],
-    ],
-    // 基础壳不内置前台会员模型；业务应用可以替换为自己的 Eloquent provider。
-    'providers' => [
-        'users' => [
-            'driver' => 'database',
-            'table' => 'users',
-        ],
-    ],
+    'defaults' => ['guard' => 'web', 'passwords' => 'users'],
+    'guards' => ['web' => ['driver' => 'session', 'provider' => 'users']],
+    'providers' => ['users' => ['driver' => 'eloquent', 'model' => \PTAdmin\User\Models\User::class]],
     'passwords' => [
         'users' => [
             'provider' => 'users',

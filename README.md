@@ -29,6 +29,10 @@ cd your-project-name
 
 ## 应用边界
 
+开发源码改为使用 Core 的 `PTAdmin\User\Models\User` 和 `UserIdentityInterface`；会员表、默认身份实现和失效事件由 Core 统一提供，基础壳不重复定义模型或建表迁移。宿主 `config/auth.php` 显式配置前台 `web` guard、`users` provider 及密码重置 broker，provider 使用 Core `User`。此配套调整尚未发布。
+
+宿主可在 `config/auth.php` 替换 `web` 对应 provider 的用户模型，或通过容器绑定替换 Core 会员接口，所有插件复用同一个实现。安装向导只创建后台创始人，不创建默认会员；本次不包含前台注册、登录页面。已有会员表与数据由迁移保留，使用自定义结构的宿主需提供适配器。
+
 - `app/`：宿主业务代码与应用级扩展
 - `addons/`：通过正常安装流程获得的插件实例
 - `database/`：宿主自己的迁移和数据初始化

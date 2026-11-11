@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use PTAdmin\User\Models\User;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Bootstrap\LoadConfiguration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use PTAdmin\Admin\Auth\AuthorizationService;
 use PTAdmin\Admin\Models\Admin;
 use PTAdmin\Addon\Lifecycle\Installer;
 use PTAdmin\Addon\Lifecycle\StateManager;
-use PTAdmin\Core\Auth\Session\SessionManager;
 use PTAdmin\Core\Install\AdminFrontendManifest;
 use PTAdmin\Core\Install\EnvironmentFile;
 use PTAdmin\Core\Install\InstallService;
@@ -48,7 +51,6 @@ final class NavigationPermissionInstallationTest extends TestCase
                 'app.key' => (new EnvironmentFile($this->root.'/.env'))->get('APP_KEY') ?? '',
                 'database.default' => 'sqlite',
                 'database.connections.sqlite.database' => $this->root.'/storage/database/install.sqlite',
-                'database.connections.sqlite.prefix' => '',
                 'database.connections.sqlite.foreign_key_constraints' => true,
                 'cache.default' => 'array', 'session.driver' => 'array',
                 'view.compiled' => $this->root.'/storage/framework/views',
@@ -74,7 +76,56 @@ final class NavigationPermissionInstallationTest extends TestCase
         (new Filesystem())->deleteDirectory($this->root);
     }
 
-    public function testFreshInstallationAndAddonLifecycleUseIndependentNavigationAndPermissions(): void
+    public static function databasePrefixes(): array
+    {
+        return ['without prefix' => [''], 'with prefix' => ['pt_']];
+    }
+
+    #[DataProvider('databasePrefixes')]
+    public function testFreshInstallationProvidesAnIndependentUserModel(string $databasePrefix): void
+    {
+        self::assertSame([], $this->app['db']->getConnections());
+        $result = app(InstallService::class)->install([
+            'username' => 'founder', 'password' => 'test-password',
+            'db_connection' => 'sqlite', 'db_database' => 'install.sqlite', 'db_prefix' => $databasePrefix,
+        ]);
+        self::assertTrue($result['installed']);
+        $this->app['db']->disconnect();
+        $this->refreshApplication();
+        self::assertSame($databasePrefix, DB::connection()->getTablePrefix());
+        self::assertSame(0, User::query()->count());
+        self::assertSame(1, Admin::query()->count());
+
+        $user = User::create([
+            'name' => '基础会员', 'email' => 'member@example.test', 'password' => 'member-password',
+            'status' => false, 'email_verified_at' => now(), 'phone_verified_at' => now(), 'realname_verified_at' => now(),
+        ])->refresh();
+        self::assertTrue($user->status);
+        self::assertNull($user->email_verified_at);
+        self::assertNull($user->phone_verified_at);
+        self::assertNull($user->realname_verified_at);
+        self::assertTrue(Hash::check('member-password', $user->password));
+        self::assertArrayNotHasKey('password', $user->toArray());
+        self::assertArrayNotHasKey('remember_token', $user->toArray());
+        self::assertFalse(Auth::guard('web')->attempt(['email' => $user->email, 'password' => 'incorrect', 'status' => true]));
+        self::assertTrue(Auth::guard('web')->attempt(['email' => $user->email, 'password' => 'member-password', 'status' => true]));
+        self::assertInstanceOf(User::class, Auth::guard('web')->user());
+        $this->getJson('/ptadmin/session')->assertUnauthorized();
+
+        $token = $this->app['auth.password.broker']->createToken($user);
+        self::assertTrue($this->app['auth.password.broker']->tokenExists($user, $token));
+        $this->assertDatabaseHas('password_reset_tokens', ['email' => $user->email]);
+
+        Auth::guard('web')->logout();
+        $user->status = false;
+        $user->save();
+        self::assertFalse(Auth::guard('web')->attempt(['email' => $user->email, 'password' => 'member-password', 'status' => true]));
+        self::assertSame(0, $this->app->make(Kernel::class)->call('migrate', ['--force' => true]));
+        self::assertSame(1, User::query()->count());
+    }
+
+    #[DataProvider('databasePrefixes')]
+    public function testFreshInstallationAndAddonLifecycleUseIndependentNavigationAndPermissions(string $databasePrefix): void
     {
         self::assertSame([], $this->app['db']->getConnections());
         $this->getJson('/ptadmin/session')->assertRedirect('/__ptadmin__/install');
@@ -82,7 +133,7 @@ final class NavigationPermissionInstallationTest extends TestCase
 
         $result = app(InstallService::class)->install([
             'username' => 'founder', 'password' => 'test-password',
-            'db_connection' => 'sqlite', 'db_database' => 'install.sqlite', 'db_prefix' => '',
+            'db_connection' => 'sqlite', 'db_database' => 'install.sqlite', 'db_prefix' => $databasePrefix,
         ]);
         self::assertTrue($result['installed']);
         $prefix = $result['result']['web_prefix'];
@@ -96,8 +147,12 @@ final class NavigationPermissionInstallationTest extends TestCase
         // 安装前只注册安装路由；下一次应用启动才加载授权和业务接口。
         $this->app['db']->disconnect();
         $this->refreshApplication();
+        $login = $this->postJson('/ptadmin/login', [
+            'username' => 'founder', 'password' => 'test-password',
+        ])->assertOk()->assertJsonPath('code', 0);
+        self::assertSame($databasePrefix, DB::connection()->getTablePrefix());
         $admin = Admin::query()->firstOrFail();
-        $this->withToken(app(SessionManager::class)->issue('admin', $admin->id, 'admin')->toArray()['access_token']);
+        $this->withToken($login->json('data.access_token'));
         $this->getJson('/ptadmin/session')->assertOk();
         $catalog = $this->getJson('/ptadmin/authorization/catalog')->assertOk()->json('data.resources');
         self::assertContains('permission', array_column($catalog, 'type'));
