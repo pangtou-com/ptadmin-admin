@@ -4,14 +4,16 @@
 
 仓库只负责 Laravel 应用入口、运行目录、宿主路由与扩展位置；后台认证、权限、Schema、插件生命周期、安装向导和已构建 Admin Shell 统一由 `ptadmin/core` 提供。这里不重复维护 Core 实现，也不再依赖历史 `ptadmin/admin`、`ptadmin/addon`、`ptadmin/schema` 或 Easy 包。
 
-当前基础壳版本为 `v0.11.0`，依赖 `ptadmin/core:^0.11.0`，锁定 Core `v0.11.0`，配套官方 Shell `0.11.0`，支持版本检查、安全公告以及符合条件的 Core 和 Shell 在线更新。官方版本目录通过固定 HTTPS 接口读取，无需配置发行签名公钥。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
+当前基础壳版本为 `v0.12.0`，依赖 `ptadmin/core:^0.12.0`，锁定 Core `v0.12.0`，配套官方 Shell `0.12.0`，支持版本检查、安全公告以及符合条件的 Core 和 Shell 在线更新。官方版本目录通过固定 HTTPS 接口读取，无需配置发行签名公钥。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
+
+0.12.0 新增 Schema 批量输出 Hook，列表、详情和树节点可统一补充展示字段；从 0.11.0 升级无新增数据库迁移，插件需声明兼容 Core 0.12.x。
 
 0.11.0 提供通知批量发送、投递查询与认证回执接口。现有宿主升级时需备份并执行新增通知投递字段迁移，短信插件使用支持 Core 0.11.x 的版本。
 
 ## 创建应用
 
 ```bash
-composer create-project ptadmin/admin your-project-name "0.11.0"
+composer create-project ptadmin/admin your-project-name "0.12.0"
 cd your-project-name
 ```
 
@@ -51,7 +53,7 @@ cd your-project-name
 
 Core 在线更新需要可执行的 PHP CLI、Composer 和相应目录写权限。可通过 `PTADMIN_UPDATE_PHP_BINARY`、`PTADMIN_COMPOSER_PATH` 指定服务器已有程序路径。Git/CI 交付、自定义 Shell 或受限环境继续使用项目部署流程，不通过调整权限或版本号绕过检查。
 
-本版安装的是 Core 正式包携带的 Shell `0.11.0`，包含新版系统信息界面、官网维护和版本详情入口，并仅在存在安全公告时显示提醒。安装产物与官方 Shell 构建包使用同一文件摘要，避免宿主预览已更新而新安装仍使用旧界面。重新安装最新版后，没有更高版本时不显示更新按钮；验证升级流程须使用更高的正式目标版本。
+本版安装的是 Core 正式包携带的 Shell `0.12.0`，包含新版系统信息界面、官网维护和版本详情入口，并仅在存在安全公告时显示提醒。安装产物与官方 Shell 构建包使用同一文件摘要，避免宿主预览已更新而新安装仍使用旧界面。重新安装最新版后，没有更高版本时不显示更新按钮；验证升级流程须使用更高的正式目标版本。
 
 ## 开发与测试
 
