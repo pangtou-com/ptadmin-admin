@@ -4,16 +4,16 @@
 
 仓库只负责 Laravel 应用入口、运行目录、宿主路由与扩展位置；后台认证、权限、Schema、插件生命周期、安装向导和已构建 Admin Shell 统一由 `ptadmin/core` 提供。这里不重复维护 Core 实现，也不再依赖历史 `ptadmin/admin`、`ptadmin/addon`、`ptadmin/schema` 或 Easy 包。
 
-当前基础壳版本为 `v0.12.1`，依赖 `ptadmin/core:^0.12.1`，锁定 Core `v0.12.1`，配套官方 Shell `0.12.0`，支持版本检查、安全公告以及符合条件的 Core 和 Shell 在线更新。官方版本目录通过固定 HTTPS 接口读取，无需配置发行签名公钥。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
+当前基础壳版本为 `v0.12.2`，依赖 `ptadmin/core:^0.12.2`，锁定 Core `v0.12.2`，配套官方 Shell `0.12.0`，支持版本检查、安全公告以及符合条件的 Core 和 Shell 在线更新。官方版本目录通过固定 HTTPS 接口读取，无需配置发行签名公钥。运行基线为 PHP `>=8.2 <9.0`、Laravel `>=12.68 <13.0`，不延续历史 Admin 内核的版本或旧运行环境支持。
 
-0.12.1 修复 Core 升级后旧插件因兼容范围不匹配而无法在线更新的问题；允许更新到兼容当前 Core 的新版，保留清单、签名与运行时兼容校验。从 0.12.0 升级无新增数据库迁移，沿用 Shell 0.12.0。
+0.12.2 修复安装向导的 HTTPS 请求、表单校验、断线执行、错误日志显示与环境配置持久化；在建库前检查前端发布目录权限，并保留安装数据库密码的首尾空格。从 0.12.1 升级无新增数据库迁移，沿用 Shell 0.12.0；已有失败安装的残留数据库与损坏配置不会被自动清理或覆盖。
 
 0.11.0 提供通知批量发送、投递查询与认证回执接口。现有宿主升级时需备份并执行新增通知投递字段迁移，短信插件使用支持 Core 0.11.x 的版本。
 
 ## 创建应用
 
 ```bash
-composer create-project ptadmin/admin your-project-name "0.12.1"
+composer create-project ptadmin/admin your-project-name "0.12.2"
 cd your-project-name
 ```
 

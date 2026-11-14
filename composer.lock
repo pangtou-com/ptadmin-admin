@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "85dd2a15ffc4eff0e50dc119e4395a26",
+    "content-hash": "a5b0941a14b0ae918744738417d6e9a2",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -3385,16 +3385,16 @@
         },
         {
             "name": "ptadmin/core",
-            "version": "v0.12.1",
+            "version": "v0.12.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pangtou-com/ptadmin-core.git",
-                "reference": "a586a3de5048b7667a90e281878daa5ed36df024"
+                "reference": "f394697a023a427147d3caa0c5ac88eed00a5e03"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pangtou-com/ptadmin-core/zipball/a586a3de5048b7667a90e281878daa5ed36df024",
-                "reference": "a586a3de5048b7667a90e281878daa5ed36df024",
+                "url": "https://api.github.com/repos/pangtou-com/ptadmin-core/zipball/f394697a023a427147d3caa0c5ac88eed00a5e03",
+                "reference": "f394697a023a427147d3caa0c5ac88eed00a5e03",
                 "shasum": ""
             },
             "require": {
@@ -3429,7 +3429,6 @@
                     "PTAdmin\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "Apache-2.0"
             ],
@@ -3442,9 +3441,9 @@
             "description": "PTAdmin core package with Admin, Addon, Schema and Core runtime.",
             "support": {
                 "issues": "https://github.com/pangtou-com/ptadmin-core/issues",
-                "source": "https://github.com/pangtou-com/ptadmin-core/tree/v0.12.1"
+                "source": "https://github.com/pangtou-com/ptadmin-core/tree/v0.12.2"
             },
-            "time": "2026-11-13T03:50:07+00:00"
+            "time": "2026-11-14T04:20:40+00:00"
         },
         {
             "name": "ralouphie/getallheaders",

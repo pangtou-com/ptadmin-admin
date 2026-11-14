@@ -90,6 +90,29 @@ final class PreInstallHostContractTest extends TestCase
         self::assertSame([], $this->app['db']->getConnections());
     }
 
+    public function test_http_middleware_preserves_installation_passwords(): void
+    {
+        $this->app['router']->post('/__ptadmin__/install/credential-probe', static function (\Illuminate\Http\Request $request) {
+            return response()->json($request->only(['db_password', 'database', 'password', 'password_confirmation', 'app_name']));
+        });
+        $password = ' pass#word\\with${symbols} ';
+        $this->postJson('/__ptadmin__/install/credential-probe', [
+            'db_password' => $password,
+            'database' => ['password' => $password],
+            'password' => $password,
+            'password_confirmation' => $password,
+            'app_name' => ' Example ',
+        ])->assertOk()
+            ->assertJsonPath('db_password', $password)
+            ->assertJsonPath('database.password', $password)
+            ->assertJsonPath('password', $password)
+            ->assertJsonPath('password_confirmation', $password)
+            ->assertJsonPath('app_name', 'Example');
+
+        self::assertSame([], $this->app['db']->getConnections());
+        self::assertFileDoesNotExist(storage_path('database/ptadmin.db'));
+    }
+
     public function test_installed_home_uses_the_generated_admin_prefix(): void
     {
         $this->app->make(\PTAdmin\Core\Install\InstallStateStore::class)
