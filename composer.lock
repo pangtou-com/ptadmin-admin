@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a5b0941a14b0ae918744738417d6e9a2",
+    "content-hash": "80c5b6a78331f3f0c564549b7540c9f0",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -3385,16 +3385,16 @@
         },
         {
             "name": "ptadmin/core",
-            "version": "v0.12.2",
+            "version": "v0.12.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pangtou-com/ptadmin-core.git",
-                "reference": "f394697a023a427147d3caa0c5ac88eed00a5e03"
+                "reference": "053d3ebd03e38d8aa98650a4b4032dbd3f2293c8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pangtou-com/ptadmin-core/zipball/f394697a023a427147d3caa0c5ac88eed00a5e03",
-                "reference": "f394697a023a427147d3caa0c5ac88eed00a5e03",
+                "url": "https://api.github.com/repos/pangtou-com/ptadmin-core/zipball/053d3ebd03e38d8aa98650a4b4032dbd3f2293c8",
+                "reference": "053d3ebd03e38d8aa98650a4b4032dbd3f2293c8",
                 "shasum": ""
             },
             "require": {
@@ -3429,6 +3429,19 @@
                     "PTAdmin\\": "src/"
                 }
             },
+            "autoload-dev": {
+                "psr-4": {
+                    "PTAdmin\\Core\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "phpstan": [
+                    "@php -d sys_temp_dir=/tmp vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit=1G"
+                ],
+                "test": [
+                    "phpunit -c phpunit.xml.dist"
+                ]
+            },
             "license": [
                 "Apache-2.0"
             ],
@@ -3439,11 +3452,7 @@
                 }
             ],
             "description": "PTAdmin core package with Admin, Addon, Schema and Core runtime.",
-            "support": {
-                "issues": "https://github.com/pangtou-com/ptadmin-core/issues",
-                "source": "https://github.com/pangtou-com/ptadmin-core/tree/v0.12.2"
-            },
-            "time": "2026-11-14T04:20:40+00:00"
+            "time": "2026-11-14T08:03:55+00:00"
         },
         {
             "name": "ralouphie/getallheaders",
